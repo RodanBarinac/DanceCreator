@@ -1,0 +1,5 @@
+{"Name": "1DR",
+  "Desc": "Half Diagonal Reel on the first diagonal",
+  "FigureSeries": {
+    "Anchor": [[0, 0], [0, 0]],
+    "List": ["H1DR", "H1DR"]}}
