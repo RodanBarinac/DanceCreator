@@ -1,0 +1,9 @@
+{"Partner": [[0,1],[0,0]],
+  "CriptDesc": ["{Dancer} steps one place up.",
+    "{Dancer} steps one place up."],
+  "StartPos": [[0, 0], [0, 1]],
+  "TransferCode": [[-1, 0], [-1, 0]],
+  "Name": "1cSU",
+  "Desc": "One couple step one place up.",
+  "Bars": 2,
+  "Anchor": [0,0]}

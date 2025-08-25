@@ -4,17 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7aaaf50a-c70e-40e5-a0da-48518b5e3409" name="Changes" comment="Erstellen der Umgebung.">
-      <change afterPath="$PROJECT_DIR$/DanceFloor.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/1DR.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/1cRT.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParalelFigure.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/SerialFigure.py" afterDir="false" />
+    <list default="true" id="7aaaf50a-c70e-40e5-a0da-48518b5e3409" name="Changes" comment="Serielle Figure implementiert">
+      <change afterPath="$PROJECT_DIR$/Figures/1cCast1p.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Figures/1cLT.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Figures/1cLT1c.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Figures/1cSU.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/DanceCreator.py" beforeDir="false" afterPath="$PROJECT_DIR$/DanceCreator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Diagone_Reel.ini" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/H1DR.ini" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/1DR.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/1DR.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParalelFigure.py" beforeDir="false" afterPath="$PROJECT_DIR$/ParalelFigure.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SerialFigure.py" beforeDir="false" afterPath="$PROJECT_DIR$/SerialFigure.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,25 +45,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.DanceCreator.executor": "Run",
-    "Python.DanceFloor.executor": "Debug",
-    "Python.Figures.executor": "Run",
-    "Python.scratch.executor": "Run",
-    "Python.scratch_1.executor": "Run",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "E:/Git/DanceCreator/Figures"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.DanceCreator.executor&quot;: &quot;Run&quot;,
+    &quot;Python.DanceFloor.executor&quot;: &quot;Debug&quot;,
+    &quot;Python.Figures.executor&quot;: &quot;Run&quot;,
+    &quot;Python.scratch.executor&quot;: &quot;Run&quot;,
+    &quot;Python.scratch_1.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/Git/python-seafile&quot;
   },
-  "keyToStringList": {
-    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
-      "Python"
+  &quot;keyToStringList&quot;: {
+    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
+      &quot;Python&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="E:\Git\DanceCreator\Figures" />
@@ -72,6 +71,58 @@
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\Git\DanceCreator\Figures" />
     </key>
+  </component>
+  <component name="RunManager" selected="Python.scratch_1">
+    <configuration name="DanceCreator" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="DanceCreator" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/DanceCreator.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="scratch_1" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="DanceCreator" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$APPLICATION_CONFIG_DIR$/scratches" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$APPLICATION_CONFIG_DIR$/scratches/scratch_1.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.scratch_1" />
+        <item itemvalue="Python.DanceCreator" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
@@ -105,7 +156,15 @@
       <option name="project" value="LOCAL" />
       <updated>1710694978273</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Serielle Figure implementiert">
+      <option name="closed" value="true" />
+      <created>1718031099375</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1718031099375</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -121,7 +180,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Erstellen der Umgebung." />
-    <option name="LAST_COMMIT_MESSAGE" value="Erstellen der Umgebung." />
+    <MESSAGE value="Serielle Figure implementiert" />
+    <option name="LAST_COMMIT_MESSAGE" value="Serielle Figure implementiert" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -135,11 +195,6 @@
           <url>file://$PROJECT_DIR$/DanceFloor.py</url>
           <line>79</line>
           <option name="timeStamp" value="33" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Figures.py</url>
-          <line>78</line>
-          <option name="timeStamp" value="34" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

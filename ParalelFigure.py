@@ -12,11 +12,6 @@ class ParalelFigure(Figures.SimpleFigure):
         self.FigureSeries['List'] = []
         self.FigureSeries['Anchor'] = []
 
-    def __init__(self, name, desc):
-        super().__init__(name, desc)
-        self.FigureSeries['List'] = []
-        self.FigureSeries['Anchor'] = []
-
     def loadFigure(self, Filename):
         with open('E:/Git/DanceCreator/Figures/' + Filename + '.json', 'r') as f:
             FigData = json.load(f)
@@ -28,17 +23,18 @@ class ParalelFigure(Figures.SimpleFigure):
         self.FigureSeries['Anchor'] = []
 
         if 'FigureSeries' in FigData:
-            for i in range(len(FigData['FigureSeries']['List'])):
-                self.FigureSeries['List'].append(Figures.SimpleFigure(FigData['FigureSeries']['List'][i], ''))
-                self.FigureSeries['List'][i].loadFigure(FigData['FigureSeries']['List'][i])
-                self.FigureSeries['Anchor'].append(FigData['FigureSeries']['Anchor'][i])
-                self.FigureSeries['List'][i].Anchor = \
-                    (FigData['FigureSeries']['Anchor'][i][0], FigData['FigureSeries']['Anchor'][i][1])
+            if type(FigData['FigureSeries']['List']) == list
+                for i in range(len(FigData['FigureSeries']['List'][0])):
+                    self.FigureSeries['List'].append(Figures.SimpleFigure(FigData['FigureSeries']['List'][0][i], ''))
+                    self.FigureSeries['List'][i].loadFigure(FigData['FigureSeries']['List'][0][i])
+                    self.FigureSeries['Anchor'].append(FigData['FigureSeries']['Anchor'][0][i])
+                    self.FigureSeries['List'][i].Anchor = \
+                        (FigData['FigureSeries']['Anchor'][0][i][0], FigData['FigureSeries']['Anchor'][0][i][1])
         else:
-            print(FigData)
-            self.FigureSeries['List'].append(Figures.SimpleFigure(self.name, ''))
-            self.FigureSeries['List'][0].loadFigure()
-            self.FigureSeries['Anchor'].append((0, 0))
+            # print(FigData)
+            # self.FigureSeries['List'].append(Figures.SimpleFigure(self.name, ''))
+            # self.FigureSeries['List'][0].loadFigure()
+            # self.FigureSeries['Anchor'].append((0, 0))
 
     def writeFigure(self):
 
@@ -48,16 +44,16 @@ class ParalelFigure(Figures.SimpleFigure):
                 'Desc': self.desc,
                 }
             FigData['FigureSeries'] = {}
-            FigData['FigureSeries']['List'] = []
-            FigData['FigureSeries']['Anchor'] = []
+            FigData['FigureSeries']['List'] = [[]]
+            FigData['FigureSeries']['Anchor'] = [[]]
             for i in range(self.FigureSeries['List']):
-                FigData['FigureSeries']['List'][i] = self.FigureSeries['List'][i].name()
-                FigData['FigureSeries']['Anchor'][i] = self.FigureSeries['Anchor'][i]
+                FigData['FigureSeries']['List'][0][i] = self.FigureSeries['List'][i].name()
+                FigData['FigureSeries']['Anchor'][0][i] = self.FigureSeries['Anchor'][i]
 
             with open('E:/Git/DanceCreator/Figures/' + self.name + '.json', 'w') as f:
                 json.dump(FigData, f, sort_keys=True)
         else:
-            self.FigureSeries['List'][0].writeFigure()
+            # self.FigureSeries['List'][0].writeFigure()
 
     def DanceMove(self):
         myDanceMove = []

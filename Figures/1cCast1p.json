@@ -1,0 +1,9 @@
+{"Partner": [[0,1],[0,0]],
+  "CriptDesc": ["{Dancer} casts down one place.",
+    "{Dancer} casts down one place."],
+  "StartPos": [[0, 0], [0, 1]],
+  "TransferCode": [[1, 0], [1, 0]],
+  "Name": "1cCast1p",
+  "Desc": "One couple cast down for one place.",
+  "Bars": 2,
+  "Anchor": [0,0]}

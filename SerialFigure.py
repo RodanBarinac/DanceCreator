@@ -29,10 +29,10 @@ class SerialFigure(Figures.SimpleFigure):
                 self.FigureSeries['List'][i].Anchor = \
                     (FigData['FigureSeries']['Anchor'][i][0], FigData['FigureSeries']['Anchor'][i][1])
         else:
-            print(FigData)
-            self.FigureSeries['List'].append(Figures.SimpleFigure(self.name, ''))
-            self.FigureSeries['List'][0].loadFigure()
-            self.FigureSeries['Anchor'].append((0, 0))
+            # print(FigData)
+            # self.FigureSeries['List'].append(Figures.SimpleFigure(self.name, ''))
+            # self.FigureSeries['List'][0].loadFigure()
+            # self.FigureSeries['Anchor'].append((0, 0))
 
     def writeFigure(self):
 
@@ -51,7 +51,7 @@ class SerialFigure(Figures.SimpleFigure):
             with open('E:/Git/DanceCreator/Figures/' + self.name + '.json', 'w') as f:
                 json.dump(FigData, f, sort_keys=True)
         else:
-            self.FigureSeries['List'][0].writeFigure()
+            # self.FigureSeries['List'][0].writeFigure()
 
     # def testFigureSeries(self):
     #     myStartPos = self.FigureSeries['List'][0].StartPos

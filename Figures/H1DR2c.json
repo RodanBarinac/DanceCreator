@@ -1,0 +1,11 @@
+{"StartPos": [[0, 0], [0.5, 0.25], [1.5, 0.75], [2, 1]],
+  "TransferCode": [[2, 1], [1, 0], [-1, 0], [-2, -1]],
+  "Name": "H1DR2c",
+  "Desc": "Half Diagonal Reel on the first diagonal, end facing second corner.",
+  "CriptDesc": ["{Dancer} dances half a diagonal reel to {EndPos}",
+    "{Dancer} dances half a diagonal reel to face {Face}",
+   "{Dancer} dances half a diagonal reel to face {Face}",
+   "{Dancer} dances half a diagonal reel to {EndPos}"],
+  "Faceing": [[],[2,0],[0,1],[]],
+  "Bars": 4,
+  "Anchor": [0,0]}
