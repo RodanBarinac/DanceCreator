@@ -1,9 +1,9 @@
-{"Partner": [[0,1],[0,0]],
+{"Partner": [[0,2],[0,0]],
   "CriptDesc": ["{Dancer} turns right hand with {Partner} and ends in own place.",
     "{Dancer} turns right hand with {Partner} and ends in own place."],
-  "StartPos": [[0, 0], [0, 1]],
-  "TransferCode": [[0, 0], [0, 0]],
+  "StartPos": [[0, 0], [0, 2]],
+  "EndPos": [[0, 0], [0, 2]],
   "Name": "1cRT",
   "Desc": "Two bar right hand turn for one couple",
   "Bars": 2,
-  "Anchor": [0,0]}
+  "Version": 2}

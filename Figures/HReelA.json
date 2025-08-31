@@ -1,0 +1,9 @@
+{"CriptDesc": ["{Dancer} dances half a right shoulder reel to {EndPos}",
+              "{Dancer} dances half a right shoulder reel to {EndPos}",
+              "{Dancer} dances half a right shoulder reel to {EndPos}"],
+  "StartPos": [[0, 0], [0, 1], [0, 2]],
+  "EndPos": [[0, 2], [0,1], [0, 0]],
+  "Name": "HReelA",
+  "Desc": "Half Reel of three acros",
+  "Bars": 4,
+  "Version": 2}

@@ -1,111 +1,95 @@
-# class Position:
-#     x = 0
-#     y = 0
-#
-#     def __init__(self, value):
-#         self.x = value[0]
-#         self.y = value[1]
-#
-#     def __add__(self, other):
-#         return (self.x + other.x, self.y + other.y)
+import Dancer
+
+def combineDanceFloor(oldDFs = []):
+    newDF = DanceFloor('dummy')
+
+    for i in range(len(oldDFs)):
+        for myPos in oldDFs[i].DanceFloorMap.keys():
+            newDF.addDancer(oldDFs[i].DanceFloorMap[myPos][0], myPos, oldDFs[i].DanceFloorMap[myPos][1])
+    return newDF
+
 
 class DanceFloor:
-    _DanceFloorMap = dict
-    _DanceFloorNames = dict
+    _DanceFloorMap = {}           # Karte der beteidigten Tänzer
+    _DanceFloorNames = {}         # Karte der Positionen der beteidigten Tänzer
+    _MaxRow = 0
     _Row = 2
-    _Col = 4
-    Bar = 0
+    _Col = 2
 
-    def __init__(self, name, NofCouple = 3):
+    def __init__(self, name, NofCouple = 0):
+        self._DanceFloorMap = {}  # Karte der beteidigten Tänzer
+        self._DanceFloorNames = {}  # Karte der Positionen der beteidigten Tänzer
+
         self.name = name
-        self.setupDancefloor(NofCouple)
+        self.maxRow = NofCouple
+        if NofCouple > 0:
+            self.setupDancefloor(int(NofCouple))
 
-    def getDanceFloorMap(self):
-        return self._DanceFloorMap.copy()
-    def setDanceFloorMap(self, myFloorMap):
-        self._DanceFloorMap = myFloorMap
+    @property
+    def maxRow(self):
+        return self._MaxRow
+    @maxRow.setter
+    def maxRow(self, newMaxRow):
+        if newMaxRow > self.maxRow:
+            self._MaxRow = newMaxRow
+            self.setupDanceFloorNames(int(newMaxRow))
 
-    def PosbyName(self, myName):
-        if myName in self._DanceFloorMap.values():
-            keys = [k for k, v in self._DanceFloorMap.items() if v == myName]
-            return keys[0]
+    @property
+    def DanceFloorMap(self):
+        return self._DanceFloorMap
 
-    def NamebyPos(self, myPos):
+    def DancerbyPos(self, myPos):
+        if type(myPos) == type([]):
+            myPos = (myPos[0], myPos[1])
+
         if myPos in self._DanceFloorMap:
-            myName = self._DanceFloorMap[myPos]
+            myDancer = self._DanceFloorMap[myPos][0]
         else:
-            myName = ''
+            raise Exception("Sorry, no dancer here! " + str(myPos) + "\n" + str(self))
 
-        return myName
+        return myDancer
 
     def PosNamebyPos(self, myPos):
+        if type(myPos) == type([]):
+            myPos = (myPos[0], myPos[1])
+
         if myPos in self._DanceFloorNames:
-            myName = self._DanceFloorNames[myPos] + ' position'
+            myName = self._DanceFloorNames[myPos] + 's position'
         else:
             myName = ''
 
         return myName
-    def addDancer(self, myName, myPos):
+
+    def addDancer(self, myDancer, myPos, myFacing):
+        if type(myPos) == type([]):
+            myPos = (myPos[0], myPos[1])
+
+        self.maxRow = myPos[0]
         if myPos not in self._DanceFloorMap.keys():
-            self._DanceFloorMap[myPos] = myName
+            self._DanceFloorMap[myPos] = [myDancer, myFacing]
+        else:
+            raise Exception("Sorry, spott already taken. " + str(myPos))
+
+    def setupDanceFloorNames(self, NofCouples):
+        for myi in range(NofCouples):
+            myi += 1
+            self._DanceFloorNames[(myi ,1)] = str(myi) + 'm'
+            self._DanceFloorNames[(myi ,3)] = str(myi) + 'w'
 
     def setupDancefloor(self, NofCouples):
-        self._DanceFloorMap = {}
         for myi in range(NofCouples):
-            myi = myi+1
-            self._DanceFloorMap[(myi,1)] = str(myi) + 'm'
-            self._DanceFloorMap[(myi,2)] = str(myi) + 'w'
-        self._DanceFloorNames = self._DanceFloorMap.copy()
+            myi += 1
+            myMan = Dancer.Dancer(str(myi) + 'm', 'male')
+            myLady = Dancer.Dancer(str(myi) + 'w', 'female')
 
-    def teleportDancerbyName(self, myName, AbsPos, newFloor):
-        StartPos = newFloor.PosbyName(myName)
-        if StartPos != '':
-            newFloor.pop(StartPos)
-        newFloor[AbsPos] = myName
-        return newFloor
+            self.addDancer(myMan, (myi, 1), [myi, 3])
+            self.addDancer(myLady, (myi, 3),[myi, 1])
+    def copy(self):
+        newDF = DanceFloor('dummy')
 
-    def moveDancerbyPos(self, StartPos, RelPos, newFloor):
-        if StartPos in self._DanceFloorMap:
-            myName = self._DanceFloorMap[StartPos]
-            if newFloor[StartPos] == self._DanceFloorMap[StartPos]:
-                newFloor.pop(StartPos)
-            myPos =(StartPos[0]+RelPos[0], StartPos[1]+RelPos[1])
-            newFloor[myPos] = myName
-        return newFloor
-
-    def moveDancerbyName(self,myName,RelPos, newFloor):
-        return self.moveDancerbyPos(self.PosbyName(myName),RelPos,newFloor)
-
-    def doDanceMove(self, myDanceMove, FigType = 'Simple'):
-        if FigType == 'Simple':
-            if type(myDanceMove) == dict:
-                newFloorMap = self.getDanceFloorMap()
-                for i in range(len(myDanceMove['Move'])):
-                    self.moveDancerbyPos(myDanceMove['Dancers'][i], myDanceMove['Move'][i], newFloorMap)
-                self.setDanceFloorMap(newFloorMap)
-                self.Bar = self.Bar + myDanceMove['Bars']
-
-        if FigType == 'Seriel':
-            if type(myDanceMove) != []:
-                myDanceMove = [myDanceMove]
-            myDanceFloor = DanceFloor('DoDanceMove_' + self.name, 0)
-            myDanceFloor.setDanceFloorMap(self.getDanceFloorMap())
-            for j in range(len(myDanceMove)):
-                myDanceFloor.doDanceMove(myDanceMove[j], 'Simple')
-            self.setDanceFloorMap(myDanceFloor.getDanceFloorMap())
-            self.Bar = self.Bar + myDanceFloor.Bar
-
-        if FigType == 'Parallel':
-            myDanceFloorList = []
-            for i in range(len(myDanceMove)):
-                myDanceFloorList.append(DanceFloor('DoDanceMove_' + self.name + str(i), 0))
-                myDanceFloorList[i].setDanceFloorMap(myDanceFloorMap)
-                myDanceFloorList[i].doDanceMove(myDanceMove[i], 'Seriel')
-
-            newFloorMap = self.getDanceFloorMap()
-            for i in range(len(myDanceFloorList)):
-                for j in range(len(myDanceMove[i]['Dancers'])):
-                   self.teleportDancerbyName(myDanceMove[i]['Dancers'][j], myDanceFloorList[i].PosbyName(myDanceMove[i]['Dancers'][j]), newFloorMap)
+        for myPos in self._DanceFloorMap.keys():
+             newDF.addDancer( self._DanceFloorMap[myPos][0], myPos,  self._DanceFloorMap[myPos][1])
+        return newDF
 
     def __str__(self):
         maxRow = 0
@@ -116,12 +100,12 @@ class DanceFloor:
             if maxCol < nPos[1]:
                 maxCol = nPos[1]
 #        print(str(maxRow) + ' / ' + str(maxCol))
-        myDesc = '                     Men                 Lady\n'
+        myDesc = '            Men                 Lady'
         for i in range(int(self._Row * maxRow) + 1):
             for j in range(int(self._Col * maxCol) + 1):
                 locDesc = '    '
                 if (i/self._Row,j/self._Col) in self._DanceFloorMap.keys():
-                    locDesc = locDesc + self._DanceFloorMap[(i/self._Row, j/self._Col)]
+                    locDesc = locDesc + self._DanceFloorMap[(i/self._Row, j/self._Col)][0].name
                 myDesc = myDesc + locDesc[-4:] + ' '
             myDesc = myDesc + '\n'
 

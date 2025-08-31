@@ -1,0 +1,153 @@
+dance:
+  name: Mairies
+  author: 
+  music: Reel
+  bars: 40
+  couples_involved: 3
+  orientation: Longwise
+  set_size: 4
+  complex_figure:
+    - complex_figure_name: first four bars
+      figure_list:
+        - strang: 1
+          comment: 1C
+          list:
+            - anchor:
+                x: 0
+                y: 0
+              figure_name: TR
+            - anchor:
+                x: 0
+                y: 0
+              figure_name: Cast
+        - strang: 2
+          comment: 2M
+          list:
+            - anchor:
+                x: 1
+                y: 0
+              figure_name: Stand
+            - anchor:
+                x: 1
+                y: 0
+              figure_name: Stepup
+        - strang: 3
+          comment: 2L
+          list:
+            - anchor:
+                x: 1
+                y: 1
+              figure_name: Stand
+            - anchor:
+                x: 1
+                y: 1
+              figure_name: Stepup
+
+simple_figure_library:
+  - name: stand
+    startpositions:
+      - position:
+          x: 0
+          y: 0
+    endpositions:
+      - position:
+          x: 0
+          y: 0
+  - name: Turn Right
+    startpositions:
+      - position:
+          x: 0
+          y: 0
+      - position:
+          x: 0
+          y: 1
+    endpositions:
+      - position:
+          x: 0
+          y: 0
+      - position:
+          x: 0
+          y: 1
+  - name: Cast
+    startpositions:
+      - position:
+          x: 0
+          y: 0
+      - position:
+          x: 0
+          y: 1
+    endpositions:
+      - position:
+          x: 1
+          y: 0
+      - position:
+          x: 1
+          y: 1
+  - name: Step up
+    startpositions:
+      - position:
+          x: 0
+          y: 0
+      - position:
+          x: 0
+          y: 1
+    endpositions:
+      - position:
+          x: -1
+          y: 0
+      - position:
+          x: -1
+          y: 1
+
+
+
+
+  - name: Turn Right
+    beteiligte: 2
+    anchor:
+      x: 0
+      y: 0
+  - name: Cast
+    beteiligte: 2
+    anchor:
+      x: 0
+      y: 0
+
+  
+(0,0)
+    1M    1L
+    (1,1) (1,2)
+
+    2M    2L
+    (2,1) (2,2)
+
+    3M    3L
+    (3,1) (3,2)
+
+    4M    4L
+    (4,1) (4,2)
+
+
+      start:
+    - complex_figure_name:
+      - 
+      simple_figure:
+        anchor:
+        startpunte:
+          - id: 1
+            x:
+            y:
+          - id: 2
+            x:
+            y:
+        endpunkte:
+          - id: 1
+            x:
+            y:
+          - id: 2
+            x:
+            y:
+        länge:
+        endfacing:
+        description:
+    - complex_figure_name:

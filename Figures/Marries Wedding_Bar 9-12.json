@@ -1,0 +1,6 @@
+{"Name": "Marries Wedding_Bar 9-12",
+  "Desc": "Third 4 Bars of Marrie's Wedding",
+  "FigureList": ["p",[[0,0], "H1DR2c"],
+              ["s",[[0,2], "1pWait"], [[0,2], "1pWait"]],
+              ["s",[[2,0], "1pWait"], [[2,0], "1pWait"]]],
+  "Version": 3}

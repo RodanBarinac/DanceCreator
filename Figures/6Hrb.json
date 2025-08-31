@@ -1,0 +1,13 @@
+{"Partner": [[0,2],[0,0]],
+  "CriptDesc": ["{Dancer} dances with the others a circle to the left and back.",
+                "{Dancer} dances with the others a circle to the left and back.",
+                "{Dancer} dances with the others a circle to the left and back.",
+                "{Dancer} dances with the others a circle to the left and back.",
+                "{Dancer} dances with the others a circle to the left and back.",
+                "{Dancer} dances with the others a circle to the left and back."],
+  "StartPos": [[0, 0], [0, 2], [1, 0], [1, 2], [2, 0], [2, 2]],
+  "EndPos": [[0, 0], [0, 2], [1, 0], [1, 2], [2, 0], [2, 2]],
+  "Name": "6Hrb",
+  "Desc": "Six hands round and back",
+  "Bars": 2,
+  "Version": 2}

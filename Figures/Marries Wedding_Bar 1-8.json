@@ -1,0 +1,6 @@
+{"Name": "Marries Wedding_Bar 1-8",
+  "Desc": "First 8 Bars of Marrie's Wedding",
+  "FigureList": ["p",["s",[[0,0], "1cRT"], [[0,0], "1cCast1p"], [[1,0], "1cLT1c"]],
+				["s",[[1,0], "1cWait"], [[1,0], "1cSU"],    [[0,0], "1cWait"], [[0,0], "1cWait"]],
+				["s",[[2,0], "1cWait"], [[2,0], "1cWait"],  [[2,0], "1cWait"], [[2,0], "1cWait"]]],
+  "Version": 3}

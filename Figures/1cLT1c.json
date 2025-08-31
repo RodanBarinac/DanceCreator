@@ -1,10 +1,10 @@
-{"Partner": [[0,1],[0,0]],
+{"Partner": [[0,2],[0,0]],
   "CriptDesc": ["{Dancer} turns left hand with {Partner} and ends facing {Face}.",
     "{Dancer} turns left hand with {Partner} and ends facing {Face}."],
-  "StartPos": [[0, 0], [0, 1]],
-  "TransferCode": [[0.5, 0.75], [-0.5, -0.75]],
-  "Faceing": [[1,1],[-1,0]],
+  "StartPos": [[0, 0], [0, 2]],
+  "EndPos": [[0.5, 1.5], [-0.5, 0.5]],
+  "Faceing": [[1,2],[-1,0]],
   "Name": "1cLT1c",
-  "Desc": "Two bar left hand turn for one couple end facing first corner",
-  "Bars": 2,
-  "Anchor": [0,0]}
+  "Desc": "Four bar left hand turn for one couple end facing first corner",
+  "Bars": 4,
+  "Version": 2}
