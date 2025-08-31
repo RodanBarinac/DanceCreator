@@ -1,3 +1,4 @@
+import os
 import json
 from Figures import Figure
 import DanceFloor as DF
@@ -96,7 +97,7 @@ class SimpleFigure(Figure):
         return myCrips
     '''
     def loadFigure(self, Filename):
-        with open('E:/Git/DanceCreator/Figures/' + Filename + '.json', 'r') as f:
+        with open(os.getcwd()+'/Figures/' + Filename + '.json', 'r') as f:
             FigData = json.load(f)
         myKeys = FigData.keys()
         if 'Version' in myKeys:
