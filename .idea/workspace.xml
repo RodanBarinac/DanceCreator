@@ -4,40 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7aaaf50a-c70e-40e5-a0da-48518b5e3409" name="Changes" comment="Serielle Figure implementiert">
-      <change afterPath="$PROJECT_DIR$/DanceCreator_old.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Dance_old.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Dancer.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/1cWait.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/1pWait.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/6Hrb.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/H2DRSL.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/HReelA.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/HReelASLEnddown.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/HReelASLEndup.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/HReelASLSTup.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/HReelASLStdown.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 1-8.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 13-16.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 21-24.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 25-32.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 9-12.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Figures/dance.yaml" afterDir="false" />
+    <list default="true" id="7aaaf50a-c70e-40e5-a0da-48518b5e3409" name="Changes" comment="- Aufteilung in einfache iund Komplexe Figuren&#10;- Komplexe Figuren können Figuren seriel und parallel anordnen.&#10;- Marrie's Wedding als Bsp">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dance.py" beforeDir="false" afterPath="$PROJECT_DIR$/Dance.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DanceCreator.py" beforeDir="false" afterPath="$PROJECT_DIR$/DanceCreator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DanceFloor.py" beforeDir="false" afterPath="$PROJECT_DIR$/DanceFloor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Figures.py" beforeDir="false" afterPath="$PROJECT_DIR$/Figures.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Figures/1DR.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/1DR.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Figures/1cCast1p.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/1cCast1p.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Figures/1cLT1c.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/1cLT1c.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Figures/1cRT.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/1cRT.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Figures/1cSU.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/1cSU.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Figures/H1DR.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/H1DR.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Figures/H1DR2c.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/H1DR2c.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Figures/H2DR3c.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/H2DR3c.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParalelFigure.py" beforeDir="false" afterPath="$PROJECT_DIR$/KomplexFigure.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SerialFigure.py" beforeDir="false" afterPath="$PROJECT_DIR$/SimpleFigure.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SimpleFigure.py" beforeDir="false" afterPath="$PROJECT_DIR$/SimpleFigure.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -199,7 +168,15 @@
       <option name="project" value="LOCAL" />
       <updated>1756115419275</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="- Aufteilung in einfache iund Komplexe Figuren&#10;- Komplexe Figuren können Figuren seriel und parallel anordnen.&#10;- Marrie's Wedding als Bsp">
+      <option name="closed" value="true" />
+      <created>1756660255586</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1756660255586</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -216,7 +193,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Erstellen der Umgebung." />
     <MESSAGE value="Serielle Figure implementiert" />
-    <option name="LAST_COMMIT_MESSAGE" value="Serielle Figure implementiert" />
+    <MESSAGE value="- Aufteilung in einfache iund Komplexe Figuren&#10;- Komplexe Figuren können Figuren seriel und parallel anordnen.&#10;- Marrie's Wedding als Bsp" />
+    <option name="LAST_COMMIT_MESSAGE" value="- Aufteilung in einfache iund Komplexe Figuren&#10;- Komplexe Figuren können Figuren seriel und parallel anordnen.&#10;- Marrie's Wedding als Bsp" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

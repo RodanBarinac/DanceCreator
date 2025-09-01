@@ -55,4 +55,6 @@ class Figure(ABC):
     def loadFigure(self, Filename):
         pass
 
+    def posWithAnchor(self, myPos):
+        return (myPos[0] + self.Anchor[0], myPos[1] + self.Anchor[1])
 ''

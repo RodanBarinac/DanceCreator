@@ -2,6 +2,15 @@ import Dancer
 
 def combineDanceFloor(oldDFs = []):
     newDF = DanceFloor('dummy')
+    newBars = []
+
+    for DF in oldDFs:
+        newBars.append(DF.AktBar)
+
+    if not newBars[:-1] == newBars[1:]:
+        raise Exception("Sorry, not all the Bars are equal")
+    else:
+        newDF.AktBar = newBars[0]
 
     for i in range(len(oldDFs)):
         for myPos in oldDFs[i].DanceFloorMap.keys():
@@ -15,12 +24,14 @@ class DanceFloor:
     _MaxRow = 0
     _Row = 2
     _Col = 2
+    AktBar = 0
 
     def __init__(self, name, NofCouple = 0):
         self._DanceFloorMap = {}  # Karte der beteidigten Tänzer
         self._DanceFloorNames = {}  # Karte der Positionen der beteidigten Tänzer
 
         self.name = name
+        self.AktBar = 1
         self.maxRow = NofCouple
         if NofCouple > 0:
             self.setupDancefloor(int(NofCouple))
@@ -74,6 +85,7 @@ class DanceFloor:
         for myi in range(NofCouples):
             myi += 1
             self._DanceFloorNames[(myi ,1)] = str(myi) + 'm'
+            self._DanceFloorNames[(myi ,2)] = 'between ' + str(myi) + 'c'
             self._DanceFloorNames[(myi ,3)] = str(myi) + 'w'
 
     def setupDancefloor(self, NofCouples):
@@ -89,6 +101,7 @@ class DanceFloor:
 
         for myPos in self._DanceFloorMap.keys():
              newDF.addDancer( self._DanceFloorMap[myPos][0], myPos,  self._DanceFloorMap[myPos][1])
+        newDF.AktBar = self.AktBar
         return newDF
 
     def __str__(self):
@@ -100,7 +113,7 @@ class DanceFloor:
             if maxCol < nPos[1]:
                 maxCol = nPos[1]
 #        print(str(maxRow) + ' / ' + str(maxCol))
-        myDesc = '            Men                 Lady'
+        myDesc = '\nEnd of Bar: ' + str(self.AktBar-1) + '\n            Men                 Lady'
         for i in range(int(self._Row * maxRow) + 1):
             for j in range(int(self._Col * maxCol) + 1):
                 locDesc = '    '

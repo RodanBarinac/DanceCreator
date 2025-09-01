@@ -14,24 +14,54 @@ class SimpleFigure(Figure):
 
     def DanceMove(self, oldDF):
         newDF = DF.DanceFloor('dummy')
+        newDF.AktBar = oldDF.AktBar + self.Bars
 
         for i in range(len(self.StartPos)):
-            tmpStartPos = (self.StartPos[i][0]+self.Anchor[0],self.StartPos[i][1]+self.Anchor[1])
-            tmpEndPos = (self.EndPos[i][0]+self.Anchor[0],self.EndPos[i][1]+self.Anchor[1])
+            tmpStartPos = self.posWithAnchor(self.StartPos[i])
+            tmpEndPos = self.posWithAnchor(self.EndPos[i])
             if len(self.Facing) > i:
-                tmpFacing = (self.Facing[i][0]+self.Anchor[0],self.Facing[i][1]+self.Anchor[1])
+                tmpFacing = self.posWithAnchor(self.Facing[i])
             else:
                 tmpFacing = []
             newDF.addDancer(oldDF.DancerbyPos(tmpStartPos), tmpEndPos, tmpFacing)
 
         return newDF
 
-    def getCrips(self, myDanceFloorMap, globAnchor = (0,0)):
+    def getCrips(self, myDF):
         myCrips = []
-        myDancers = []
-        myEndPos = []
-        myFacing = []
-        myPartner = []
+
+        if not isinstance(myDF, DF.DanceFloor):
+            raise Exception("Sorry, no Dance Floor")
+
+        if len(self.StartPos) != len(self._CriptDesc):
+            raise Exception("Sorry, no Cripts for everyone")
+
+        for i in range(len(self._CriptDesc)):
+            myCript = str(self._CriptDesc[i])
+            if '{Dancer}' in myCript:
+                myCript = myCript.replace('{Dancer}', myDF.DancerbyPos(self.posWithAnchor(self.StartPos[i])).name)
+
+            if '{StartPos}' in myCript:
+                myCript = myCript.replace('{StartPos}', myDF.PosNamebyPos(self.posWithAnchor(self.StartPos[i])))
+
+            if '{EndPos}' in myCript:
+                myCript = myCript.replace('{EndPos}', myDF.PosNamebyPos(self.posWithAnchor(self.EndPos[i])))
+
+            if '{Face}' in myCript:
+                if self._FacingPos[i] != '':
+                    myCript = myCript.replace('{Face}', myDF.PosNamebyPos(self.posWithAnchor(self._FacingPos[i])))
+                else:
+                    raise Exception("Sorry, noone to face!")
+
+            if '{Partner}' in myCript:
+                if self._PartnerPos[i] != '':
+                    myCript = myCript.replace('{Partner}', myDF.DancerbyPos(self.posWithAnchor(self._PartnerPos[i])).name)
+                else:
+                    raise Exception("Sorry, no partner!")
+            if len(myCript) > 0:
+                myCrips.append(str(myDF.AktBar) + ' - ' + str(myDF.AktBar+self.Bars-1) + ': ' + myCript)
+
+        return myCrips
         '''
         myDanceFloor = DF.DanceFloor('getCrips_' + self.name, 10)
         myDanceFloor.setDanceFloorMap(myDanceFloorMap)
@@ -56,7 +86,7 @@ class SimpleFigure(Figure):
                     myFacing.append(myDanceFloor.PosNamebyPos((globAnchor[0] + self.Anchor[0]+self._FacingPos[i][0], globAnchor[1] + self.Anchor[1]+self._FacingPos[i][1])))
                 else:
                     myFacing.append('')
-
+        
         for i in range(len(self.StartPos)):
             n = 1
             Texts = []
@@ -94,8 +124,8 @@ class SimpleFigure(Figure):
                 case 5:
                     myCript = myCript.format(Text1 = Texts[0][i], Text2 = Texts[1][i], Text3 = Texts[2][i], Text4 = Texts[3][i], Text5 = Texts[4][i])
             myCrips.append(myCript)
-        return myCrips
-    '''
+        '''
+
     def loadFigure(self, Filename):
         with open(os.getcwd()+'/Figures/' + Filename + '.json', 'r') as f:
             FigData = json.load(f)

@@ -14,3 +14,20 @@ def getFigure(Filename, Anchor = [0,0]):
         myFig = SimpleFigure(Filename, Anchor)
 
     return myFig
+
+def printCrip(myCrips):
+    if type(myCrips) != type([]):
+        print(myCrips)
+    else:
+        if len(myCrips) == 0:
+            pass
+        elif type(myCrips[0]) != type([]):
+            print(myCrips[0])
+            if len(myCrips) > 1:
+                printCrip(myCrips[1:])
+        else:
+            for myCrip in myCrips:
+                printCrip(myCrip)
+def showCrips(myFig, myDF):
+    printCrip(myFig.getCrips(myDF))
+

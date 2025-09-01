@@ -51,8 +51,27 @@ class ComplexFigure(Fig.Figure):
     def DanceMove(self, oldDF):
         return self.subDanceMove(self._FigureObjs, oldDF)
 
-    def getCrips(self, myDanceFloorMap, globAnchor=(0, 0)):
-        return 'Test'
+    def subgetCrips(self, FigObjs, newDF):
+        if isinstance(FigObjs, Fig.Figure):
+            return FigObjs.getCrips(newDF)
+        else:
+            if FigObjs[0] == "s":
+                newCrips = []
+                tmpDF = newDF.copy()
+                for FigObj in FigObjs[1:]:
+                    newCrips.append(self.subgetCrips(FigObj, tmpDF))
+                    tmpDF = self.subDanceMove(FigObj, tmpDF)
+                return newCrips
+            elif FigObjs[0] == "p":
+                newCrips = [] #  ['While:']
+                for FigObj in FigObjs[1:]:
+                    newCrips.append(self.subgetCrips(FigObj, newDF))
+                return newCrips
+            else:
+                raise Exception("Sorry, no valid figure found!")
+
+    def getCrips(self, oldDF):
+        return self.subgetCrips(self._FigureObjs, oldDF)
 
     def loadSubFigure(self, myFigList, myAnchor):
         if len(myFigList) >> 1:
