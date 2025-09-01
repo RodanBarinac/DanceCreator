@@ -1,9 +1,10 @@
+import os
 import json
 import Figures as Fig
 import DanceFloor as DF
 import Dance
 
-class KomplexFigure(Fig.Figure):
+class ComplexFigure(Fig.Figure):
     _FigureList = [[]]
     _FigureObjs = []
     def __init__(self, loadFile, Anchor = [0,0]):
@@ -64,7 +65,7 @@ class KomplexFigure(Fig.Figure):
                 return retList
 
     def loadFigure(self, Filename):
-        with open('E:/Git/DanceCreator/Figures/' + Filename + '.json', 'r') as f:
+        with open(os.getcwd()+'/Figures/' + Filename + '.json', 'r') as f:
             FigData = json.load(f)
         myKeys = FigData.keys()
         if 'Version' in myKeys:
