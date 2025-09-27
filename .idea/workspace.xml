@@ -4,8 +4,33 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7aaaf50a-c70e-40e5-a0da-48518b5e3409" name="Changes" comment="- Aufteilung in einfache iund Komplexe Figuren&#10;- Komplexe Figuren können Figuren seriel und parallel anordnen.&#10;- Marrie's Wedding als Bsp">
+    <list default="true" id="7aaaf50a-c70e-40e5-a0da-48518b5e3409" name="Changes" comment="- Crip Ausgabe hinzugefügt.">
+      <change afterPath="$PROJECT_DIR$/Figures/H2DR.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Figures/HLReelAD.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Figures/HLReelAU.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Figures/HRReelAD.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Figures/HRReelAU.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Figures/Testi.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ComplexFigure.py" beforeDir="false" afterPath="$PROJECT_DIR$/ComplexFigure.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dance.py" beforeDir="false" afterPath="$PROJECT_DIR$/Dance.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DanceCreator.py" beforeDir="false" afterPath="$PROJECT_DIR$/DanceCreator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DanceFloor.py" beforeDir="false" afterPath="$PROJECT_DIR$/DanceFloor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures.py" beforeDir="false" afterPath="$PROJECT_DIR$/Figures.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/H1DR.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/H1DR.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/H1DR2c.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/H2DR3c.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/H2DRSL.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/HReelA.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/HReelASLEnddown.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/HReelASLEndup.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/HReelASLSTup.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/HReelASLStdown.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 1-8.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 1-8.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 13-16.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 13-16.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 21-24.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 21-24.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 25-32.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 25-32.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 9-12.json" beforeDir="false" afterPath="$PROJECT_DIR$/Figures/Marries Wedding_Bar 9-12.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/SimpleFigure.py" beforeDir="false" afterPath="$PROJECT_DIR$/SimpleFigure.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -23,8 +48,20 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;RodanBarinac&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/RodanBarinac/DanceCreator.git&quot;,
+    &quot;accountId&quot;: &quot;311d7fd5-2f49-4ba2-865f-48c611b2f35e&quot;
+  }
+}</component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$PROJECT_DIR$/Figures/H1DR.json" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Figures/H1DR.json" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -33,22 +70,25 @@
   &quot;associatedIndex&quot;: 1
 }</component>
   <component name="ProjectId" id="2dp8tUU3RPBqRi68Jq8aZjASvD1" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Python.ComplexFigure.executor": "Debug",
     "Python.DanceCreator.executor": "Run",
     "Python.DanceCreator_old.executor": "Run",
     "Python.DanceFloor.executor": "Run",
     "Python.Figures.executor": "Run",
     "Python.KomplexFigure.executor": "Run",
+    "Python.SimpleFigure.executor": "Run",
     "Python.scratch.executor": "Run",
     "Python.scratch_1.executor": "Run",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "master",
     "ignore.virus.scanning.warn.message": "true",
     "last_opened_file_path": "E:/Git/DanceCreator/Figures"
@@ -68,8 +108,8 @@
       <recent name="E:\Git\DanceCreator\Figures" />
     </key>
   </component>
-  <component name="RunManager">
-    <configuration name="DanceCreator_old" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+  <component name="RunManager" selected="Python.DanceCreator">
+    <configuration name="DanceCreator" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="DanceCreator" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -82,7 +122,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="E:\Git\DanceCreator\DanceCreator_old.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/DanceCreator.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -113,9 +153,13 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Python.DanceCreator" />
+      <item itemvalue="Python.scratch_1" />
+    </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.DanceCreator_old" />
+        <item itemvalue="Python.DanceCreator" />
         <item itemvalue="Python.scratch_1" />
       </list>
     </recent_temporary>
@@ -123,7 +167,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-d68999036c7f-d3b881c8e49f-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-233.14475.56" />
+        <option value="bundled-python-sdk-79ce2b023f03-d902c0275401-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-252.25557.130" />
       </set>
     </attachedChunks>
   </component>
@@ -176,12 +220,30 @@
       <option name="project" value="LOCAL" />
       <updated>1756660255586</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="- Crip Ausgabe hinzugefügt.">
+      <option name="closed" value="true" />
+      <created>1756741460680</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1756741460680</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
+    <option name="OPEN_GENERIC_TABS">
+      <map>
+        <entry key="2c09c906-cf52-407a-a561-465768b2d0aa" value="TOOL_WINDOW" />
+      </map>
+    </option>
     <option name="TAB_STATES">
       <map>
+        <entry key="2c09c906-cf52-407a-a561-465768b2d0aa">
+          <value>
+            <State />
+          </value>
+        </entry>
         <entry key="MAIN">
           <value>
             <State />
@@ -194,7 +256,8 @@
     <MESSAGE value="Erstellen der Umgebung." />
     <MESSAGE value="Serielle Figure implementiert" />
     <MESSAGE value="- Aufteilung in einfache iund Komplexe Figuren&#10;- Komplexe Figuren können Figuren seriel und parallel anordnen.&#10;- Marrie's Wedding als Bsp" />
-    <option name="LAST_COMMIT_MESSAGE" value="- Aufteilung in einfache iund Komplexe Figuren&#10;- Komplexe Figuren können Figuren seriel und parallel anordnen.&#10;- Marrie's Wedding als Bsp" />
+    <MESSAGE value="- Crip Ausgabe hinzugefügt." />
+    <option name="LAST_COMMIT_MESSAGE" value="- Crip Ausgabe hinzugefügt." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -205,9 +268,9 @@
           <option name="timeStamp" value="21" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/KomplexFigure.py</url>
-          <line>58</line>
-          <option name="timeStamp" value="80" />
+          <url>file://$PROJECT_DIR$/ComplexFigure.py</url>
+          <line>82</line>
+          <option name="timeStamp" value="30" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -220,7 +283,7 @@
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
-        <watch expression="myDanceFloor" />
+        <watch expression="FigObjs[0]" language="Python" />
       </configuration>
     </watches-manager>
   </component>

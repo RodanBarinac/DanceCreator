@@ -3,7 +3,7 @@ from ComplexFigure import ComplexFigure
 import json
 import os
 
-def getFigure(Filename, Anchor = [0,0]):
+def getFigure(Filename, Anchor = [0,0], Addons = []):
 
     with open(os.getcwd()+'/Figures/' + Filename + '.json', 'r') as f:
         FigData = json.load(f)
@@ -11,7 +11,7 @@ def getFigure(Filename, Anchor = [0,0]):
     if 'FigureList' in FigData.keys():
         myFig = ComplexFigure(Filename, Anchor)
     else:
-        myFig = SimpleFigure(Filename, Anchor)
+        myFig = SimpleFigure(Filename, Anchor, Addons)
 
     return myFig
 
@@ -28,6 +28,7 @@ def printCrip(myCrips):
         else:
             for myCrip in myCrips:
                 printCrip(myCrip)
+
 def showCrips(myFig, myDF):
     printCrip(myFig.getCrips(myDF))
 

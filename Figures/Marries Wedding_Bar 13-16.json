@@ -1,6 +1,7 @@
 {"Name": "Marries Wedding_Bar 9-12",
   "Desc": "Fourth 4 Bars of Marrie's Wedding",
-  "FigureList": ["p",[[0,0], "H2DR3c"],
-              ["s",[[0,0], "1pWait"], [[0,0], "1pWait"]],
-              ["s",[[2,2], "1pWait"], [[2,2], "1pWait"]]],
+  "FigureList": ["p",[
+                      [[0,0], ["H2DR", ["E3c"]]],
+                      ["s",[[[0,0], ["1pWait", []]], [[0,0], ["1pWait", []]]]],
+                      ["s",[[[2,2], ["1pWait", []]], [[2,2], ["1pWait", []]]]]]],
   "Version": 3}

@@ -13,6 +13,7 @@ def combineDanceFloor(oldDFs = []):
         newDF.AktBar = newBars[0]
 
     for i in range(len(oldDFs)):
+#        print('????\n', i, oldDFs[i])
         for myPos in oldDFs[i].DanceFloorMap.keys():
             newDF.addDancer(oldDFs[i].DanceFloorMap[myPos][0], myPos, oldDFs[i].DanceFloorMap[myPos][1])
     return newDF
@@ -79,7 +80,7 @@ class DanceFloor:
         if myPos not in self._DanceFloorMap.keys():
             self._DanceFloorMap[myPos] = [myDancer, myFacing]
         else:
-            raise Exception("Sorry, spott already taken. " + str(myPos))
+            raise Exception("Sorry, spott already taken. " + str(myPos) + ' ' + myDancer.name + self.__str__())
 
     def setupDanceFloorNames(self, NofCouples):
         for myi in range(NofCouples):

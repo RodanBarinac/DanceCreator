@@ -1,16 +1,80 @@
 import os
 import json
-from Figures import Figure
+import Figures
 import DanceFloor as DF
 
-class SimpleFigure(Figure):
-    _PartnerPos = []
+class SimpleFigure(Figures.Figure):
+    _Partner = []
     _CriptDesc = []
+    _Addons = []
 
-    def __init__(self, loadFile, Anchor = [0,0]):
+    def __init__(self, loadFile, Anchor = [0,0], Addons = []):
+        self.clear()
         self.name = loadFile
         self.Anchor = Anchor
-        self.loadFigure(loadFile)
+        self.loadFigure(loadFile, Addons)
+
+    def clear(self):
+        super().clear()
+        self._Partner = []
+        self._CriptDesc = []
+        self._Addons = []
+
+    @property
+    def Desc(self):
+        addDesc = ''
+        for Addon in self._Addons:
+            tmpDesc = Addon.Desc
+            if len(tmpDesc) > 0:
+                addDesc = addDesc + '\n' + tmpDesc
+
+        if len(addDesc) > 0:
+            return super().Desc + '\n' + addDesc
+        else:
+            return  super().Desc
+    @Desc.setter
+    def Desc(self, newDesc):
+        self._Desc = newDesc
+
+    @property
+    def StartPos(self):
+        tmpPos = super().StartPos
+        for Addon in self._Addons:
+            tmpPos = Addon.StartPos(tmpPos)
+        return tmpPos
+    @StartPos.setter
+    def StartPos(self, newStartPos):
+        self._StartPos = newStartPos
+
+    @property
+    def EndPos(self):
+        tmpPos = super().EndPos
+        for Addon in self._Addons:
+            tmpPos = Addon.EndPos(tmpPos)
+        return tmpPos
+    @EndPos.setter
+    def EndPos(self, newEndPos):
+        self._EndPos = newEndPos
+
+    @property
+    def Facing(self):
+        tmpPos = super().Facing
+        for Addon in self._Addons:
+            tmpPos = Addon.Facing(tmpPos)
+        return tmpPos
+    @EndPos.setter
+    def Facing(self, newFacing):
+        self._Facing = newFacing
+
+    @property
+    def Partner(self):
+        tmpPos = super().Partner
+        for Addon in self._Addons:
+            tmpPos = Addon.Partner(tmpPos)
+        return tmpPos
+    @EndPos.setter
+    def Partner(self, newPartner):
+        self._Partner = newPartner
 
     def DanceMove(self, oldDF):
         newDF = DF.DanceFloor('dummy')
@@ -33,11 +97,15 @@ class SimpleFigure(Figure):
         if not isinstance(myDF, DF.DanceFloor):
             raise Exception("Sorry, no Dance Floor")
 
-        if len(self.StartPos) != len(self._CriptDesc):
+        aktCrips = self._CriptDesc
+        for Addon in self._Addons:
+            aktCrips = Addon.getCrips(aktCrips)
+
+        if len(self.StartPos) != len(aktCrips):
             raise Exception("Sorry, no Cripts for everyone")
 
-        for i in range(len(self._CriptDesc)):
-            myCript = str(self._CriptDesc[i])
+        for i in range(len(aktCrips)):
+            myCript = str(aktCrips[i])
             if '{Dancer}' in myCript:
                 myCript = myCript.replace('{Dancer}', myDF.DancerbyPos(self.posWithAnchor(self.StartPos[i])).name)
 
@@ -62,71 +130,8 @@ class SimpleFigure(Figure):
                 myCrips.append(str(myDF.AktBar) + ' - ' + str(myDF.AktBar+self.Bars-1) + ': ' + myCript)
 
         return myCrips
-        '''
-        myDanceFloor = DF.DanceFloor('getCrips_' + self.name, 10)
-        myDanceFloor.setDanceFloorMap(myDanceFloorMap)
 
-        for i in range(len(self.StartPos)):
-            myDancers.append(myDanceFloor.NamebyPos((globAnchor[0] + self.Anchor[0]+self.StartPos[i][0], globAnchor[1] + self.Anchor[1]+self.StartPos[i][1])))
-        if len(self._PartnerPos) == len(self.StartPos):
-            for i in range(len(self.StartPos)):
-                if len(self._PartnerPos[i]) == 2:
-                    myPartner.append(myDanceFloor.NamebyPos((globAnchor[0] + self.Anchor[0]+self._PartnerPos[i][0], globAnchor[1] + self.Anchor[1]+self._PartnerPos[i][1])))
-                else:
-                    myFacing.append('')
-        myDanceMove = self.DanceMove()
-        for i in range(len(myDanceMove['Dancers'])):
-            myDanceMove['Dancers'][i] = self.addPositions([tuple(myDanceMove['Dancers'][i]), globAnchor, tuple(self.Anchor)])
-        myDanceFloor.doDanceMove(myDanceMove, 'Simple')
-        for i in range(len(self.StartPos)):
-            myEndPos.append(myDanceFloor.PosNamebyPos(myDanceFloor.PosbyName(myDancers[i])))
-        if len(self._FacingPos) == len(self.StartPos):
-            for i in range(len(self.StartPos)):
-                if len(self._FacingPos[i]) == 2:
-                    myFacing.append(myDanceFloor.PosNamebyPos((globAnchor[0] + self.Anchor[0]+self._FacingPos[i][0], globAnchor[1] + self.Anchor[1]+self._FacingPos[i][1])))
-                else:
-                    myFacing.append('')
-        
-        for i in range(len(self.StartPos)):
-            n = 1
-            Texts = []
-            myCript = str(self._CriptDesc[i])
-            if '{Dancer}' in myCript:
-                myCript = myCript.replace('{Dancer}', '{Text' + str(n) + '}')
-                Texts.append(myDancers)
-                n = n + 1
-            if '{StartPos}' in myCript:
-                myCript = myCript.replace('{StartPos}', '{Text' + str(n) + '}')
-                Texts.append(self.StartPos)
-                n = n + 1
-            if '{EndPos}' in myCript:
-                myCript = myCript.replace('{EndPos}', '{Text' + str(n) + '}')
-                Texts.append(myEndPos)
-                n = n  + 1
-            if '{Face}' in myCript:
-                myCript = myCript.replace('{Face}', '{Text' + str(n) + '}')
-                Texts.append(myFacing)
-                n = n + 1
-            if '{Partner}' in myCript:
-                myCript = myCript.replace('{Partner}', '{Text' + str(n) + '}')
-                Texts.append(myPartner)
-                n = n + 1
-
-            match  n-1:
-                case 1:
-                    myCript = myCript.format(Text1 = Texts[0][i])
-                case 2:
-                    myCript = myCript.format(Text1 = Texts[0][i], Text2 = Texts[1][i])
-                case 3:
-                    myCript = myCript.format(Text1 = Texts[0][i], Text2 = Texts[1][i], Text3 = Texts[2][i])
-                case 4:
-                    myCript = myCript.format(Text1 = Texts[0][i], Text2 = Texts[1][i], Text3 = Texts[2][i], Text4 = Texts[3][i])
-                case 5:
-                    myCript = myCript.format(Text1 = Texts[0][i], Text2 = Texts[1][i], Text3 = Texts[2][i], Text4 = Texts[3][i], Text5 = Texts[4][i])
-            myCrips.append(myCript)
-        '''
-
-    def loadFigure(self, Filename):
+    def loadFigure(self, Filename, Addons):
         with open(os.getcwd()+'/Figures/' + Filename + '.json', 'r') as f:
             FigData = json.load(f)
         myKeys = FigData.keys()
@@ -174,21 +179,10 @@ class SimpleFigure(Figure):
                     tmpList.append('')
             self._PartnerPos = tmpList
 
-
-    ''' do we write??
-
-    def writeFigure(self):
-        FigData = {
-            'Name': self.name,
-            'Desc': self.desc,
-            'Bars': self.Bars,
-            'StartPos': self.StartPos,
-            'TransferCode': self.TransferCode,
-            'CriptDesc' : self._CriptDesc,
-            'Faceing' :self._FacingPos,
-            'Partner' : self._PartnerPos
-            }
-
-        with open('E:/Git/DanceCreator/Figures/' + self.name + '.json', 'w') as f:
-            json.dump(FigData, f, sort_keys=True)
-    '''
+        if len(Addons) > 0:
+            myAKeys = FigData['Addons'].keys()
+            for i in range(len(Addons)):
+                if Addons[i] in myAKeys:
+                    self._Addons.append(Figures.FigureAddon(self, FigData['Addons'][Addons[i]]))
+                else:
+                    raise Exception('Sorry, no such addon!')

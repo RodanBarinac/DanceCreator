@@ -1,0 +1,22 @@
+{"CriptDesc": ["{Dancer} dances half a right shoulder reel across to {EndPos}",
+              "{Dancer} dances half a right shoulder reel across to {EndPos}",
+              "{Dancer} dances half a right shoulder reel across to {EndPos}"],
+  "StartPos": [[0, 0], [0, 1], [0, 2]],
+  "EndPos": [[0, 2], [0, 1], [0, 0]],
+  "Name": "HReelAD",
+  "Desc": "Half right shoulder reel of three acros down",
+  "Bars": 4,
+  "Version": 2,
+  "Addons":{
+    "EUp": {
+      "EndPos": [[0, 2], [-1, 0], [0, 0]],
+      "Name": "EUp",
+      "Desc": "Ending in the sideline above.",
+      "Version": 1},
+    "SUp": {
+      "StartPos": [[0, 0], [-1, 2], [0, 2]],
+      "Name": "SUp",
+      "Desc": "Start in the sideline above.",
+      "Version": 1}
+  }
+}

@@ -1,14 +1,9 @@
 import Dance
 import DanceFloor as DF
-import Figures as Fig
-import SimpleFigure as SFig
+
 
 Floor = DF.DanceFloor('Marrie\'s Wedding',3)
 print(Floor)
-# Marrie = Dance.getFigure('1DR', '1DR', [1,1])
-# Floor = Marrie.DanceMove(Floor)
-# print(Floor)
-
 #print('### First 8 Bars ###')
 Marrie = Dance.getFigure( 'Marries Wedding_Bar 1-8', [1,1])
 Dance.showCrips(Marrie, Floor)
@@ -34,13 +29,11 @@ Marrie = Dance.getFigure( 'Marries Wedding_Bar 21-24', [1,1])
 Dance.showCrips(Marrie, Floor)
 Floor = Marrie.DanceMove(Floor)
 print(Floor)
-#print('### x 8 Bars ###')
 Marrie = Dance.getFigure( 'Marries Wedding_Bar 25-32', [1,1])
 Dance.showCrips(Marrie, Floor)
 Floor = Marrie.DanceMove(Floor)
 print(Floor)
-#print('### last 8 Bars ###')
-Marrie = Dance.getFigure( '6Hrb', [1,1])
+Marrie = Dance.getFigure( '6Hrb', [1,1],[])
 Dance.showCrips(Marrie, Floor)
 Floor = Marrie.DanceMove(Floor)
 print(Floor)
