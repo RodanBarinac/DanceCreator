@@ -19,6 +19,17 @@
       }
       .card:hover { cursor: pointer; }
 
+      /* Gruppenkarten Styling */
+      .card.group-card { background: linear-gradient(90deg,#fbfbff,#f6fcff); border-left-width: 4px; }
+      .card.group-card .group-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 4px; margin-right: 8px; font-weight: 700; }
+      .card.group-sequenziell { border-left-color: #ffd8a8; }
+      .card.group-sequenziell .group-icon { background: #fff4e6; color: #ad5b00; }
+      .card.group-parallel { border-left-color: #cce7ff; }
+      .card.group-parallel .group-icon { background: #e8f6ff; color: #0b66a3; }
+
+      .group-label { display:flex; align-items:center; }
+      .group-name { font-weight: 600; }
+
       /* Grundlegendes Layout, damit Panels und Tree sichtbar sind */
       html, body { height: 100%; margin: 0; padding: 0; }
       #container { display: flex; height: calc(100vh - 64px); box-sizing: border-box; }
@@ -234,7 +245,7 @@ function reloadTreeFromFile(fileName) {
 // Wird beim ersten Laden der Seite einmalig ausgeführt.
 function populateJsTree() {
     const nodes = [
-        { id: 'dance-node', parent: '#', text: 'Dance', li_attr: { meta: { Set: '' } } },
+        { id: 'dance-node', parent: '#', text: 'Dance', li_attr: { meta: { Set: '', type: 'group', mode: 'sequenziell', Name: 'Dance', Desc: 'Root: sequenzielle Gruppe' } } },
         { id: 'n1', parent: 'dance-node', text: '1cCast1p', li_attr: { meta: {} } },
         { id: 'complex-1', parent: 'dance-node', text: 'ComplexFigure', state: { opened: true }, li_attr: { meta: {} } },
         { id: 'c1', parent: 'complex-1', text: '1cRT', li_attr: { meta: {} } },
@@ -397,15 +408,18 @@ function loadFigures() {
         .then(data => {
             if (!Array.isArray(data)) data = [];
             // füge zwei generische Gruppentypen hinzu, falls nicht vorhanden
+            // Extras: bilden jetzt Formation='group' und unterscheiden im Feld 'mode'
             const extras = [
-                { Name: 'sequenzielle Gruppe', Desc: 'Sequenzielle Gruppe', Formation: 'sequenziell' },
-                { Name: 'parralele Gruppe', Desc: 'Parallele Gruppe', Formation: 'parralel' }
+                { Name: 'sequenzielle Gruppe', Desc: 'Sequenzielle Gruppe', Formation: 'group', mode: 'sequenziell' },
+                { Name: 'parallele Gruppe', Desc: 'Parallele Gruppe', Formation: 'group', mode: 'parallel' }
             ];
             extras.forEach(ex => {
                 const exists = data.some(f => {
                     const n = (f.Name || f.name || f.text || '').toString();
                     const form = (f.Formation || f.formation || f.formation_name || '').toString().toLowerCase();
-                    return n === ex.Name || form === (ex.Formation || '').toString().toLowerCase();
+                    const m = (f.mode || f.Mode || '').toString().toLowerCase();
+                    // match by name OR by same formation AND same mode
+                    return n === ex.Name || (form === (ex.Formation || '').toString().toLowerCase() && m === (ex.mode || '').toString().toLowerCase());
                 });
                 if (!exists) data.push(ex);
             });
@@ -427,22 +441,44 @@ function loadFigures() {
                 card.style.marginBottom = '6px';
                 card.style.alignItems = 'center';
 
-                const formation = fig.Formation || fig.formation || fig.formation_name || '';
-                card.dataset.formation = formation.toString().toLowerCase();
+                const formation = (fig.Formation || fig.formation || '').toString().toLowerCase();
+                const mode = (fig.mode || fig.Mode || fig.Mode || '').toString().toLowerCase();
+                card.dataset.formation = formation;
+                card.dataset.mode = mode;
+
+                // Gruppenkarten: Formation === 'group'; konkrete Art in 'mode'
+                const isGroup = formation === 'group';
+                if (isGroup) {
+                    card.classList.add('group-card');
+                    if (mode === 'sequenziell') card.classList.add('group-sequenziell');
+                    if (mode === 'parallel') card.classList.add('group-parallel');
+                }
 
                 try { card.dataset.full = JSON.stringify(fig); } catch (e) { card.dataset.full = ''; }
 
                 const left = document.createElement('div'); left.style.flex = '1'; left.style.minWidth = '0';
+
+                // Icon + Name container
+                const labelRow = document.createElement('div'); labelRow.className = 'group-label';
+                if (isGroup) {
+                    const icon = document.createElement('div'); icon.className = 'group-icon';
+                    icon.textContent = (mode === 'sequenziell') ? 'S' : 'P';
+                    icon.title = mode || 'group';
+                    labelRow.appendChild(icon);
+                }
+
                 const nameEl = document.createElement('strong');
-                nameEl.textContent = fig.name || fig.Name || fig.text || 'Unnamed';
+                nameEl.textContent = fig.name || fig.Name || fig.text || fig.Name || 'Unnamed';
                 nameEl.style.display = 'block'; nameEl.style.whiteSpace = 'nowrap'; nameEl.style.overflow = 'hidden'; nameEl.style.textOverflow = 'ellipsis';
 
                 const descEl = document.createElement('div');
-                descEl.textContent = fig.desc || fig.Desc || fig.Description || fig.description || '';
+                descEl.textContent = fig.desc || fig.Desc || fig.Description || fig.description || fig.Desc || '';
                 descEl.style.fontSize = '0.9rem'; descEl.style.color = '#444';
                 descEl.style.display = 'block'; descEl.style.whiteSpace = 'normal'; descEl.style.overflow = 'hidden'; descEl.style.textOverflow = 'ellipsis'; descEl.style.lineHeight = '1.2'; descEl.style.maxHeight = '2.4em'; descEl.style.marginTop = '3px';
 
-                left.appendChild(nameEl); left.appendChild(descEl);
+                labelRow.appendChild(nameEl);
+                left.appendChild(labelRow);
+                left.appendChild(descEl);
 
                 const right = document.createElement('div'); right.style.marginLeft = '8px'; right.style.flex = '0 0 auto';
                 const barsVal = (fig.Bars ?? fig.bars ?? fig.barsCount ?? fig.BarsCount ?? fig.bar ?? fig.Bar);
@@ -455,8 +491,20 @@ function loadFigures() {
                 card.setAttribute('draggable', 'true');
                 card.addEventListener('dragstart', function(e) {
                     try {
-                        e.dataTransfer.setData('application/x-figure', JSON.stringify(fig));
-                        e.dataTransfer.setData('application/json', JSON.stringify(fig));
+                        if (isGroup) {
+                            // send a compact group node description instead of the full figure
+                            const payload = {
+                                type: 'group',
+                                mode: mode || 'sequenziell',
+                                name: (fig.Name || fig.name || fig.text || ''),
+                                desc: (fig.Desc || fig.desc || fig.Description || fig.description || '')
+                            };
+                            e.dataTransfer.setData('application/x-figure', JSON.stringify(payload));
+                            e.dataTransfer.setData('application/json', JSON.stringify(payload));
+                        } else {
+                            e.dataTransfer.setData('application/x-figure', JSON.stringify(fig));
+                            e.dataTransfer.setData('application/json', JSON.stringify(fig));
+                        }
                         e.dataTransfer.effectAllowed = 'copy';
                     } catch (err) {}
                 });
@@ -473,7 +521,7 @@ function loadFigures() {
             if (typeof applyFilters === 'function') applyFilters();
         })
         .catch(err => console.error('Fehler beim Laden der Figuren:', err));
-}
+ }
 
 function displayFigureDetails(fig) {
     const middle = document.getElementById('middle'); if (!middle) return;
@@ -487,20 +535,32 @@ function displayFigureDetails(fig) {
 
 function populateFormationOptions(data) {
     const select = document.getElementById('filter'); if (!select) return;
+
     const previous = select.value || '';
-    const map = new Map();
+    const formationMap = new Map();
+
     data.forEach(fig => {
-        const v = fig.Formation || fig.formation || fig.formation_name || '';
-        if (v && typeof v === 'string') { const key = v.toString().toLowerCase(); if (!map.has(key)) map.set(key, v); }
+        const v = (fig.Formation || fig.formation || fig.formation_name || '').toString();
+        if (v) {
+            const key = v.toLowerCase();
+            if (!formationMap.has(key)) formationMap.set(key, v);
+        }
     });
+
+    // Entferne alte Options außer der ersten (Alle Formationen)
     while (select.options.length > 1) select.remove(1);
-    Array.from(map.entries()).sort((a,b)=>a[1].localeCompare(b[1])).forEach(([key, original]) => {
+
+    // Füge Formationen sortiert hinzu
+    Array.from(formationMap.entries()).sort((a,b)=>a[1].localeCompare(b[1])).forEach(([key, original]) => {
         const opt = document.createElement('option'); opt.value = key; opt.textContent = original; select.appendChild(opt);
     });
+
+    // Stelle vorherigen Wert wieder her, falls vorhanden
     if (previous) {
         const found = Array.from(select.options).some(o => o.value === previous.toString().toLowerCase());
         select.value = found ? previous.toString().toLowerCase() : '';
     }
+
     if (typeof applyFilters === 'function') applyFilters();
 }
 

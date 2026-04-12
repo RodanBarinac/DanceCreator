@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7aaaf50a-c70e-40e5-a0da-48518b5e3409" name="Changes" comment="- Stand 20260412&#10;- jsTree statisch befüllt.&#10;- dnd für JSTree und cards enabled.">
+    <list default="true" id="7aaaf50a-c70e-40e5-a0da-48518b5e3409" name="Changes" comment="- Stand 20260412">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/index.html" afterDir="false" />
     </list>
@@ -279,7 +279,15 @@
       <option name="project" value="LOCAL" />
       <updated>1775990790630</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="- Stand 20260412">
+      <option name="closed" value="true" />
+      <created>1775992528331</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1775992528331</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -315,7 +323,8 @@
     <MESSAGE value="- Einlesen der Figure in Figuren_DB, anzeigen und Filtern in index.html funktioniert." />
     <MESSAGE value="- Anzeigen reduzierter Daten in den Cards, Bei Auswahl anzeige der Card im Arbeitsbereich." />
     <MESSAGE value="- Stand 20260412&#10;- jsTree statisch befüllt.&#10;- dnd für JSTree und cards enabled." />
-    <option name="LAST_COMMIT_MESSAGE" value="- Stand 20260412&#10;- jsTree statisch befüllt.&#10;- dnd für JSTree und cards enabled." />
+    <MESSAGE value="- Stand 20260412" />
+    <option name="LAST_COMMIT_MESSAGE" value="- Stand 20260412" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
