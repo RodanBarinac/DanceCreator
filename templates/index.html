@@ -18,6 +18,24 @@
         box-shadow: 0 0 0 2px rgba(158,197,255,0.15);
       }
       .card:hover { cursor: pointer; }
+
+      /* Grundlegendes Layout, damit Panels und Tree sichtbar sind */
+      html, body { height: 100%; margin: 0; padding: 0; }
+      #container { display: flex; height: calc(100vh - 64px); box-sizing: border-box; }
+      .panel { padding: 8px; box-sizing: border-box; overflow: auto; }
+      #left { width: 320px; min-width: 200px; border-right: 1px solid #eee; display: flex; flex-direction: column; }
+      #middle { flex: 1; min-width: 200px; }
+      #right { width: 360px; min-width: 240px; border-left: 1px solid #eee; display: flex; flex-direction: column; }
+
+      /* Splitter optisch sichtbar */
+      .splitter { width: 8px; cursor: col-resize; background: linear-gradient(90deg, rgba(0,0,0,0.02), rgba(0,0,0,0.04)); }
+
+      /* jsTree Container */
+      #treeview { flex: 1; min-height: 180px; background: #fff; padding: 6px; border-radius: 4px; border: 1px solid #eee; overflow: auto; }
+
+      /* Figuren-Liste */
+      #figure-list { display: block; overflow: auto; max-height: calc(100% - 120px); }
+
     </style>
 
 </head>
@@ -185,7 +203,7 @@ function reloadTreeFromFile(fileName) {
                     parent: parent,
                     text: n.text || n.name || String(id),
                     children: (n.children === true) || (n.hasOwnProperty('children') && Array.isArray(n.children) ? n.children : false),
-                    li_attr: { meta: n.meta || n }
+                    li_attr: { meta: (n.meta && typeof n.meta === 'object') ? n.meta : {} }
                 };
             });
 
@@ -216,7 +234,7 @@ function reloadTreeFromFile(fileName) {
 // Wird beim ersten Laden der Seite einmalig ausgeführt.
 function populateJsTree() {
     const nodes = [
-        { id: 'dance-node', parent: '#', text: 'Dance', li_attr: { meta: { Set: '1C-Longwise Set' } } },
+        { id: 'dance-node', parent: '#', text: 'Dance', li_attr: { meta: { Set: '' } } },
         { id: 'n1', parent: 'dance-node', text: '1cCast1p', li_attr: { meta: {} } },
         { id: 'complex-1', parent: 'dance-node', text: 'ComplexFigure', state: { opened: true }, li_attr: { meta: {} } },
         { id: 'c1', parent: 'complex-1', text: '1cRT', li_attr: { meta: {} } },
@@ -262,7 +280,7 @@ function populateJsTree() {
             const label = fig.name || fig.Name || fig.text || 'NewFigure';
             const nodeData = {
                 text: label,
-                li_attr: { meta: fig }
+                li_attr: { meta: (typeof fig === 'object' && fig !== null) ? fig : {} }
             };
 
             // Erstelle Knoten
@@ -272,70 +290,110 @@ function populateJsTree() {
             });
         });
 
+        // Wenn ein Knoten selektiert wird, zeige seine Metadaten im Arbeitsbereich
+        $('#treeview').on('select_node.jstree', function(e, data) {
+            try { showNodeMeta(data.node); } catch (err) { console.warn('select_node handler error', err); }
+        });
+
     } else {
-        inst.settings.core.data = nodes;
+        inst.settings.core.data = nodes.map(n => {
+            // stelle sicher, dass für jeden Knoten li_attr.meta existiert
+            n.li_attr = n.li_attr || {};
+            n.li_attr.meta = n.li_attr.meta || {};
+            return n;
+        });
         inst.settings.plugins = inst.settings.plugins || [];
         if (!inst.settings.plugins.includes('dnd')) inst.settings.plugins.push('dnd');
         inst.refresh();
     }
+    // mache sicher, dass der Baum sichtbar gerendert ist
+    try { const t = $('#treeview').jstree(true); if (t) t.refresh(); } catch (e) {}
 }
 
 // Einmaliger Aufruf beim Laden der Seite
 document.addEventListener('DOMContentLoaded', function() {
     populateJsTree();
+    if (typeof loadFigures === 'function') loadFigures();
 });
 
+// Zeigt Metadaten eines jsTree-Knotens im Arbeitsbereich an (speziell Set für dance-node)
+function showNodeMeta(nodeOrId) {
+    const tree = $('#treeview').jstree(true);
+    if (!tree) return;
+    const node = (typeof nodeOrId === 'string') ? tree.get_node(nodeOrId) : nodeOrId;
+    if (!node) return;
 
-// automatische Befüllung des Formation-Filters (wird von loadFigures aufgerufen)
-function populateFormationOptions(data) {
-    const select = document.getElementById('filter');
-    if (!select) return;
+    // Meta aus unterschiedlichen Orten extrahieren
+    let meta = {};
+    if (node.li_attr && node.li_attr.meta) meta = Object.assign({}, node.li_attr.meta);
+    else if (node.original && node.original.li_attr && node.original.li_attr.meta) meta = Object.assign({}, node.original.li_attr.meta);
+    else if (tree._model && tree._model.data && tree._model.data[node.id] && tree._model.data[node.id].li_attr && tree._model.data[node.id].li_attr.meta) meta = Object.assign({}, tree._model.data[node.id].li_attr.meta);
 
-    // Merke aktuellen Wert, damit wir ihn nach dem Neuaufbau wieder setzen können
-    const previous = select.value || '';
+    const middle = document.getElementById('middle');
+    middle.innerHTML = '<h3>Arbeitsbereich</h3>';
+    const wrapper = document.createElement('div'); wrapper.style.padding = '8px';
 
-    // Sammle eindeutige Formation-Werte in Originalschreibweise
-    const formationsMap = new Map();
-    data.forEach(fig => {
-        const val = fig.Formation || fig.formation || fig.formationType || fig.formation_name || '';
-        if (val && typeof val === 'string') {
-            const key = val.toString().toLowerCase();
-            if (!formationsMap.has(key)) formationsMap.set(key, val);
+    const title = document.createElement('h4'); title.textContent = node.text || node.id; wrapper.appendChild(title);
+    const idLine = document.createElement('div'); idLine.textContent = 'Node ID: ' + node.id; idLine.style.fontSize = '0.9rem'; idLine.style.color = '#666'; wrapper.appendChild(idLine);
+
+    // Spezifische Steuerung für dance-node: Set-Auswahl
+    if (node.id === 'dance-node') {
+        const label = document.createElement('label'); label.textContent = 'Set:'; label.style.display = 'block'; label.style.marginTop = '8px';
+        const select = document.createElement('select'); select.style.marginTop = '4px';
+        const emptyOpt = document.createElement('option'); emptyOpt.value = ''; emptyOpt.textContent = '(nicht gesetzt)'; select.appendChild(emptyOpt);
+        for (let i = 1; i <= 8; i++) {
+            const opt = document.createElement('option'); opt.value = i + 'C-Longwise Set'; opt.textContent = i + 'C-Longwise Set'; select.appendChild(opt);
         }
-    });
+        try { select.value = meta.Set || ''; } catch (e) { /* ignore */ }
 
-    // Entferne alte Options außer der ersten (Alle Formationen)
-    while (select.options.length > 1) select.remove(1);
+        select.addEventListener('change', function() {
+            meta.Set = select.value || '';
+            saveNodeMeta(node.id, meta);
+            // Aktualisiere Anzeige des JSON-Blocks
+            if (pre) pre.textContent = JSON.stringify(meta, null, 2);
+        });
 
-    // Füge gefundene Optionen sortiert hinzu
-    Array.from(formationsMap.entries())
-         .sort((a,b) => a[1].localeCompare(b[1]))
-         .forEach(([key, original]) => {
-             const opt = document.createElement('option');
-             opt.value = key;
-             opt.textContent = original;
-             select.appendChild(opt);
-         });
-
-    // Wenn die vorher gewählte Option noch existiert, stelle sie wieder her
-    if (previous) {
-        const found = Array.from(select.options).some(o => o.value === previous.toString().toLowerCase());
-        if (found) {
-            select.value = previous.toString().toLowerCase();
-        } else {
-            // falls nicht vorhanden, setze auf Alle
-            select.value = '';
-        }
+        wrapper.appendChild(label);
+        wrapper.appendChild(select);
     }
 
-    // Filter aktualisieren
-    if (typeof applyFilters === 'function') applyFilters();
+    // Zeige JSON-Meta
+    const pre = document.createElement('pre'); pre.style.background = '#f7f7f7'; pre.style.padding = '8px'; pre.style.borderRadius = '4px'; pre.style.marginTop = '10px'; pre.style.maxHeight = '240px'; pre.style.overflow = 'auto';
+    pre.textContent = JSON.stringify(meta, null, 2);
+    wrapper.appendChild(pre);
+
+    middle.appendChild(wrapper);
 }
 
-// Stellt die Karten auf der linken Seite wieder her: lädt /figures und baut die Kartelemente auf
+// Speichert Meta-Daten in der internen jsTree-Struktur für den Knoten
+function saveNodeMeta(nodeId, meta) {
+    const tree = $('#treeview').jstree(true);
+    if (!tree) return;
+    const n = tree.get_node(nodeId);
+    if (!n) return;
+
+    try {
+        n.li_attr = n.li_attr || {};
+        n.li_attr.meta = Object.assign({}, meta);
+        if (n.original) n.original.li_attr = n.original.li_attr || {}, n.original.li_attr.meta = Object.assign({}, meta);
+        if (tree._model && tree._model.data && tree._model.data[nodeId]) {
+            tree._model.data[nodeId].li_attr = tree._model.data[nodeId].li_attr || {};
+            tree._model.data[nodeId].li_attr.meta = Object.assign({}, meta);
+        }
+        // set data attribute on DOM element if available
+        try {
+            const $li = $('#' + nodeId.replace(/(:|\.|\[|\]|,|=|@)/g, "\\$1"));
+            if ($li && $li.length) $li.attr('data-meta', JSON.stringify(meta));
+        } catch (e) {}
+    } catch (err) {
+        console.warn('saveNodeMeta failed', err);
+    }
+}
+
+// Fügt die Funktionalität zum Laden und Anzeigen der Figuren-Karten hinzu
 function loadFigures() {
     fetch('/figures')
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
             if (!Array.isArray(data)) return;
             if (typeof populateFormationOptions === 'function') populateFormationOptions(data);
@@ -355,68 +413,44 @@ function loadFigures() {
                 card.style.marginBottom = '6px';
                 card.style.alignItems = 'center';
 
-                // Formation als dataset für Filter
-                const formation = fig.Formation || fig.formation || fig.formationType || fig.formation_name || '';
+                const formation = fig.Formation || fig.formation || fig.formation_name || '';
                 card.dataset.formation = formation.toString().toLowerCase();
 
-                // komplette Figur als data-Attribut
-                try { card.dataset.full = JSON.stringify(fig); } catch (e) { card.dataset.full = '' }
+                try { card.dataset.full = JSON.stringify(fig); } catch (e) { card.dataset.full = ''; }
 
-                // Linker Bereich: Name + Description
-                const left = document.createElement('div');
-                left.style.flex = '1';
-                left.style.minWidth = '0';
-
+                const left = document.createElement('div'); left.style.flex = '1'; left.style.minWidth = '0';
                 const nameEl = document.createElement('strong');
                 nameEl.textContent = fig.name || fig.Name || fig.text || 'Unnamed';
-                nameEl.style.display = 'block';
-                nameEl.style.whiteSpace = 'nowrap';
-                nameEl.style.overflow = 'hidden';
-                nameEl.style.textOverflow = 'ellipsis';
+                nameEl.style.display = 'block'; nameEl.style.whiteSpace = 'nowrap'; nameEl.style.overflow = 'hidden'; nameEl.style.textOverflow = 'ellipsis';
 
                 const descEl = document.createElement('div');
-                descEl.textContent = fig.Desc || '';
-                descEl.style.fontSize = '0.9rem';
-                descEl.style.color = '#444';
-                // Mehrzeilige Beschreibung anzeigen, max. ~2 Zeilen mit Ellipsis
-                descEl.style.display = 'block';
-                descEl.style.whiteSpace = 'normal';
-                descEl.style.overflow = 'hidden';
-                descEl.style.textOverflow = 'ellipsis';
-                descEl.style.lineHeight = '1.2';
-                descEl.style.maxHeight = '2.4em';
-                descEl.style.marginTop = '3px';
+                descEl.textContent = fig.desc || fig.Desc || fig.Description || fig.description || '';
+                descEl.style.fontSize = '0.9rem'; descEl.style.color = '#444';
+                descEl.style.display = 'block'; descEl.style.whiteSpace = 'normal'; descEl.style.overflow = 'hidden'; descEl.style.textOverflow = 'ellipsis'; descEl.style.lineHeight = '1.2'; descEl.style.maxHeight = '2.4em'; descEl.style.marginTop = '3px';
 
-                left.appendChild(nameEl);
-                left.appendChild(descEl);
+                left.appendChild(nameEl); left.appendChild(descEl);
 
-                // Rechter Bereich: Bars
-                const right = document.createElement('div');
-                right.style.marginLeft = '8px';
-                right.style.flex = '0 0 auto';
+                const right = document.createElement('div'); right.style.marginLeft = '8px'; right.style.flex = '0 0 auto';
                 const barsVal = (fig.Bars ?? fig.bars ?? fig.barsCount ?? fig.BarsCount ?? fig.bar ?? fig.Bar);
                 right.textContent = (barsVal === undefined || barsVal === null || barsVal === '') ? 'Bars: —' : 'Bars: ' + barsVal;
-                right.style.fontSize = '0.9rem';
-                right.style.color = '#333';
+                right.style.fontSize = '0.9rem'; right.style.color = '#333';
 
-                card.appendChild(left);
-                card.appendChild(right);
+                card.appendChild(left); card.appendChild(right);
 
-                // draggable: erlaubt Drag von Figuren in den Tree
+                // draggable for tree drop
                 card.setAttribute('draggable', 'true');
                 card.addEventListener('dragstart', function(e) {
                     try {
                         e.dataTransfer.setData('application/x-figure', JSON.stringify(fig));
                         e.dataTransfer.setData('application/json', JSON.stringify(fig));
                         e.dataTransfer.effectAllowed = 'copy';
-                    } catch (err) { /* ignore */ }
+                    } catch (err) {}
                 });
 
-                // Klick: markiere und zeige Details
                 card.addEventListener('click', function() {
                     document.querySelectorAll('#figure-list .card').forEach(c => c.classList.remove('selected'));
                     card.classList.add('selected');
-                    try { displayFigureDetails(fig); } catch (e) { console.warn(e); }
+                    displayFigureDetails(fig);
                 });
 
                 container.appendChild(card);
@@ -424,67 +458,57 @@ function loadFigures() {
 
             if (typeof applyFilters === 'function') applyFilters();
         })
-        .catch(err => { console.error('Fehler beim Laden der Figuren:', err); });
+        .catch(err => console.error('Fehler beim Laden der Figuren:', err));
 }
 
-// Einfache Anzeige der vollständigen Figur im Arbeitsbereich (mittlere Spalte)
 function displayFigureDetails(fig) {
-    const middle = document.getElementById('middle');
-    if (!middle) return;
+    const middle = document.getElementById('middle'); if (!middle) return;
     middle.innerHTML = '<h3>Arbeitsbereich</h3>';
-
     const wrap = document.createElement('div'); wrap.style.padding = '8px';
-    const title = document.createElement('h4'); title.textContent = fig.name || fig.Name || fig.text || 'Unnamed';
-    wrap.appendChild(title);
-
-    const desc = document.createElement('p'); desc.textContent = fig.desc || fig.Description || fig.description || '';
-    wrap.appendChild(desc);
-
-    const pre = document.createElement('pre'); pre.textContent = JSON.stringify(fig, null, 2);
-    pre.style.background = '#f7f7f7'; pre.style.padding = '8px'; pre.style.borderRadius = '4px'; pre.style.maxHeight = '240px'; pre.style.overflow = 'auto';
-    wrap.appendChild(pre);
-
+    const title = document.createElement('h4'); title.textContent = fig.name || fig.Name || fig.text || 'Unnamed'; wrap.appendChild(title);
+    const desc = document.createElement('p'); desc.textContent = fig.desc || fig.Description || fig.description || fig.Desc || ''; wrap.appendChild(desc);
+    const pre = document.createElement('pre'); pre.textContent = JSON.stringify(fig, null, 2); pre.style.background = '#f7f7f7'; pre.style.padding = '8px'; pre.style.borderRadius = '4px'; pre.style.maxHeight = '240px'; pre.style.overflow = 'auto'; wrap.appendChild(pre);
     middle.appendChild(wrap);
 }
 
-// Filter- und Suchfunktion: wendet den ausgewählten Formation-Filter und Suche auf die Cards an
+function populateFormationOptions(data) {
+    const select = document.getElementById('filter'); if (!select) return;
+    const previous = select.value || '';
+    const map = new Map();
+    data.forEach(fig => {
+        const v = fig.Formation || fig.formation || fig.formation_name || '';
+        if (v && typeof v === 'string') { const key = v.toString().toLowerCase(); if (!map.has(key)) map.set(key, v); }
+    });
+    while (select.options.length > 1) select.remove(1);
+    Array.from(map.entries()).sort((a,b)=>a[1].localeCompare(b[1])).forEach(([key, original]) => {
+        const opt = document.createElement('option'); opt.value = key; opt.textContent = original; select.appendChild(opt);
+    });
+    if (previous) {
+        const found = Array.from(select.options).some(o => o.value === previous.toString().toLowerCase());
+        select.value = found ? previous.toString().toLowerCase() : '';
+    }
+    if (typeof applyFilters === 'function') applyFilters();
+}
+
 function applyFilters() {
-    const filterEl = document.getElementById('filter');
-    const searchEl = document.getElementById('search');
+    const filterEl = document.getElementById('filter'); const searchEl = document.getElementById('search');
     const sel = filterEl ? (filterEl.value || '').toString().toLowerCase() : '';
     const text = searchEl ? (searchEl.value || '').toString().toLowerCase() : '';
-
     const cards = document.querySelectorAll('#figure-list .card');
     cards.forEach(card => {
         const cardFormation = (card.dataset.formation || '').toString().toLowerCase();
         const matchesFormation = !sel || sel === cardFormation;
-
-        const nameEl = card.querySelector('strong');
-        const nameText = nameEl ? (nameEl.textContent || '').toString().toLowerCase() : '';
+        const nameEl = card.querySelector('strong'); const nameText = nameEl ? (nameEl.textContent || '').toString().toLowerCase() : '';
         const matchesText = !text || nameText.includes(text);
-
-        const show = matchesFormation && matchesText;
-        card.style.display = show ? 'flex' : 'none';
+        const show = matchesFormation && matchesText; card.style.display = show ? 'flex' : 'none';
     });
 }
 
-// Registriere Event-Listener für Filter und Suche
+// Listener registrieren
 (function registerFilterListeners(){
-    const filterEl = document.getElementById('filter');
-    if (filterEl) {
-        filterEl.addEventListener('change', applyFilters);
-        filterEl.addEventListener('input', applyFilters);
-    }
-    const searchEl = document.getElementById('search');
-    if (searchEl) searchEl.addEventListener('input', applyFilters);
-
-    // wende aktuellen Filter sofort an (falls schon gesetzt)
-    if (typeof applyFilters === 'function') applyFilters();
+    const filterEl = document.getElementById('filter'); if (filterEl) { filterEl.addEventListener('change', applyFilters); filterEl.addEventListener('input', applyFilters); }
+    const searchEl = document.getElementById('search'); if (searchEl) searchEl.addEventListener('input', applyFilters);
 })();
-
-// Figuren direkt beim Start laden
-document.addEventListener('DOMContentLoaded', loadFigures);
 </script>
-
 </body>
 </html>
