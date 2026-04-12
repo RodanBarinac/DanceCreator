@@ -89,10 +89,6 @@
   </div>
 
   <script>
-          <!-- *************************** -->
-          <!-- *** Splitter funktionen *** -->
-          <!-- *************************** -->
-
     function makeSplitter(splitterId, leftPanelId, rightPanelId) {
       const splitter = document.getElementById(splitterId);
       const leftPanel = document.getElementById(leftPanelId);
@@ -129,11 +125,6 @@
 
   <script>
 // Verstecktes File-Input erzeugen
-
-          <!-- ******************** -->
-          <!-- *** Laden Button *** -->
-          <!-- ******************** -->
-
 const fileInput = document.createElement('input');
 fileInput.type = 'file';
 fileInput.accept = '.json';
@@ -143,23 +134,20 @@ document.body.appendChild(fileInput);
 
 // Load-Button klick → Datei-Auswahl
 document.getElementById('btn-load').addEventListener('click', () => {
-    // Anfrage an Backend: liste der Dance .json Dateien im DANCES_DIR
     fetch('/dances')
         .then(res => res.json())
         .then(list => {
             if (!list || !Array.isArray(list) || list.length === 0) {
-                alert('Keine Dance-Dateien auf dem Server gefunden.');
+                console.error('Keine Dance-Dateien auf dem Server gefunden.');
                 return;
             }
             showDanceSelectionModal(list);
         })
         .catch(err => {
             console.error('Fehler beim Abfragen der Dance-Liste:', err);
-            alert('Fehler beim Abfragen der Dance-Liste');
         });
 });
 
-// Einfaches Modal zur Auswahl einer Datei aus dem Server-Verzeichnis
 function showDanceSelectionModal(files) {
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed'; overlay.style.left = 0; overlay.style.top = 0;
@@ -191,21 +179,16 @@ function showDanceSelectionModal(files) {
 // Wenn Datei gewählt → an /tree senden
 fileInput.addEventListener('change', () => {
     if (!fileInput.files.length) return;
-
     const file = fileInput.files[0];
     const fileName = file.name;
-
-    // jsTree mit neuer Datei laden
     reloadTreeFromFile(fileName);
 });
 
 // Funktion zum Neuladen des Trees
 function reloadTreeFromFile(fileName) {
-    // Hole die flache Knotenliste vom Backend und mappe sie in jsTree-Format
     fetch(`/tree?file=${encodeURIComponent(fileName)}`)
         .then(res => res.json())
         .then(nodes => {
-            // nodes erwartet eine Liste von Objekten, evtl. mit 'id', 'parent_id', 'name'/'text', 'meta'
             const jsNodes = (Array.isArray(nodes) ? nodes : []).map(n => {
                 const id = (n.id !== undefined && n.id !== null) ? String(n.id) : (n.name || n.text || Math.random().toString(36).slice(2));
                 const parent = (n.parent_id === null || n.parent_id === undefined) ? '#' : String(n.parent_id);
@@ -218,15 +201,67 @@ function reloadTreeFromFile(fileName) {
                 };
             });
 
-            // Falls kein jsTree existiert, initialisiere ihn; sonst setze die Daten neu
             const inst = $('#treeview').jstree(true);
             if (!inst) {
                 $('#treeview').jstree({
-                    'core': {
-                        'data': jsNodes,
-                        'check_callback': true
+                    'core': { 'data': jsNodes, 'check_callback': true },
+                    'plugins': ['dnd', 'contextmenu', 'wholerow'],
+                    'contextmenu': {
+                        'items': function(node) {
+                            const tree = $('#treeview').jstree(true);
+                            let defaultItems = {};
+                            try {
+                                if ($.jstree && $.jstree.defaults && $.jstree.defaults.contextmenu && typeof $.jstree.defaults.contextmenu.items === 'function') {
+                                    defaultItems = $.jstree.defaults.contextmenu.items.call(this, node) || {};
+                                }
+                            } catch (err) { defaultItems = {}; }
+                            const meta = (node && node.li_attr && node.li_attr.meta) ? node.li_attr.meta : (node && node.original && node.original.li_attr && node.original.li_attr.meta ? node.original.li_attr.meta : {});
+                            const isGroup = (meta && meta.type === 'group');
+                            if (isGroup) {
+                                defaultItems.rename = { 'label': 'Umbenennen', 'action': function (obj) { try { tree.edit(node.id); } catch (e) {} } };
+                            } else {
+                                delete defaultItems.rename;
+                            }
+                            return defaultItems;
+                        }
+                    },
+                    'dnd': { 'inside_pos': 'last', 'check_while_dragging': true }
+                });
+
+                // enable dblclick rename for group nodes
+                $('#treeview').on('dblclick.jstree', function(e) {
+                    const inst = $('#treeview').jstree(true);
+                    if (!inst) return;
+                    let el = e.target;
+                    while (el && el !== this && el.tagName !== 'LI') el = el.parentNode;
+                    if (!el || el === this) return;
+                    const node = inst.get_node(el.id);
+                    if (!node) return;
+                    const meta = (node.li_attr && node.li_attr.meta) ? node.li_attr.meta : (node.original && node.original.li_attr && node.original.li_attr.meta ? node.original.li_attr.meta : {});
+                    if (meta && meta.type === 'group') {
+                        try { inst.edit(node.id); } catch (err) {}
                     }
                 });
+
+                $('#treeview').on('rename_node.jstree', function(e, data) {
+                    try {
+                        const node = data.node;
+                        if (!node) return;
+                        const meta = (node.li_attr && node.li_attr.meta) ? node.li_attr.meta : (node.original && node.original.li_attr && node.original.li_attr.meta ? node.original.li_attr.meta : {});
+                        if (meta && meta.type === 'group') {
+                            meta.Name = node.text;
+                            try { node.li_attr = node.li_attr || {}; node.li_attr.meta = meta; } catch(e){}
+                            try {
+                                const tree = $('#treeview').jstree(true);
+                                if (tree && tree._model && tree._model.data && tree._model.data[node.id]) {
+                                    tree._model.data[node.id].li_attr = tree._model.data[node.id].li_attr || {};
+                                    tree._model.data[node.id].li_attr.meta = meta;
+                                }
+                            } catch(e){}
+                        }
+                    } catch (err) { console.warn('rename_node handler failed', err); }
+                });
+
             } else {
                 inst.settings.core.data = jsNodes;
                 inst.refresh();
@@ -234,7 +269,6 @@ function reloadTreeFromFile(fileName) {
         })
         .catch(err => {
             console.error('Fehler beim Laden des Trees:', err);
-            alert('Fehler beim Laden des Tree vom Server');
         });
 }
 </script>
@@ -242,9 +276,8 @@ function reloadTreeFromFile(fileName) {
 
 <script>
 // Erzeugt und füllt den jsTree mit einer Beispiel-Dance-Struktur.
-// Wird beim ersten Laden der Seite einmalig ausgeführt.
 function populateJsTree() {
-    const nodes = [
+     const nodes = [
         { id: 'dance-node', parent: '#', text: 'Dance', li_attr: { meta: { Set: '', type: 'group', mode: 'sequenziell', Name: 'Dance', Desc: 'Root: sequenzielle Gruppe' } } },
         { id: 'n1', parent: 'dance-node', text: '1cCast1p', li_attr: { meta: {} } },
         { id: 'complex-1', parent: 'dance-node', text: 'ComplexFigure', state: { opened: true }, li_attr: { meta: {} } },
@@ -253,71 +286,75 @@ function populateJsTree() {
         { id: 'n3', parent: 'dance-node', text: '6Hrb', li_attr: { meta: {} } }
     ];
 
-    // Falls jsTree noch nicht existiert, initialisiere ihn; sonst setze die Daten neu
     const inst = $('#treeview').jstree(true);
     if (!inst) {
         $('#treeview').jstree({
-            'core': {
-                'data': nodes,
-                'check_callback': true
+            'core': { 'data': nodes, 'check_callback': true },
+            'plugins': ['dnd', 'contextmenu', 'wholerow'],
+            'contextmenu': {
+                'items': function(node) {
+                    const tree = $('#treeview').jstree(true);
+                    let defaultItems = {};
+                    try {
+                        if ($.jstree && $.jstree.defaults && $.jstree.defaults.contextmenu && typeof $.jstree.defaults.contextmenu.items === 'function') {
+                            defaultItems = $.jstree.defaults.contextmenu.items.call(this, node) || {};
+                        }
+                    } catch (err) { defaultItems = {}; }
+                    const meta = (node && node.li_attr && node.li_attr.meta) ? node.li_attr.meta : (node && node.original && node.original.li_attr && node.original.li_attr.meta ? node.original.li_attr.meta : {});
+                    const isGroup = (meta && meta.type === 'group');
+                    if (isGroup) {
+                        defaultItems.rename = { 'label': 'Umbenennen', 'action': function (obj) { try { tree.edit(node.id); } catch (e) {} } };
+                    } else {
+                        delete defaultItems.rename;
+                    }
+                    return defaultItems;
+                }
             },
-            'plugins': ['dnd'],
-            'dnd': {
-                'inside_pos': 'last',
-                'check_while_dragging': true
+            'dnd': { 'inside_pos': 'last', 'check_while_dragging': true }
+        });
+
+        // dblclick/rename handlers set in reloadTreeFromFile as well; keep them available
+        $('#treeview').on('dblclick.jstree', function(e) {
+            const inst = $('#treeview').jstree(true);
+            if (!inst) return;
+            let el = e.target;
+            while (el && el !== this && el.tagName !== 'LI') el = el.parentNode;
+            if (!el || el === this) return;
+            const node = inst.get_node(el.id);
+            if (!node) return;
+            const meta = (node.li_attr && node.li_attr.meta) ? node.li_attr.meta : (node.original && node.original.li_attr && node.original.li_attr.meta ? node.original.li_attr.meta : {});
+            if (meta && meta.type === 'group') {
+                try { inst.edit(node.id); } catch (err) {}
             }
         });
 
-        // Ermögliche das Hinzufügen externer Elemente per HTML5-Drop
-        const treeEl = document.getElementById('treeview');
-        treeEl.addEventListener('dragover', function(e) { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; });
-        treeEl.addEventListener('drop', function(e) {
-            e.preventDefault();
-            const tree = $('#treeview').jstree(true);
-            if (!tree) return;
-
-            // Versuch zuerst custom MIME-Type, dann generisches JSON/Text
-            const raw = e.dataTransfer.getData('application/x-figure') || e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain');
-            if (!raw) return;
-            let fig;
-            try { fig = JSON.parse(raw); } catch (err) { console.warn('Drop: keine gültige JSON-Figur:', err); return; }
-
-            // Bestimme Ziel-Node (nächstes li-Element)
-            let el = e.target;
-            while (el && el !== treeEl && el.tagName !== 'LI') el = el.parentNode;
-            let parentId = '#';
-            if (el && el !== treeEl && el.tagName === 'LI') parentId = el.id;
-
-            const label = fig.name || fig.Name || fig.text || 'NewFigure';
-            const nodeData = {
-                text: label,
-                li_attr: { meta: (typeof fig === 'object' && fig !== null) ? fig : {} }
-            };
-
-            // Erstelle Knoten
-            tree.create_node(parentId, nodeData, 'last', function(created) {
-                // öffne Parent, falls geschlossen
-                try { tree.open_node(parentId); } catch (e) {}
-            });
-        });
-
-        // Wenn ein Knoten selektiert wird, zeige seine Metadaten im Arbeitsbereich
-        $('#treeview').on('select_node.jstree', function(e, data) {
-            try { showNodeMeta(data.node); } catch (err) { console.warn('select_node handler error', err); }
+        $('#treeview').on('rename_node.jstree', function(e, data) {
+            try {
+                const node = data.node;
+                if (!node) return;
+                const meta = (node.li_attr && node.li_attr.meta) ? node.li_attr.meta : (node.original && node.original.li_attr && node.original.li_attr.meta ? node.original.li_attr.meta : {});
+                if (meta && meta.type === 'group') {
+                    meta.Name = node.text;
+                    try { node.li_attr = node.li_attr || {}; node.li_attr.meta = meta; } catch(e){}
+                    try {
+                        const tree = $('#treeview').jstree(true);
+                        if (tree && tree._model && tree._model.data && tree._model.data[node.id]) {
+                            tree._model.data[node.id].li_attr = tree._model.data[node.id].li_attr || {};
+                            tree._model.data[node.id].li_attr.meta = meta;
+                        }
+                    } catch(e){}
+                }
+            } catch (err) { console.warn('rename_node handler failed', err); }
         });
 
     } else {
-        inst.settings.core.data = nodes.map(n => {
-            // stelle sicher, dass für jeden Knoten li_attr.meta existiert
-            n.li_attr = n.li_attr || {};
-            n.li_attr.meta = n.li_attr.meta || {};
-            return n;
-        });
-        inst.settings.plugins = inst.settings.plugins || [];
-        if (!inst.settings.plugins.includes('dnd')) inst.settings.plugins.push('dnd');
-        inst.refresh();
-    }
-    // mache sicher, dass der Baum sichtbar gerendert ist
+         inst.settings.core.data = nodes.map(n => { n.li_attr = n.li_attr || {}; n.li_attr.meta = n.li_attr.meta || {}; return n; });
+         inst.settings.plugins = inst.settings.plugins || [];
+         if (!inst.settings.plugins.includes('dnd')) inst.settings.plugins.push('dnd');
+         if (!inst.settings.plugins.includes('contextmenu')) inst.settings.plugins.push('contextmenu');
+         if (!inst.settings.plugins.includes('wholerow')) inst.settings.plugins.push('wholerow');
+         inst.refresh();
+     }
     try { const t = $('#treeview').jstree(true); if (t) t.refresh(); } catch (e) {}
 }
 
@@ -334,7 +371,6 @@ function showNodeMeta(nodeOrId) {
     const node = (typeof nodeOrId === 'string') ? tree.get_node(nodeOrId) : nodeOrId;
     if (!node) return;
 
-    // Meta aus unterschiedlichen Orten extrahieren
     let meta = {};
     if (node.li_attr && node.li_attr.meta) meta = Object.assign({}, node.li_attr.meta);
     else if (node.original && node.original.li_attr && node.original.li_attr.meta) meta = Object.assign({}, node.original.li_attr.meta);
@@ -347,7 +383,6 @@ function showNodeMeta(nodeOrId) {
     const title = document.createElement('h4'); title.textContent = node.text || node.id; wrapper.appendChild(title);
     const idLine = document.createElement('div'); idLine.textContent = 'Node ID: ' + node.id; idLine.style.fontSize = '0.9rem'; idLine.style.color = '#666'; wrapper.appendChild(idLine);
 
-    // Spezifische Steuerung für dance-node: Set-Auswahl
     if (node.id === 'dance-node') {
         const label = document.createElement('label'); label.textContent = 'Set:'; label.style.display = 'block'; label.style.marginTop = '8px';
         const select = document.createElement('select'); select.style.marginTop = '4px';
@@ -355,12 +390,11 @@ function showNodeMeta(nodeOrId) {
         for (let i = 1; i <= 8; i++) {
             const opt = document.createElement('option'); opt.value = i + 'C-Longwise Set'; opt.textContent = i + 'C-Longwise Set'; select.appendChild(opt);
         }
-        try { select.value = meta.Set || ''; } catch (e) { /* ignore */ }
+        try { select.value = meta.Set || ''; } catch (e) { }
 
         select.addEventListener('change', function() {
             meta.Set = select.value || '';
             saveNodeMeta(node.id, meta);
-            // Aktualisiere Anzeige des JSON-Blocks
             if (pre) pre.textContent = JSON.stringify(meta, null, 2);
         });
 
@@ -368,7 +402,6 @@ function showNodeMeta(nodeOrId) {
         wrapper.appendChild(select);
     }
 
-    // Zeige JSON-Meta
     const pre = document.createElement('pre'); pre.style.background = '#f7f7f7'; pre.style.padding = '8px'; pre.style.borderRadius = '4px'; pre.style.marginTop = '10px'; pre.style.maxHeight = '240px'; pre.style.overflow = 'auto';
     pre.textContent = JSON.stringify(meta, null, 2);
     wrapper.appendChild(pre);
@@ -391,7 +424,6 @@ function saveNodeMeta(nodeId, meta) {
             tree._model.data[nodeId].li_attr = tree._model.data[nodeId].li_attr || {};
             tree._model.data[nodeId].li_attr.meta = Object.assign({}, meta);
         }
-        // set data attribute on DOM element if available
         try {
             const $li = $('#' + nodeId.replace(/(:|\.|\[|\]|,|=|@)/g, "\\$1"));
             if ($li && $li.length) $li.attr('data-meta', JSON.stringify(meta));
@@ -404,11 +436,12 @@ function saveNodeMeta(nodeId, meta) {
 // Fügt die Funktionalität zum Laden und Anzeigen der Figuren-Karten hinzu
 function loadFigures() {
     fetch('/figures')
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+            return res.json();
+        })
         .then(data => {
             if (!Array.isArray(data)) data = [];
-            // füge zwei generische Gruppentypen hinzu, falls nicht vorhanden
-            // Extras: bilden jetzt Formation='group' und unterscheiden im Feld 'mode'
             const extras = [
                 { Name: 'sequenzielle Gruppe', Desc: 'Sequenzielle Gruppe', Formation: 'group', mode: 'sequenziell' },
                 { Name: 'parallele Gruppe', Desc: 'Parallele Gruppe', Formation: 'group', mode: 'parallel' }
@@ -418,7 +451,6 @@ function loadFigures() {
                     const n = (f.Name || f.name || f.text || '').toString();
                     const form = (f.Formation || f.formation || f.formation_name || '').toString().toLowerCase();
                     const m = (f.mode || f.Mode || '').toString().toLowerCase();
-                    // match by name OR by same formation AND same mode
                     return n === ex.Name || (form === (ex.Formation || '').toString().toLowerCase() && m === (ex.mode || '').toString().toLowerCase());
                 });
                 if (!exists) data.push(ex);
@@ -446,7 +478,6 @@ function loadFigures() {
                 card.dataset.formation = formation;
                 card.dataset.mode = mode;
 
-                // Gruppenkarten: Formation === 'group'; konkrete Art in 'mode'
                 const isGroup = formation === 'group';
                 if (isGroup) {
                     card.classList.add('group-card');
@@ -457,8 +488,6 @@ function loadFigures() {
                 try { card.dataset.full = JSON.stringify(fig); } catch (e) { card.dataset.full = ''; }
 
                 const left = document.createElement('div'); left.style.flex = '1'; left.style.minWidth = '0';
-
-                // Icon + Name container
                 const labelRow = document.createElement('div'); labelRow.className = 'group-label';
                 if (isGroup) {
                     const icon = document.createElement('div'); icon.className = 'group-icon';
@@ -487,18 +516,11 @@ function loadFigures() {
 
                 card.appendChild(left); card.appendChild(right);
 
-                // draggable for tree drop
                 card.setAttribute('draggable', 'true');
                 card.addEventListener('dragstart', function(e) {
                     try {
                         if (isGroup) {
-                            // send a compact group node description instead of the full figure
-                            const payload = {
-                                type: 'group',
-                                mode: mode || 'sequenziell',
-                                name: (fig.Name || fig.name || fig.text || ''),
-                                desc: (fig.Desc || fig.desc || fig.Description || fig.description || '')
-                            };
+                            const payload = { type: 'group', mode: mode || 'sequenziell', name: (fig.Name || fig.name || fig.text || ''), desc: (fig.Desc || fig.desc || fig.Description || fig.description || '') };
                             e.dataTransfer.setData('application/x-figure', JSON.stringify(payload));
                             e.dataTransfer.setData('application/json', JSON.stringify(payload));
                         } else {
@@ -518,7 +540,6 @@ function loadFigures() {
                 container.appendChild(card);
             });
 
-            if (typeof applyFilters === 'function') applyFilters();
         })
         .catch(err => console.error('Fehler beim Laden der Figuren:', err));
  }
@@ -547,15 +568,12 @@ function populateFormationOptions(data) {
         }
     });
 
-    // Entferne alte Options außer der ersten (Alle Formationen)
     while (select.options.length > 1) select.remove(1);
 
-    // Füge Formationen sortiert hinzu
     Array.from(formationMap.entries()).sort((a,b)=>a[1].localeCompare(b[1])).forEach(([key, original]) => {
         const opt = document.createElement('option'); opt.value = key; opt.textContent = original; select.appendChild(opt);
     });
 
-    // Stelle vorherigen Wert wieder her, falls vorhanden
     if (previous) {
         const found = Array.from(select.options).some(o => o.value === previous.toString().toLowerCase());
         select.value = found ? previous.toString().toLowerCase() : '';
@@ -578,7 +596,6 @@ function applyFilters() {
     });
 }
 
-// Listener registrieren
 (function registerFilterListeners(){
     const filterEl = document.getElementById('filter'); if (filterEl) { filterEl.addEventListener('change', applyFilters); filterEl.addEventListener('input', applyFilters); }
     const searchEl = document.getElementById('search'); if (searchEl) searchEl.addEventListener('input', applyFilters);
