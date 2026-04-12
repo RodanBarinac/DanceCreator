@@ -395,7 +395,21 @@ function loadFigures() {
     fetch('/figures')
         .then(res => res.json())
         .then(data => {
-            if (!Array.isArray(data)) return;
+            if (!Array.isArray(data)) data = [];
+            // füge zwei generische Gruppentypen hinzu, falls nicht vorhanden
+            const extras = [
+                { Name: 'sequenzielle Gruppe', Desc: 'Sequenzielle Gruppe', Formation: 'sequenziell' },
+                { Name: 'parralele Gruppe', Desc: 'Parallele Gruppe', Formation: 'parralel' }
+            ];
+            extras.forEach(ex => {
+                const exists = data.some(f => {
+                    const n = (f.Name || f.name || f.text || '').toString();
+                    const form = (f.Formation || f.formation || f.formation_name || '').toString().toLowerCase();
+                    return n === ex.Name || form === (ex.Formation || '').toString().toLowerCase();
+                });
+                if (!exists) data.push(ex);
+            });
+
             if (typeof populateFormationOptions === 'function') populateFormationOptions(data);
 
             const container = document.getElementById('figure-list');
