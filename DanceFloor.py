@@ -47,3 +47,51 @@ class DanceFloor:
             "tick": self.tick,
             "positions": self.positions
         }
+
+
+class CombineConflictError(Exception):
+    """Raised when multiple parallel floors write conflicting dancers into the same position."""
+    def __init__(self, message, conflicts=None):
+        super().__init__(message)
+        self.conflicts = conflicts or {}
+
+
+def combine_dancefloors(floors):
+    """Combine multiple DanceFloor instances resulting from parallel execution.
+    If a position is written by more than one floor with different dancers, raise CombineConflictError.
+    Otherwise, apply non-empty changes to a base floor and return it.
+    """
+    if not floors:
+        raise ValueError('No floors to combine')
+    base = floors[0].copy()
+    conflicts = {}
+    # for each position, collect non-None dancer identities
+    positions = set()
+    for f in floors:
+        positions.update(f.positions.keys())
+    for pos in positions:
+        dancers = []
+        for idx, f in enumerate(floors):
+            d = f.positions.get(pos, {}).get('dancer')
+            if d is not None:
+                dancers.append((idx, d))
+        # check for conflict: more than one distinct dancer
+        unique_names = set()
+        for _, d in dancers:
+            name = getattr(d, 'name', None) if d is not None else None
+            unique_names.add(name)
+        if len(dancers) > 1 and len([n for n in unique_names if n is not None]) > 1:
+            # conflict
+            conflicts[pos] = [{'floor': idx, 'dancer': getattr(d,'name',d)} for idx, d in dancers]
+    if conflicts:
+        raise CombineConflictError('Conflict while combining parallel floors', conflicts=conflicts)
+    # no conflicts: apply non-None dancer values from floors in order (first non-None wins)
+    result = base
+    for f in floors:
+        for pos, info in f.positions.items():
+            if info.get('dancer') is not None:
+                result.set_dancer(pos, info.get('dancer'))
+    # tick: choose max tick
+    result.tick = max(f.tick for f in floors)
+    return result
+

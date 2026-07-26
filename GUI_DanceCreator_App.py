@@ -72,6 +72,13 @@ def api_execute():
         crips = fobj.getCrips(floor)
         return jsonify({'floor': new.to_dict(), 'crips': crips})
     except Exception as e:
+        # handle combine conflict specially
+        try:
+            from DanceFloor import CombineConflictError
+            if isinstance(e, CombineConflictError):
+                return jsonify({'error': str(e), 'conflicts': e.conflicts}), 409
+        except Exception:
+            pass
         return jsonify({'error': str(e)}), 500
 
 

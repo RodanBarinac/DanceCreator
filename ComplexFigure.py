@@ -24,20 +24,16 @@ class ComplexFigure(Figure):
                     fobj = getFigure(sub_fig, sub_anchor)
                     floor = fobj.DanceMove(floor)
             elif isinstance(fig, list) and fig[0] == 'p':
-                # parallel: compute floors and merge (first-wins)
+                # parallel: compute floors and merge using combine_dancefloors
                 floors = []
                 for sub in fig[1]:
                     sub_anchor, sub_fig = sub[0], sub[1]
                     from Dance import getFigure
                     fobj = getFigure(sub_fig, sub_anchor)
                     floors.append(fobj.DanceMove(oldDF.copy()))
-                # simple merge: prefer changes from first floor
-                merged = oldDF.copy()
-                for f in floors:
-                    for pname, pinfo in f.positions.items():
-                        if pinfo.get('dancer') is not None:
-                            merged.set_dancer(pname, pinfo.get('dancer'))
-                floor = merged
+                # use DanceFloor.combine_dancefloors to detect conflicts
+                from DanceFloor import combine_dancefloors
+                floor = combine_dancefloors(floors)
             else:
                 # unknown entry
                 continue
