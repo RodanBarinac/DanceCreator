@@ -1,0 +1,13 @@
+{
+  "name": "Marrie's Wedding",
+  "couples": 3,
+  "tick": 0,
+  "positions": {
+    "1m": {"dancer": {"name":"A","gender":"M"}, "coord": [1,1]},
+    "1w": {"dancer": {"name":"B","gender":"F"}, "coord": [1,3]},
+    "2m": {"dancer": {"name":"C","gender":"M"}, "coord": [2,1]},
+    "2w": {"dancer": {"name":"D","gender":"F"}, "coord": [2,3]},
+    "3m": {"dancer": {"name":"E","gender":"M"}, "coord": [3,1]},
+    "3w": {"dancer": {"name":"F","gender":"F"}, "coord": [3,3]}
+  }
+}

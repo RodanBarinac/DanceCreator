@@ -1,11 +1,11 @@
 # DanceCreator – Konzept (Kurzfassung)
 
-Dieses Kurzkonzept enthält die Projektvision und den Überblick. Technische Details zur Implementierung sind in separaten Dokumenten:
+Dieses Kurzkonzept enthält die Projektvision und den Überblick. Technische Details und Implementierungsspezifikationen befinden sich in:
 - IMPLEMENTIERUNG_BACKEND.md  (Backend-Spezifikation)
 - IMPLEMENTIERUNG_GUI.md      (GUI-Implementierung)
 
 1. Projektübersicht
-DanceCreator ist ein System zur Modellierung, Visualisierung und Verwaltung von Tanzfiguren (Scottish Country Dancing). Kernfunktionen: Figuren-Management, Tanzflächen-Simulation, Cript-Generierung, Web-GUI.
+DanceCreator modelliert, visualisiert und verwaltet Tanzfiguren (Scottish Country Dancing). Kernfunktionen: Figuren-Management, Tanzflächen-Simulation, Cript-Generierung, Web-GUI.
 
 2. Zielgruppe
 - Tanzlehrer, Tänzer, Entwickler

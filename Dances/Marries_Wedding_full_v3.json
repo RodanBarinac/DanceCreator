@@ -1,0 +1,16 @@
+{
+  "Version": 3,
+  "Name": "Marries Wedding - Full",
+  "Desc": "Example full dance composed of several figures.",
+  "FigureList": [
+    [[0,0], "Reel Across"],
+    [[0,0], ["s", [
+      [[0,0], "Right Hand Turn"],
+      [[0,0], "Change Across"]
+    ]]],
+    [[0,0], ["p", [
+      [[0,0], "Reel on the Sides"],
+      [[0,0], "Half Reel"]
+    ]]]
+  ]
+}

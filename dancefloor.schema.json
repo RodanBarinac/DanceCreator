@@ -1,0 +1,26 @@
+{
+  "$schema":"http://json-schema.org/draft-07/schema#",
+  "title":"DanceFloor",
+  "type":"object",
+  "required":["name","couples","tick","positions"],
+  "properties":{
+    "name":{"type":"string"},
+    "couples":{"type":"integer","minimum":1},
+    "tick":{"type":"integer","minimum":0},
+    "positions":{
+      "type":"object",
+      "patternProperties": {
+        "^[0-9]+[mw]$": {
+          "type":"object",
+          "required":["dancer","coord"],
+          "properties":{
+            "dancer":{"type":"object","required":["name","gender"],"properties":{"name":{"type":"string"},"gender":{"type":"string","enum":["M","F","m","f"]}}},
+            "coord":{"type":"array","minItems":2,"maxItems":2,"items":[{"type":"integer"},{"type":"integer"}]}
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

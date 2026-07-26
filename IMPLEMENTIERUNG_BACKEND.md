@@ -154,3 +154,132 @@ print(Floor)
 ---
 
 Anmerkung: Dieses Dokument reicht aus, um die minimale Funktionalität, die in DanceCreator.py verwendet wird, zuverlässig zu implementieren. Es enthält präzise Signaturen, JSON-Formate und REST-Endpoints.
+
+---
+
+## Detaillierte Algorithmen & Beispiele (erweiterte technische Details)
+
+### DanceMove (Algorithmus + Verhalten)
+Zweck: Erzeuge aus einem Eingabe-DanceFloor und einer Figure (Simple/Complex) einen neuen DanceFloor mit aktualisierten Positionen.
+
+Prinzipien:
+- SimpleFigure: hat StartPos -> EndPos. DanceMove:
+  1. Validieren, dass die erwarteten Tänzer an StartPos vorhanden sind.
+  2. Berechne Zielkoordinaten durch Addition von Anchor-Offset.
+  3. Prüfe Kollisionen (Ziel besetzt) — Verhalten nach Konfiguration: raise | first-wins | merge-with-offset.
+  4. Erzeuge neues DanceFloor (kopie) und setze Tänzer auf EndPos.
+  5. Inkrementiere Tick/Bar entsprechend figure.Bars.
+
+- ComplexFigure:
+  - Rekursive Bearbeitung der FigureList.
+  - Sequenz ("s"): wende Sub-Figuren nacheinander an (jeweils newFloor = sub.DanceMove(prevFloor)).
+  - Parallel ("p"): berechne für jede Sub-Figur ein unabhängiges Ergebnisfloor aus demselben Eingangs-Floor unter Berücksichtigung von Anchors; kombiniere Ergebnisse via combineDanceFloor.
+
+Pseudocode (vereinfacht):
+```
+function DanceMove(figure, oldFloor):
+  if figure is SimpleFigure:
+    validate start positions on oldFloor
+    targetPositions = computeTargets(figure.EndPos, figure.anchor)
+    newFloor = oldFloor.copy()
+    for mapping dancer->target in targetPositions:
+      newFloor.move(dancer, target)
+    newFloor.tick += figure.Bars
+    return newFloor
+  else if figure is ComplexFigure:
+    if figure.mode == 's':
+      floor = oldFloor
+      for sub in figure.subList:
+         floor = DanceMove(sub, floor)
+      return floor
+    else if figure.mode == 'p':
+      floors = []
+      for sub in figure.subList:
+         floors.append( DanceMove(sub, oldFloor.copy()) )
+      return combineDanceFloor(floors)
+```
+
+### combineDanceFloor (Parallel-Resultate zusammenführen)
+Zweck: Vereint mehrere DanceFloor-Resultate in ein einziges, konsistentes Floor.
+
+Regeln:
+- Wenn mehrere Floors dieselbe Position belegen, Konfliktauflösung per Priorität (z. B. by sub-index) oder konfigurierbare Strategie.
+- Positionen, die nur in einem Floor geändert wurden, werden übernommen.
+- Facing/Meta werden deterministisch zusammengeführt.
+
+Empfehlung: Implementiere eine Config-Option zur Konflikt-Auflösung: ["raise", "first-wins", "merge-with-offset"].
+
+### Cript-Template-Expansion
+Template-Variablen: {Dancer}, {StartPos}, {EndPos}, {Face}, {Partner}
+
+Regeln:
+- Expansion erhält Kontext: DanceFloor (Mapping positions->Dancer), node.data (anchor, addons).
+- Fehlende Auflösungen behalten Platzhalter und führen zu Warnungen in Logs.
+- Beispiel: "Move from {StartPos} to {EndPos}" → "Move from 1m (1,1) to 3w (3,3)".
+
+### JSON-Beispiele
+SimpleFigure (v2):
+```
+{
+  "Version":2,
+  "Name":"Reel Across",
+  "Desc":"...",
+  "Bars":8,
+  "StartPos":[[1,1],[1,3]],
+  "EndPos":[[3,3],[3,1]],
+  "CriptDesc":["Bar 1-8: ..."],
+  "Faceing":[[1,3],[1,1]],
+  "Partner":[[1,3],[1,1]],
+  "Addons":{}
+}
+```
+
+ComplexFigure (v3):
+```
+{
+  "Version":3,
+  "Name":"Marrie's Wedding - Full",
+  "FigureList":[ [[0,0],"Reel Across"], [[0,0],["s", [ [[0,0],"Right Hand Turn"], [[0,0],"Change Across"] ]]] ]
+}
+```
+
+DanceFloor JSON:
+```
+{
+  "name":"Marrie's Wedding",
+  "couples":3,
+  "tick":0,
+  "positions":{
+    "1m": {"dancer":{"name":"A","gender":"M"},"coord":[1,1]},
+    ...
+  }
+}
+```
+
+### Video / Render-Job API (Ergänzung)
+- POST /api/dances/<name>/render-video  {"resolution":"720p","fps":25}
+  - Response: 202 Accepted {"jobId":"..."}
+- GET /api/render-status/<jobId>
+  - Response: 200 {"state":"pending|running|done|failed","progress":0-100,"url":"..."}
+- GET /api/dances/<name>/video -> redirect/download when ready
+
+### HTTP-Statuscodes & Fehlerpayload
+- 200 OK: erfolgreiche GET
+- 201 Created: resource created
+- 202 Accepted: job accepted (async)
+- 400 Bad Request: invalid payload
+- 404 Not Found: resource missing
+- 409 Conflict: position collision / entity exists
+- 500 Internal Server Error: unexpected
+- Fehlerpayload: {"error":"message","code":"E_VALIDATION","details":{...}}
+
+### Tests & Beispiele (Empfehlung)
+- Beispiel-JSONs in Figures/ und Dances/ (Simple/Complex minimal)
+- Unit-Tests:
+  - test_simple_move: apply SimpleFigure on 1-couple floor and assert positions
+  - test_complex_seq: sequence of two figures produces expected final positions
+  - test_parallel_combine: parallel figures combine deterministisch
+
+---
+
+Anmerkung: Dieses Dokument umfasst die erforderlichen Signaturen, JSON-Schemata, Algorithmus-Beschreibungen und API-Erweiterungen, um eine lauffähige Implementierung zu ermöglichen.
