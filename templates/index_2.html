@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>GUI mit Resizable Bereichen</title>
+    <!-- Einbinden von CSS aus dem static-Ordner -->
+    <link rel="stylesheet" href="../static/Dance_Creator.css">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/themes/default/style.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
+
+</head>
+<body>
+  <div id="header">
+    <div id="header-left">
+        <div id="file-path">Pfad: /path/to/current/file.dc</div>
+    </div>
+    <div id="header-center">
+        <h2>Dance Creator</h2>
+    </div>
+    <div id="header-right">
+        <button id="btn-load">Load</button>
+        <button id="btn-save">Save</button>
+    </div>
+  </div>
+<!-- Grundsätzlicher Aufbau -->
+  <div id="container">
+    <div id="left" class="panel">
+      <h3>Figuren</h3>
+      <!-- Suchfeld -->
+      <input type="text" id="searchBox" placeholder="Suche nach Name...">
+
+      <label for="filter">Filter:</label>
+      <select id="filter">
+          <option value="">Alle Typen</option>
+          <option value="simple">Simple</option>
+          <option value="complex">Complex</option>
+      </select>
+        <div id="figure-list"></div>
+    </div>
+
+    <div class="splitter" id="splitter-left"></div>
+    <div id="middle" class="panel">
+      <h3>Arbeitsbereich</h3>
+    </div>
+    <div class="splitter" id="splitter-right"></div>
+    <div id="right" class="panel">
+      <h3>Dancestruktur</h3>
+      <p><em><div id="treeContainer"></div></em></p>
+    </div>
+  </div>
+
+  <script>
+          <!-- *************************** -->
+          <!-- *** Splitter funktionen *** -->
+          <!-- *************************** -->
+
+    function makeSplitter(splitterId, leftPanelId, rightPanelId) {
+      const splitter = document.getElementById(splitterId);
+      const leftPanel = document.getElementById(leftPanelId);
+      const rightPanel = document.getElementById(rightPanelId);
+
+      splitter.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        document.addEventListener('mousemove', resize);
+        document.addEventListener('mouseup', stopResize);
+      });
+
+      function resize(e) {
+        const totalWidth = splitter.parentNode.offsetWidth;
+        const leftWidth = e.clientX;
+        const rightWidth = totalWidth - leftWidth - 10; // 10 = 2 splitters width
+
+        if (leftWidth > 100 && rightWidth > 100) {
+          leftPanel.style.width = leftWidth + 'px';
+          rightPanel.style.width = rightWidth + 'px';
+        }
+      }
+
+      function stopResize() {
+        document.removeEventListener('mousemove', resize);
+        document.removeEventListener('mouseup', stopResize);
+      }
+    }
+
+    makeSplitter('splitter-left', 'left', 'middle');
+    makeSplitter('splitter-right', 'middle', 'right');
+  </script>
+
+<script>
+          <!-- *********************** -->
+          <!-- *** Tree funktionen *** -->
+          <!-- *********************** -->
+
+    function renderJsTree(nodes) {
+      const treeData = toJsTreeData(nodes);
+      const treeContainer = $('#treeContainer');
+      treeContainer.jstree('destroy'); // Vorherigen Baum entfernen
+      treeContainer.jstree({
+        core: {
+          data: treeData,
+          check_callback: true
+        },
+        plugins: ['types', 'dnd', 'wholerow', "contextmenu"],
+        types: {
+          default: { icon: 'jstree-icon jstree-file' },
+          simple: { icon: 'jstree-icon jstree-file' },
+          complex: { icon: 'jstree-icon jstree-folder' }
+        }
+      });
+    }
+
+    $('#treeContainer').on("changed.jstree", function (e, data) {
+      setStatus(data.node.text + " selected");
+    });
+</script>
+
+<script>
+function loadFigures() {
+          <!-- *********************** -->
+          <!-- ***  Cards füllen   *** -->
+          <!-- *********************** -->
+
+    fetch('/figures')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('figure-list');
+            container.innerHTML = '';
+
+            data.forEach(fig => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.type = fig.type;
+
+                card.innerHTML = `
+                    <strong>${fig.name}</strong><br>
+                    Typ: ${fig.type}<br>
+                    <em>${fig.desc || ''}</em>
+                `;
+
+                container.appendChild(card);
+            });
+        })
+        .catch(err => console.error('Fehler beim Laden der Figuren:', err));
+}
+
+// Filter anwenden
+document.getElementById('search').addEventListener('input', function() {
+    const text = this.value.toLowerCase();
+    const cards = document.querySelectorAll('#figure-list .card');
+
+    cards.forEach(card => {
+        const name = card.querySelector('strong').textContent.toLowerCase();
+        if (name.includes(text)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+function applyFilters() {
+    const type = document.getElementById('filter').value;
+    const text = document.getElementById('search').value.toLowerCase();
+    const cards = document.querySelectorAll('#figure-list .card');
+
+    cards.forEach(card => {
+        const matchesType = !type || card.dataset.type === type;
+        const matchesText = card.querySelector('strong').textContent.toLowerCase().includes(text);
+
+        card.style.display = (matchesType && matchesText) ? 'block' : 'none';
+    });
+}
+
+document.getElementById('filter').addEventListener('change', applyFilters);
+document.getElementById('search').addEventListener('input', applyFilters);
+
+// Figuren direkt beim Start laden
+document.addEventListener('DOMContentLoaded', loadFigures);
+</script>
+
+</body>
+</html>

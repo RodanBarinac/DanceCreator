@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Datensatz-Übersicht</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      text-align: center;
+    }
+    #controls {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    #searchBox {
+      padding: 8px;
+      width: 250px;
+      font-size: 14px;
+    }
+    .filter-button {
+      padding: 8px 12px;
+      margin: 0 5px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .filter-button:hover {
+      background-color: #0056b3;
+    }
+    #card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 15px;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: scale(1.03);
+    }
+    .card-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .card-type {
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>Datensatz-Übersicht</h1>
+  <div id="controls">
+    <input type="text" id="searchBox" placeholder="Suche nach Name oder Typ...">
+    <button class="filter-button">Bewegungspfad</button>
+    <button class="filter-button">Orientierungspfad</button>
+    <button class="filter-button">Zeitmarkierung</button>
+  </div>
+  <div id="card-grid">
+    <div class="card">
+      <div class="card-title">Datensatz A</div>
+      <div class="card-type">Typ: Bewegungspfad</div>
+      <div>ID: 001</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Datensatz B</div>
+      <div class="card-type">Typ: Orientierungspfad</div>
+      <div>ID: 002</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Datensatz C</div>
+      <div class="card-type">Typ: Zeitmarkierung</div>
+      <div>ID: 003</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Datensatz D</div>
+      <div class="card-type">Typ: Bewegungspfad</div>
+      <div>ID: 004</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Datensatz E</div>
+      <div class="card-type">Typ: Orientierungspfad</div>
+      <div>ID: 005</div>
+    </div>
+  </div>
+</body>
+</html>

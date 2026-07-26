@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>GUI mit Resizable Bereichen</title>
+  <style>
+    body, html {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    #container {
+      display: flex;
+      height: 100%;
+      width: 100%;
+    }
+    .panel {
+      padding: 10px;
+      overflow: auto;
+    }
+    #left {
+      width: 25%;
+      background-color: #f0f0f0;
+    }
+    #middle {
+      width: 50%;
+      background-color: #ffffff;
+      border-left: 1px solid #ccc;
+      border-right: 1px solid #ccc;
+    }
+    #right {
+      width: 25%;
+      background-color: #f9f9f9;
+    }
+    .splitter {
+      width: 5px;
+      background-color: #ccc;
+      cursor: col-resize;
+    }
+    .card {
+      border: 1px solid #aaa;
+      border-radius: 5px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #fff;
+      box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="left" class="panel">
+      <h3>Datensätze</h3>
+      <label for="filter">Filter:</label>
+      <select id="filter">
+        <option value="">Alle Typen</option>
+        <option value="bewegung">Bewegungspfad</option>
+        <option value="orientierung">Orientierungspfad</option>
+      </select>
+      <div class="card">Datensatz A<br>Typ: Bewegungspfad</div>
+      <div class="card">Datensatz B<br>Typ: Orientierungspfad</div>
+      <div class="card">Datensatz C<br>Typ: Zeitmarkierung</div>
+    </div>
+    <div class="splitter" id="splitter-left"></div>
+    <div id="middle" class="panel">
+      <h3>Arbeitsbereich</h3>
+    </div>
+    <div class="splitter" id="splitter-right"></div>
+    <div id="right" class="panel">
+      <h3>Baumstruktur (jsTree)</h3>
+      <p><em>Hier wird später der Baum angezeigt.</em></p>
+    </div>
+  </div>
+
+  <script>
+    function makeSplitter(splitterId, leftPanelId, rightPanelId) {
+      const splitter = document.getElementById(splitterId);
+      const leftPanel = document.getElementById(leftPanelId);
+      const rightPanel = document.getElementById(rightPanelId);
+
+      splitter.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        document.addEventListener('mousemove', resize);
+        document.addEventListener('mouseup', stopResize);
+      });
+
+      function resize(e) {
+        const totalWidth = splitter.parentNode.offsetWidth;
+        const leftWidth = e.clientX;
+        const rightWidth = totalWidth - leftWidth - 10; // 10 = 2 splitters width
+
+        if (leftWidth > 100 && rightWidth > 100) {
+          leftPanel.style.width = leftWidth + 'px';
+          rightPanel.style.width = rightWidth + 'px';
+        }
+      }
+
+      function stopResize() {
+        document.removeEventListener('mousemove', resize);
+        document.removeEventListener('mouseup', stopResize);
+      }
+    }
+
+    makeSplitter('splitter-left', 'left', 'middle');
+    makeSplitter('splitter-right', 'middle', 'right');
+  </script>
+</body>
+</html>

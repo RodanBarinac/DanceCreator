@@ -1,131 +1,135 @@
-/* static/app.js
-   JavaScript-Frontend-Logik für die DanceTreeApp.
+// Minimal frontend to interact with backend API
 
-   Verantwortlichkeiten:
-   - Lädt die Struktur vom Backend-Endpunkt /tree?file=...
-   - Baut eine einfache Figurenliste (links) und eine Baumdarstellung (rechts)
-   - Zeigt Statusmeldungen in der Toolbar
-   - Die zentrale Tanzfläche bleibt leer (Platzhalter) — spätere Implementierung
-*/
-
-/**
- * Initialisiert jsTree im treeContainer mit den übergebenen Daten.
- */
-function renderJsTree(nodes) {
-  const treeData = toJsTreeData(nodes);
-  const treeContainer = $('#treeContainer');
-  treeContainer.jstree('destroy'); // Vorherigen Baum entfernen
-  treeContainer.jstree({
-    core: {
-      data: treeData,
-      check_callback: true
-    },
-    plugins: ['types', 'dnd', 'wholerow', "contextmenu"],
-    types: {
-      default: { icon: 'jstree-icon jstree-file' },
-      simple: { icon: 'jstree-icon jstree-file' },
-      complex: { icon: 'jstree-icon jstree-folder' }
-    }
-  });
+async function api(path, opts) {
+ const res = await fetch(path, opts);
+ const contentType = res.headers.get('content-type') || '';
+ let body = null;
+ if (contentType.includes('application/json')) body = await res.json();
+ else body = await res.text();
+ return { status: res.status, body };
 }
 
-$('#treeContainer').on("changed.jstree", function (e, data) {
-  setStatus(data.node.text + " selected");
-});
-
-/**
- * Holt alle Figuren-Dateien aus /Figures und analysiert sie.
- * Erwartet ein Backend-Endpoint /figures, der eine Liste aller Figuren liefert.
- * Sortiert und trennt nach simple/complex.
- */
-async function fetchAndRenderFigureList() {
-  const ul = document.getElementById('figureList');
-  ul.innerHTML = '<li>Lade Figuren ...</li>';
-  try {
-    // Hole alle Figuren-Dateinamen und deren Typen vom Backend
-    const res = await fetch('/figures');
-    if (!res.ok) throw new Error('Fehler beim Laden der Figurenliste');
-    const figures = await res.json(); // [{name, type, desc, ...}]
-    // Sortiere und trenne nach Typ
-    const simple = figures.filter(f => f.type === 'simple').sort((a,b)=>a.name.localeCompare(b.name));
-    const complex = figures.filter(f => f.type === 'complex').sort((a,b)=>a.name.localeCompare(b.name));
-    ul.innerHTML = '';
-    // Simple Figuren
-    if (simple.length) {
-      const h = document.createElement('li');
-      h.textContent = 'Einfache Figuren:';
-      h.style.fontWeight = 'bold';
-      ul.appendChild(h);
-      simple.forEach(f => {
-        const li = document.createElement('li');
-        li.textContent = f.name;
-        li.title = f.desc || '';
-        ul.appendChild(li);
-      });
-    }
-    // Complexe Figuren
-    if (complex.length) {
-      const h = document.createElement('li');
-      h.textContent = 'Komplexe Figuren:';
-      h.style.fontWeight = 'bold';
-      ul.appendChild(h);
-      complex.forEach(f => {
-        const li = document.createElement('li');
-        li.textContent = f.name;
-        li.title = f.desc || '';
-        ul.appendChild(li);
-      });
-    }
-    if (!simple.length && !complex.length) {
-      ul.innerHTML = '<li>Keine Figuren gefunden.</li>';
-    }
-  } catch (err) {
-    ul.innerHTML = '<li>Fehler: ' + err.message + '</li>';
-  }
+async function loadFigures() {
+ const r = await api('/api/figures');
+ if (r.status !== 200) { console.error('Failed to load figures'); return; }
+ const list = document.getElementById('fig-list');
+ list.innerHTML = '';
+ r.body.forEach(f => {
+   if (!f.file || f.file.endsWith('figure.schema.json')) return; // skip schema file
+   const li = document.createElement('li');
+   li.textContent = `${f.Name || f.file} (${f.Bars || '?'} bars)`;
+   li.dataset.file = f.file.replace('.json','');
+   li.dataset.formation = f.Formation || f.Type || 'Other';
+   li.addEventListener('click', onFigureClick);
+   list.appendChild(li);
+ });
 }
 
-/**
- * Setzt einen kurzen Statustext in der Toolbar.
- */
-function setStatus(text) {
-  const el = document.getElementById('status');
-  if (el) el.textContent = text;
+async function loadDances() {
+ const r = await api('/api/dances');
+ if (r.status !== 200) { console.error('Failed to load dances'); return; }
+ const sel = document.getElementById('dance-select');
+ sel.innerHTML = '';
+ r.body.forEach(d => {
+   const opt = document.createElement('option');
+   opt.value = d.file.replace('.json','');
+   opt.textContent = d.Name || d.file;
+   sel.appendChild(opt);
+ });
+ sel.addEventListener('change', () => initJsTree(sel.value));
+ if (r.body.length) initJsTree(r.body[0].file.replace('.json',''));
 }
 
-/**
- * Haupt-Load-Funktion: liest den Dateinamen aus dem Input-Feld,
- * ruft fetchTree auf und füllt die Bereiche.
- */
-async function loadAndRender() {
-  const input = document.getElementById('fileInput');
-  let fname = input.value.trim() || 'Marries Wedding';
-  if (!fname.endsWith('.json')) {
-    fname += '.json';
-  }
-  setStatus('Lade ' + fname + ' ...');
-  try {
-    const nodes = await get_nodes(fname);
-    // Figurenliste links: alle Figuren aus /Figures
-    fetchAndRenderFigureList();
-    // Baumstruktur rechts: jsTree
-    renderJsTree(nodes || []);
-    setStatus('Datei geladen: ' + fname);
-  } catch (err) {
-    console.error(err);
-    setStatus('Fehler: ' + err.message);
-    // Wenn Fehler, zeige kurze Nachricht im Tree-Container
-    const treeContainer = document.getElementById('treeContainer');
-    treeContainer.innerHTML = '<div style="color:crimson">Fehler: ' + err.message + '</div>';
-    const ul = document.getElementById('figureList');
-    ul.innerHTML = '';
-  }
+async function initJsTree(danceName) {
+ const r = await api(`/api/dances/${encodeURIComponent(danceName)}`);
+ const treeDiv = document.getElementById('dance-tree');
+ if (r.status !== 200) { treeDiv.textContent = 'Failed to load tree'; return; }
+ const treeData = r.body.tree;
+ // init jstree
+ // destroy existing
+ try { $(treeDiv).jstree(true).destroy(); } catch(e) {}
+ $(treeDiv).jstree({ 'core': { 'data': [ treeData ], 'check_callback': true }, 'plugins': ['dnd','wholerow'] });
+
+ // when node moved, send updated tree to backend
+ $(treeDiv).on('move_node.jstree', function(e, data) {
+   const tree = $(treeDiv).jstree(true).get_json('#', { 'flat': false });
+   // send to backend
+   fetch(`/api/dances/${encodeURIComponent(danceName)}/tree`, {
+     method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ tree: tree[0] })
+   }).then(r=>r.json()).then(j=>{ if (j.status==='ok') alert('Tree updated'); else alert('Update failed'); }).catch(err=>{ alert('Update failed'); });
+ });
 }
 
-/**
- * Event-Handler: Klick auf den 'Laden'-Button
- */
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('loadButton').addEventListener('click', loadAndRender);
-  // Laden beim ersten Aufruf
-  loadAndRender();
+async function onFigureClick(e) {
+ const name = e.currentTarget.dataset.file;
+ const detail = document.getElementById('figure-json');
+ const header = document.getElementById('figure-name');
+ const r = await api(`/api/figures/${encodeURIComponent(name)}`);
+ if (r.status !== 200) { detail.textContent = 'Error loading figure'; return; }
+ header.textContent = r.body.Name || name;
+ detail.textContent = JSON.stringify(r.body, null, 2);
+ // store current selected name
+ document.body.dataset.selectedFigure = name;
+}
+
+async function previewFigure() {
+ const name = document.body.dataset.selectedFigure;
+ if (!name) { alert('No figure selected'); return; }
+ const anchor = [parseInt(document.getElementById('anchor-row').value||0,10), parseInt(document.getElementById('anchor-col').value||0,10)];
+ let addons = {};
+ try { addons = JSON.parse(document.getElementById('addons-json').value); } catch(e) { alert('Invalid addons JSON'); return; }
+ const body = { figure: name, anchor: anchor, addons: addons, couples: 3, dance_name: 'preview' };
+ const res = await api('/api/dancefloor/execute', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+ if (res.status === 200) {
+   console.log('Preview floor', res.body.floor);
+   alert('Preview succeeded (see console)');
+ } else if (res.status === 409) {
+   showConflict(res.body);
+ } else {
+   alert('Preview failed: '+(res.body && res.body.error));
+ }
+}
+
+async function executeFigure() {
+ const name = document.body.dataset.selectedFigure;
+ if (!name) { alert('No figure selected'); return; }
+ const anchor = [parseInt(document.getElementById('anchor-row').value||0,10), parseInt(document.getElementById('anchor-col').value||0,10)];
+ let addons = {};
+ try { addons = JSON.parse(document.getElementById('addons-json').value); } catch(e) { alert('Invalid addons JSON'); return; }
+ const body = { figure: name, anchor: anchor, addons: addons, couples: 3, dance_name: 'UI-exec' };
+ const res = await api('/api/dancefloor/execute', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+ if (res.status === 200) {
+   document.getElementById('status').textContent = 'Executed';
+   alert('Execution succeeded. Check console for floor.');
+   console.log(res.body.floor);
+ } else if (res.status === 409) {
+   showConflict(res.body);
+ } else {
+   alert('Execution failed: ' + (res.body && res.body.error));
+ }
+}
+
+function showConflict(body) {
+ const modal = document.getElementById('conflict-modal');
+ modal.classList.remove('hidden');
+ document.getElementById('conflict-message').textContent = body.error || 'Konflikt';
+ document.getElementById('conflict-details').textContent = JSON.stringify(body.conflicts, null, 2);
+}
+
+function hideConflict() {
+ document.getElementById('conflict-modal').classList.add('hidden');
+}
+
+function wire() {
+ document.getElementById('execute-figure').addEventListener('click', executeFigure);
+ document.getElementById('preview-figure').addEventListener('click', previewFigure);
+ document.getElementById('dismiss').addEventListener('click', hideConflict);
+ document.getElementById('inspect-tree').addEventListener('click', ()=>{ console.log('Inspect tree'); hideConflict(); });
+ document.getElementById('edit-params').addEventListener('click', ()=>{ console.log('Edit params'); hideConflict(); });
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+ await loadFigures();
+ await loadDances();
+ wire();
 });

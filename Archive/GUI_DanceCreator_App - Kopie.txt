@@ -1,0 +1,209 @@
+"""
+DanceTreeApp - ein kleines Flask-Backend für die HTML5-GUI.
+
+Beschreibung:
+ - Liefert die HTML-Seite (templates/index.html)
+ - Stellt statische Dateien unter /static bereit (style_old.css, app.js)
+ - Bietet einen einfachen API-Endpunkt /tree, der eine JSON-Datei (aus ./Figures)
+   einliest und als flache Liste von Knoten mit id/parent_id zurückgibt.
+
+Anleitung:
+1. Kopiere diese Ordnerstruktur in dein Projekt oder nutze sie standalone:
+    DanceTreeApp/
+    ├── GUI_DanceCreator_App.py
+    ├── templates/
+    │   └── index.html
+    ├── static/
+    │   ├── style_old.css
+    │   └── app.js
+    └── Figures/         <-- JSON-Dateien hier ablegen (z. B. HLReelAD.json)
+
+2. Abhängigkeiten installieren:
+    pip install flask
+
+3. Starten:
+    python GUI_DanceCreator_App.py
+
+4. Öffne im Browser:
+    http://127.0.0.1:5000
+
+Hinweis:
+ - Die GUI zeigt links die Figurenliste und rechts die Baumstruktur.
+ - Die mittlere Tanzfläche ist ein Platzhalter (keine Drag&Drop-Funktionalität).
+ - Diese Datei ist ausführlich kommentiert; passe die Parserlogik im Bereich `build_tree_from_json`
+   an, falls deine JSON-Struktur stärker von den Beispielen abweicht.
+"""
+
+from flask import Flask, jsonify, request, render_template, send_from_directory
+import json
+import os
+from typing import Any, Dict, List, Optional
+import uuid
+
+app = Flask(__name__, template_folder="templates", static_folder="static")
+
+# Ordner, in dem der Benutzer seine JSON-Files ablegen soll
+FIGURES_DIR = os.path.join(os.path.dirname(__file__), "Figures")
+DANCES_DIR = os.path.join(os.path.dirname(__file__), "Dances")
+Figure_DB = {}
+
+def load_Figuers():
+    global Figure_DB
+    Figure_DB = {}
+    if not os.path.isdir(FIGURES_DIR):
+        return
+    for fname in os.listdir(FIGURES_DIR):
+        if not fname.endswith('.json'):
+            continue
+        fpath = os.path.join(FIGURES_DIR, fname)
+        try:
+            with open(fpath, encoding='utf-8') as f:
+                data = json.load(f)
+            name = data.get('Name') or data.get('name') or fname[:-5]
+            Figure_DB[name] = data
+            if Figure_DB[name].has_key('FigureList'):
+                Figure_DB[name]['type'] = 'complex'
+            elif Figure_DB[name].has_key('Addons'):
+                Figure_DB[name]['type'] = 'simple'
+            else:
+                Figure_DB[name]['type'] = 'unknown'
+
+        except Exception as e:
+            continue
+
+# ***************************************
+# ***   Funktionen zum Baumdiagramm   ***
+# ***************************************
+
+# unique ID
+nid = f"_{uuid.uuid4().hex[:8]}"
+
+# Funktion zum Erzeugen eines jsTree-Knotens
+def make_node(item_id, Data):
+    node = {
+        "id": Data['Name'] + '_' + nid,
+        "text": Data['Name'],
+        "type": Data['type'],
+        "meta": Data
+    }
+    if Data['type'] == 'complex':
+        node["children"] = True
+    return node
+
+@app.route('/get_nodes/<node_Name>')
+def get_nodes(node_Name):
+    if Figure_DB.has_key(node_Name):
+        data = Figure_DB[node_Name]
+        return make_node(node_Name, data)
+    else:
+        node = {
+            "id": "Dance (leer)",
+            "parent_id": None,
+            "name": "Dance (leer)",
+            "type": "simple",
+            "meta": {}
+        }
+    return node
+
+@app.route("/")
+def index():
+    """
+    Liefert die Hauptseite (templates/index.html).
+    """
+    return render_template("index.html")
+
+@app.route("/tree")
+def tree():
+    """
+    API-Endpunkt:
+      GET /tree?file=FILENAME
+
+    Liest die angegebene JSON-Datei aus dem FIGURES_DIR oder verwendet eine Standarddatei
+    (HLReelAD.json). Gibt eine JSON-Liste von Knoten zurück.
+    Ist keine Datei vorhanden oder leer, wird ein Root-Knoten (type='root') erzeugt.
+    """
+    fname = request.args.get("file") or "HLReelAD.json"
+    candidates = [
+        fname,
+        os.path.join(FIGURES_DIR, fname),
+        os.path.join(DANCES_DIR, fname),
+        os.path.join(os.path.dirname(__file__), fname)
+    ]
+    data = None
+    for c in candidates:
+        if os.path.isfile(c):
+            with open(c, "r", encoding="utf-8") as f:
+                try:
+                    data = json.load(f)
+                except Exception:
+                    data = None
+            break
+
+    if data is None:
+        # Keine Datei gefunden oder Datei leer/fehlerhaft: Root-Knoten erzeugen
+        nodes = [{
+            "id": 1,
+            "parent_id": None,
+            "name": "Dance (leer)",
+            "type": "root",
+            "meta": {}
+        }]
+        return jsonify(nodes)
+
+    nodes = build_tree_from_json(data)
+    # Falls build_tree_from_json keine Knoten liefert, Root-Knoten erzeugen
+    if not nodes:
+        nodes = [{
+            "id": 1,
+            "parent_id": None,
+            "name": "Dance (leer)",
+            "type": "root",
+            "meta": {}
+        }]
+    return jsonify(nodes)
+
+@app.route('/figures')
+def figures():
+    """
+    Liefert eine Liste aller Figuren im Figures-Verzeichnis.
+    Für jede Figur werden Name, Typ (simple/complex) und Beschreibung extrahiert.
+    Nur noch FigureList wird für komplexe Figuren akzeptiert.
+    """
+    result = []
+    for fname in sorted(os.listdir(FIGURES_DIR)):
+        if not fname.endswith('.json'):
+            continue
+        fpath = os.path.join(FIGURES_DIR, fname)
+        try:
+            with open(fpath, encoding='utf-8') as f:
+                data = json.load(f)
+            # Name extrahieren
+            name = data.get('Name') or data.get('name') or fname[:-5]
+            # Beschreibung extrahieren
+            desc = data.get('Desc') or data.get('desc') or ''
+            # Typ bestimmen: simple, complex, unknown
+            if 'FigureList' in data:
+                ftype = 'complex'
+            elif 'Addons' in data or 'addons' in data:
+                ftype = 'simple'
+            else:
+                ftype = 'unknown'
+
+            if ftype != 'unknown':
+                result.append({
+                    'name': name,
+                    'type': ftype,
+                    'desc': desc,
+                    'filename': fname
+                })
+
+        except Exception as e:
+            # Fehlerhafte Datei überspringen
+            continue
+    return jsonify(result)
+
+if __name__ == "__main__":
+    # Sicherstellen, dass das Figures-Verzeichnis existiert
+    os.makedirs(FIGURES_DIR, exist_ok=True)
+    print("Starte DanceTreeApp (Flask). Lege JSON-Dateien in das Verzeichnis 'Figures'.")
+    app.run(debug=True)

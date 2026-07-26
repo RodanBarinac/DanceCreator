@@ -2,606 +2,282 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>GUI mit Resizable Bereichen</title>
-    <!-- Inline-Data-URI Favicon: verhindert Browser-Request an /favicon.ico -->
+    <title>DanceCreator</title>
     <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=">
-    <!-- Einbinden von CSS aus dem static-Ordner -->
-    <link rel="stylesheet" href="../static/Dance_Creator.css">
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/themes/default/style.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
-
-    <!-- kleine Auswahl-Styles für Karten -->
     <style>
-      .card.selected {
-        background: #f0f7ff;
-        border-color: #9ec5ff;
-        box-shadow: 0 0 0 2px rgba(158,197,255,0.15);
+      * { box-sizing: border-box; }
+      body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
+      
+      /* Header/Toolbar */
+      header { background: #333; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      header h2 { margin: 0; font-size: 20px; }
+      #status { font-size: 11px; color: #bbb; }
+      .toolbar-buttons { display: flex; gap: 8px; }
+      
+      /* Layout */
+      #container { display: flex; height: calc(100vh - 50px); }
+      .panel { padding: 12px; overflow: auto; background: white; }
+      #left { width: 320px; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; }
+      #middle { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #e0e0e0; min-width: 200px; }
+      #right { width: 300px; display: flex; flex-direction: column; min-width: 200px; }
+      
+      /* Splitters */
+      .splitter { width: 6px; background: linear-gradient(90deg, rgba(0,0,0,0.02), rgba(0,0,0,0.04)); cursor: col-resize; user-select: none; transition: background 0.2s; }
+      .splitter:hover { background: linear-gradient(90deg, rgba(0,0,0,0.06), rgba(0,0,0,0.08)); }
+      
+      /* Left Panel - Figure List */
+      #left h3 { margin: 0 0 10px 0; font-size: 14px; }
+      #search-box { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+      #search { padding: 6px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px; }
+      #filter-formation { padding: 6px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px; }
+      
+      #fig-list { list-style: none; padding: 0; margin: 0; flex: 1; overflow-y: auto; }
+      #fig-list li { 
+        padding: 8px; 
+        cursor: pointer; 
+        border-bottom: 1px solid #f0f0f0; 
+        font-size: 12px;
+        transition: background 0.2s;
       }
-      .card:hover { cursor: pointer; }
-
-      /* Gruppenkarten Styling */
-      .card.group-card { background: linear-gradient(90deg,#fbfbff,#f6fcff); border-left-width: 4px; }
-      .card.group-card .group-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 4px; margin-right: 8px; font-weight: 700; }
-      .card.group-sequenziell { border-left-color: #ffd8a8; }
-      .card.group-sequenziell .group-icon { background: #fff4e6; color: #ad5b00; }
-      .card.group-parallel { border-left-color: #cce7ff; }
-      .card.group-parallel .group-icon { background: #e8f6ff; color: #0b66a3; }
-
-      .group-label { display:flex; align-items:center; }
-      .group-name { font-weight: 600; }
-
-      /* Grundlegendes Layout, damit Panels und Tree sichtbar sind */
-      html, body { height: 100%; margin: 0; padding: 0; }
-      #container { display: flex; height: calc(100vh - 64px); box-sizing: border-box; }
-      .panel { padding: 8px; box-sizing: border-box; overflow: auto; }
-      #left { width: 320px; min-width: 200px; border-right: 1px solid #eee; display: flex; flex-direction: column; }
-      #middle { flex: 1; min-width: 200px; }
-      #right { width: 360px; min-width: 240px; border-left: 1px solid #eee; display: flex; flex-direction: column; }
-
-      /* Splitter optisch sichtbar */
-      .splitter { width: 8px; cursor: col-resize; background: linear-gradient(90deg, rgba(0,0,0,0.02), rgba(0,0,0,0.04)); }
-
-      /* jsTree Container */
-      #treeview { flex: 1; min-height: 180px; background: #fff; padding: 6px; border-radius: 4px; border: 1px solid #eee; overflow: auto; }
-
-      /* Figuren-Liste */
-      #figure-list { display: block; overflow: auto; max-height: calc(100% - 120px); }
-
+      #fig-list li:hover { background: #f9f9f9; }
+      #fig-list li.selected { background: #e3f2fd; color: #1565c0; font-weight: 500; }
+      
+      /* Middle Panel - Details */
+      #middle h3 { margin: 0 0 10px 0; font-size: 14px; }
+      #figure-details { flex: 1; overflow-y: auto; }
+      #figure-name { display: block; font-size: 14px; font-weight: bold; margin-bottom: 8px; }
+      #figure-json { 
+        background: #fafafa; 
+        padding: 8px; 
+        border-radius: 3px; 
+        max-height: 150px; 
+        overflow: auto; 
+        font-size: 11px; 
+        font-family: monospace; 
+        white-space: pre-wrap; 
+        word-break: break-word;
+        border: 1px solid #e0e0e0;
+        margin-bottom: 10px;
+      }
+      
+      /* Control Section */
+      .control-section { border-top: 1px solid #e0e0e0; padding-top: 10px; font-size: 12px; }
+      .control-section h4 { margin: 0 0 8px 0; font-size: 12px; }
+      .form-group { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 12px; }
+      .form-group input { width: 60px; padding: 4px; border: 1px solid #ddd; border-radius: 3px; }
+      .form-group label { flex-shrink: 0; }
+      textarea { width: 100%; height: 50px; padding: 6px; font-family: monospace; font-size: 11px; border: 1px solid #ddd; border-radius: 3px; margin-bottom: 6px; }
+      
+      .button-group { display: flex; gap: 6px; margin-top: 8px; }
+      button { padding: 6px 12px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 3px; font-size: 12px; }
+      button:hover { background: #0056b3; }
+      
+      /* Right Panel - Tree */
+      #right h3 { margin: 0 0 10px 0; font-size: 14px; }
+      #dance-select { padding: 6px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px; margin-bottom: 8px; }
+      #dance-tree { flex: 1; border: 1px solid #ddd; padding: 6px; background: #fafafa; overflow: auto; border-radius: 3px; }
+      
+      /* Modal */
+      .hidden { display: none !important; }
+      #conflict-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+      .modal-box { background: white; padding: 20px; border-radius: 6px; max-width: 500px; max-height: 80vh; overflow: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+      .modal-box h3 { margin-top: 0; }
+      #conflict-details { background: #f5f5f5; padding: 8px; border-radius: 3px; max-height: 200px; overflow: auto; font-size: 11px; font-family: monospace; white-space: pre-wrap; word-break: break-word; margin-bottom: 10px; border: 1px solid #ddd; }
+      .modal-buttons { display: flex; gap: 6px; justify-content: flex-end; margin-top: 10px; }
+      
+      /* jstree overrides */
+      .jstree-node { margin-left: 0; }
     </style>
-
 </head>
 <body>
-  <div id="header">
-    <div id="header-left">
-        <div id="file-path">Pfad: /path/to/current/file.dc</div>
+  <!-- Header / Toolbar -->
+  <header>
+    <div id="status">Ready</div>
+    <h2>DanceCreator</h2>
+    <div class="toolbar-buttons">
+      <button id="btn-load" title="Load Dance">Load</button>
+      <button id="btn-save" title="Save Dance">Save</button>
     </div>
-    <div id="header-center">
-        <h2>Dance Creator</h2>
-    </div>
-    <div id="header-right">
-        <button id="btn-load">Load</button>
-        <button id="btn-save">Save</button>
-    </div>
-  </div>
-<!-- Grundsätzlicher Aufbau -->
+  </header>
+
+  <!-- Main Container -->
   <div id="container">
+    
+    <!-- Left Panel: Figure Catalog -->
     <div id="left" class="panel">
-      <h3>Figuren</h3>
-      <!-- Suchfeld -->
-      <input type="text" id="search" placeholder="Suche nach Name..." style="width: 100%; margin-bottom: 10px;">
-
-      <label for="filter">Filter (Formation):</label>
-      <select id="filter">
+      <h3>Figuren-Katalog</h3>
+      
+      <div id="search-box">
+        <input id="search" type="text" placeholder="Suche..." />
+        <select id="filter-formation">
           <option value="">Alle Formationen</option>
-      </select>
-        <div id="figure-list"></div>
+        </select>
+      </div>
+      
+      <ul id="fig-list"></ul>
     </div>
 
+    <!-- Splitter 1 -->
     <div class="splitter" id="splitter-left"></div>
+
+    <!-- Middle Panel: Figure Details & Controls -->
     <div id="middle" class="panel">
-      <h3>Arbeitsbereich</h3>
+      <h3>Details</h3>
+      
+      <div id="figure-details">
+        <span id="figure-name">Keine Figur gewählt</span>
+        <div id="figure-json"></div>
+      </div>
+      
+      <div class="control-section">
+        <h4>Figur ausführen (Modus B)</h4>
+        
+        <div class="form-group">
+          <label>Anchor:</label>
+          <input id="anchor-row" type="number" value="0" />
+          <span>×</span>
+          <input id="anchor-col" type="number" value="0" />
+        </div>
+        
+        <label style="font-size: 12px;">Addons (JSON):</label>
+        <textarea id="addons-json">{}</textarea>
+        
+        <div class="button-group">
+          <button id="preview-figure">Preview</button>
+          <button id="execute-figure">Execute</button>
+        </div>
+      </div>
     </div>
+
+    <!-- Splitter 2 -->
     <div class="splitter" id="splitter-right"></div>
+
+    <!-- Right Panel: Dance Tree -->
     <div id="right" class="panel">
-      <h3>Dancestruktur</h3>
-      <div id="treeview"></div>
+      <h3>Tanz-Struktur</h3>
+      <select id="dance-select"></select>
+      <div id="dance-tree"></div>
     </div>
   </div>
 
+  <!-- Conflict Modal -->
+  <div id="conflict-modal" class="hidden">
+    <div class="modal-box">
+      <h3 style="margin-top: 0;">⚠ Konflikt erkannt</h3>
+      <p id="conflict-message">Tanzfläche Konflikt</p>
+      <div>
+        <strong>Details:</strong>
+        <div id="conflict-details"></div>
+      </div>
+      <div class="modal-buttons">
+        <button id="dismiss">Abbrechen</button>
+        <button id="inspect-tree">Tree anschauen</button>
+        <button id="edit-params">Parameter ändern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Figure Management Scripts -->
   <script>
+    // Resizable Splitters
     function makeSplitter(splitterId, leftPanelId, rightPanelId) {
       const splitter = document.getElementById(splitterId);
       const leftPanel = document.getElementById(leftPanelId);
       const rightPanel = document.getElementById(rightPanelId);
-
-      splitter.addEventListener('mousedown', function(e) {
+      
+      splitter.addEventListener('mousedown', (e) => {
         e.preventDefault();
-        document.addEventListener('mousemove', resize);
-        document.addEventListener('mouseup', stopResize);
+        const startX = e.clientX;
+        const startLeftWidth = leftPanel.offsetWidth;
+        const startRightWidth = rightPanel.offsetWidth;
+        const container = document.getElementById('container');
+        
+        function onMouseMove(e) {
+          const deltaX = e.clientX - startX;
+          const newLeftWidth = startLeftWidth + deltaX;
+          const newRightWidth = startRightWidth - deltaX;
+          
+          if (newLeftWidth > 150 && newRightWidth > 150) {
+            leftPanel.style.width = newLeftWidth + 'px';
+            rightPanel.style.width = newRightWidth + 'px';
+          }
+        }
+        
+        function onMouseUp() {
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+        }
+        
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
       });
-
-      function resize(e) {
-        const totalWidth = splitter.parentNode.offsetWidth;
-        const leftWidth = e.clientX;
-        const rightWidth = totalWidth - leftWidth - 10; // 10 = 2 splitters width
-
-        if (leftWidth > 100 && rightWidth > 100) {
-          leftPanel.style.width = leftWidth + 'px';
-          rightPanel.style.width = rightWidth + 'px';
-        }
+    }
+    
+    // Init splitters when DOM ready
+    document.addEventListener('DOMContentLoaded', () => {
+      makeSplitter('splitter-left', 'left', 'middle');
+      makeSplitter('splitter-right', 'middle', 'right');
+    });
+    
+    // Load & Save Buttons (Toolbar)
+    document.getElementById('btn-load').addEventListener('click', () => {
+      const danceSelect = document.getElementById('dance-select');
+      if (danceSelect && danceSelect.value) {
+        alert('Dance geladen: ' + danceSelect.value);
+      } else {
+        alert('Bitte zuerst einen Tanz aus der Liste auswählen');
       }
+    });
 
-      function stopResize() {
-        document.removeEventListener('mousemove', resize);
-        document.removeEventListener('mouseup', stopResize);
+    document.getElementById('btn-save').addEventListener('click', () => {
+      alert('Save-Funktion: wird später implementiert (PUT /api/dances/<name>)');
+    });
+
+    // Formation Filter Population
+    async function populateFormations() {
+      try {
+        const r = await fetch('/api/figures');
+        if (r.status !== 200) return;
+        const figures = await r.json();
+        const formations = new Set();
+        figures.forEach(fig => {
+          const formation = fig.Formation || fig.formation || fig.Type || fig.type || 'Other';
+          formations.add(formation);
+        });
+        const select = document.getElementById('filter-formation');
+        Array.from(formations).sort().forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f;
+          opt.textContent = f;
+          select.appendChild(opt);
+        });
+      } catch (e) {
+        console.error('Failed to populate formations:', e);
       }
     }
 
-    makeSplitter('splitter-left', 'left', 'middle');
-    makeSplitter('splitter-right', 'middle', 'right');
+    // Apply Filters to List
+    function applyFilters() {
+      const search = document.getElementById('search').value.toLowerCase();
+      const formation = document.getElementById('filter-formation').value;
+      const items = document.querySelectorAll('#fig-list li');
+      items.forEach(li => {
+        const name = (li.textContent || '').toLowerCase();
+        const figFormation = li.dataset.formation || '';
+        const matchesSearch = !search || name.includes(search);
+        const matchesFormation = !formation || figFormation === formation;
+        li.style.display = (matchesSearch && matchesFormation) ? 'block' : 'none';
+      });
+    }
+
+    document.getElementById('search').addEventListener('input', applyFilters);
+    document.getElementById('filter-formation').addEventListener('change', applyFilters);
+
+    // Init on load
+    window.addEventListener('DOMContentLoaded', populateFormations);
   </script>
-
-
-
-  <script>
-// Verstecktes File-Input erzeugen
-const fileInput = document.createElement('input');
-fileInput.type = 'file';
-fileInput.accept = '.json';
-fileInput.style.display = 'none';
-fileInput.webkitdirectory = false;
-document.body.appendChild(fileInput);
-
-// Load-Button klick → Datei-Auswahl
-document.getElementById('btn-load').addEventListener('click', () => {
-    fetch('/dances')
-        .then(res => res.json())
-        .then(list => {
-            if (!list || !Array.isArray(list) || list.length === 0) {
-                console.error('Keine Dance-Dateien auf dem Server gefunden.');
-                return;
-            }
-            showDanceSelectionModal(list);
-        })
-        .catch(err => {
-            console.error('Fehler beim Abfragen der Dance-Liste:', err);
-        });
-});
-
-function showDanceSelectionModal(files) {
-    const overlay = document.createElement('div');
-    overlay.style.position = 'fixed'; overlay.style.left = 0; overlay.style.top = 0;
-    overlay.style.right = 0; overlay.style.bottom = 0; overlay.style.background = 'rgba(0,0,0,0.4)';
-    overlay.style.zIndex = 10000;
-
-    const box = document.createElement('div');
-    box.style.width = '480px'; box.style.maxWidth = '90%'; box.style.margin = '12vh auto';
-    box.style.background = '#fff'; box.style.borderRadius = '6px'; box.style.padding = '12px';
-    box.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
-
-    const title = document.createElement('h4'); title.textContent = 'Dance-Datei wählen'; title.style.margin = '0 0 8px 0';
-    box.appendChild(title);
-
-    const select = document.createElement('select'); select.style.width = '100%'; select.style.padding = '6px';
-    files.forEach(f => { const opt = document.createElement('option'); opt.value = f; opt.textContent = f; select.appendChild(opt); });
-    box.appendChild(select);
-
-    const btnRow = document.createElement('div'); btnRow.style.display = 'flex'; btnRow.style.justifyContent = 'flex-end'; btnRow.style.gap = '8px'; btnRow.style.marginTop = '10px';
-    const btnCancel = document.createElement('button'); btnCancel.textContent = 'Abbrechen'; btnCancel.style.padding = '6px 10px';
-    btnCancel.addEventListener('click', () => document.body.removeChild(overlay));
-    const btnOk = document.createElement('button'); btnOk.textContent = 'Laden'; btnOk.style.padding = '6px 10px';
-    btnOk.addEventListener('click', () => { const chosen = select.value; if (chosen) reloadTreeFromFile(chosen); document.body.removeChild(overlay); });
-    btnRow.appendChild(btnCancel); btnRow.appendChild(btnOk); box.appendChild(btnRow);
-
-    overlay.appendChild(box); document.body.appendChild(overlay); select.focus();
-}
-
-// Wenn Datei gewählt → an /tree senden
-fileInput.addEventListener('change', () => {
-    if (!fileInput.files.length) return;
-    const file = fileInput.files[0];
-    const fileName = file.name;
-    reloadTreeFromFile(fileName);
-});
-
-// Funktion zum Neuladen des Trees
-function reloadTreeFromFile(fileName) {
-    fetch(`/tree?file=${encodeURIComponent(fileName)}`)
-        .then(res => res.json())
-        .then(nodes => {
-            const jsNodes = (Array.isArray(nodes) ? nodes : []).map(n => {
-                const id = (n.id !== undefined && n.id !== null) ? String(n.id) : (n.name || n.text || Math.random().toString(36).slice(2));
-                const parent = (n.parent_id === null || n.parent_id === undefined) ? '#' : String(n.parent_id);
-                return {
-                    id: id,
-                    parent: parent,
-                    text: n.text || n.name || String(id),
-                    children: (n.children === true) || (n.hasOwnProperty('children') && Array.isArray(n.children) ? n.children : false),
-                    li_attr: { meta: (n.meta && typeof n.meta === 'object') ? n.meta : {} }
-                };
-            });
-
-            const inst = $('#treeview').jstree(true);
-            if (!inst) {
-                $('#treeview').jstree({
-                    'core': { 'data': jsNodes, 'check_callback': true },
-                    'plugins': ['dnd', 'contextmenu', 'wholerow'],
-                    'contextmenu': {
-                        'items': function(node) {
-                            const tree = $('#treeview').jstree(true);
-                            let defaultItems = {};
-                            try {
-                                if ($.jstree && $.jstree.defaults && $.jstree.defaults.contextmenu && typeof $.jstree.defaults.contextmenu.items === 'function') {
-                                    defaultItems = $.jstree.defaults.contextmenu.items.call(this, node) || {};
-                                }
-                            } catch (err) { defaultItems = {}; }
-                            const meta = (node && node.li_attr && node.li_attr.meta) ? node.li_attr.meta : (node && node.original && node.original.li_attr && node.original.li_attr.meta ? node.original.li_attr.meta : {});
-                            const isGroup = (meta && meta.type === 'group');
-                            if (isGroup) {
-                                defaultItems.rename = { 'label': 'Umbenennen', 'action': function (obj) { try { tree.edit(node.id); } catch (e) {} } };
-                            } else {
-                                delete defaultItems.rename;
-                            }
-                            return defaultItems;
-                        }
-                    },
-                    'dnd': { 'inside_pos': 'last', 'check_while_dragging': true }
-                });
-
-                // enable dblclick rename for group nodes
-                $('#treeview').on('dblclick.jstree', function(e) {
-                    const inst = $('#treeview').jstree(true);
-                    if (!inst) return;
-                    let el = e.target;
-                    while (el && el !== this && el.tagName !== 'LI') el = el.parentNode;
-                    if (!el || el === this) return;
-                    const node = inst.get_node(el.id);
-                    if (!node) return;
-                    const meta = (node.li_attr && node.li_attr.meta) ? node.li_attr.meta : (node.original && node.original.li_attr && node.original.li_attr.meta ? node.original.li_attr.meta : {});
-                    if (meta && meta.type === 'group') {
-                        try { inst.edit(node.id); } catch (err) {}
-                    }
-                });
-
-                $('#treeview').on('rename_node.jstree', function(e, data) {
-                    try {
-                        const node = data.node;
-                        if (!node) return;
-                        const meta = (node.li_attr && node.li_attr.meta) ? node.li_attr.meta : (node.original && node.original.li_attr && node.original.li_attr.meta ? node.original.li_attr.meta : {});
-                        if (meta && meta.type === 'group') {
-                            meta.Name = node.text;
-                            try { node.li_attr = node.li_attr || {}; node.li_attr.meta = meta; } catch(e){}
-                            try {
-                                const tree = $('#treeview').jstree(true);
-                                if (tree && tree._model && tree._model.data && tree._model.data[node.id]) {
-                                    tree._model.data[node.id].li_attr = tree._model.data[node.id].li_attr || {};
-                                    tree._model.data[node.id].li_attr.meta = meta;
-                                }
-                            } catch(e){}
-                        }
-                    } catch (err) { console.warn('rename_node handler failed', err); }
-                });
-
-            } else {
-                inst.settings.core.data = jsNodes;
-                inst.refresh();
-            }
-        })
-        .catch(err => {
-            console.error('Fehler beim Laden des Trees:', err);
-        });
-}
-</script>
-
-
-<script>
-// Erzeugt und füllt den jsTree mit einer Beispiel-Dance-Struktur.
-function populateJsTree() {
-     const nodes = [
-        { id: 'dance-node', parent: '#', text: 'Dance', li_attr: { meta: { Set: '', type: 'group', mode: 'sequenziell', Name: 'Dance', Desc: 'Root: sequenzielle Gruppe' } } },
-        { id: 'n1', parent: 'dance-node', text: '1cCast1p', li_attr: { meta: {} } },
-        { id: 'complex-1', parent: 'dance-node', text: 'ComplexFigure', state: { opened: true }, li_attr: { meta: {} } },
-        { id: 'c1', parent: 'complex-1', text: '1cRT', li_attr: { meta: {} } },
-        { id: 'c2', parent: 'complex-1', text: '1cWait', li_attr: { meta: {} } },
-        { id: 'n3', parent: 'dance-node', text: '6Hrb', li_attr: { meta: {} } }
-    ];
-
-    const inst = $('#treeview').jstree(true);
-    if (!inst) {
-        $('#treeview').jstree({
-            'core': { 'data': nodes, 'check_callback': true },
-            'plugins': ['dnd', 'contextmenu', 'wholerow'],
-            'contextmenu': {
-                'items': function(node) {
-                    const tree = $('#treeview').jstree(true);
-                    let defaultItems = {};
-                    try {
-                        if ($.jstree && $.jstree.defaults && $.jstree.defaults.contextmenu && typeof $.jstree.defaults.contextmenu.items === 'function') {
-                            defaultItems = $.jstree.defaults.contextmenu.items.call(this, node) || {};
-                        }
-                    } catch (err) { defaultItems = {}; }
-                    const meta = (node && node.li_attr && node.li_attr.meta) ? node.li_attr.meta : (node && node.original && node.original.li_attr && node.original.li_attr.meta ? node.original.li_attr.meta : {});
-                    const isGroup = (meta && meta.type === 'group');
-                    if (isGroup) {
-                        defaultItems.rename = { 'label': 'Umbenennen', 'action': function (obj) { try { tree.edit(node.id); } catch (e) {} } };
-                    } else {
-                        delete defaultItems.rename;
-                    }
-                    return defaultItems;
-                }
-            },
-            'dnd': { 'inside_pos': 'last', 'check_while_dragging': true }
-        });
-
-        // dblclick/rename handlers set in reloadTreeFromFile as well; keep them available
-        $('#treeview').on('dblclick.jstree', function(e) {
-            const inst = $('#treeview').jstree(true);
-            if (!inst) return;
-            let el = e.target;
-            while (el && el !== this && el.tagName !== 'LI') el = el.parentNode;
-            if (!el || el === this) return;
-            const node = inst.get_node(el.id);
-            if (!node) return;
-            const meta = (node.li_attr && node.li_attr.meta) ? node.li_attr.meta : (node.original && node.original.li_attr && node.original.li_attr.meta ? node.original.li_attr.meta : {});
-            if (meta && meta.type === 'group') {
-                try { inst.edit(node.id); } catch (err) {}
-            }
-        });
-
-        $('#treeview').on('rename_node.jstree', function(e, data) {
-            try {
-                const node = data.node;
-                if (!node) return;
-                const meta = (node.li_attr && node.li_attr.meta) ? node.li_attr.meta : (node.original && node.original.li_attr && node.original.li_attr.meta ? node.original.li_attr.meta : {});
-                if (meta && meta.type === 'group') {
-                    meta.Name = node.text;
-                    try { node.li_attr = node.li_attr || {}; node.li_attr.meta = meta; } catch(e){}
-                    try {
-                        const tree = $('#treeview').jstree(true);
-                        if (tree && tree._model && tree._model.data && tree._model.data[node.id]) {
-                            tree._model.data[node.id].li_attr = tree._model.data[node.id].li_attr || {};
-                            tree._model.data[node.id].li_attr.meta = meta;
-                        }
-                    } catch(e){}
-                }
-            } catch (err) { console.warn('rename_node handler failed', err); }
-        });
-
-    } else {
-         inst.settings.core.data = nodes.map(n => { n.li_attr = n.li_attr || {}; n.li_attr.meta = n.li_attr.meta || {}; return n; });
-         inst.settings.plugins = inst.settings.plugins || [];
-         if (!inst.settings.plugins.includes('dnd')) inst.settings.plugins.push('dnd');
-         if (!inst.settings.plugins.includes('contextmenu')) inst.settings.plugins.push('contextmenu');
-         if (!inst.settings.plugins.includes('wholerow')) inst.settings.plugins.push('wholerow');
-         inst.refresh();
-     }
-    try { const t = $('#treeview').jstree(true); if (t) t.refresh(); } catch (e) {}
-}
-
-// Einmaliger Aufruf beim Laden der Seite
-document.addEventListener('DOMContentLoaded', function() {
-    populateJsTree();
-    if (typeof loadFigures === 'function') loadFigures();
-});
-
-// Zeigt Metadaten eines jsTree-Knotens im Arbeitsbereich an (speziell Set für dance-node)
-function showNodeMeta(nodeOrId) {
-    const tree = $('#treeview').jstree(true);
-    if (!tree) return;
-    const node = (typeof nodeOrId === 'string') ? tree.get_node(nodeOrId) : nodeOrId;
-    if (!node) return;
-
-    let meta = {};
-    if (node.li_attr && node.li_attr.meta) meta = Object.assign({}, node.li_attr.meta);
-    else if (node.original && node.original.li_attr && node.original.li_attr.meta) meta = Object.assign({}, node.original.li_attr.meta);
-    else if (tree._model && tree._model.data && tree._model.data[node.id] && tree._model.data[node.id].li_attr && tree._model.data[node.id].li_attr.meta) meta = Object.assign({}, tree._model.data[node.id].li_attr.meta);
-
-    const middle = document.getElementById('middle');
-    middle.innerHTML = '<h3>Arbeitsbereich</h3>';
-    const wrapper = document.createElement('div'); wrapper.style.padding = '8px';
-
-    const title = document.createElement('h4'); title.textContent = node.text || node.id; wrapper.appendChild(title);
-    const idLine = document.createElement('div'); idLine.textContent = 'Node ID: ' + node.id; idLine.style.fontSize = '0.9rem'; idLine.style.color = '#666'; wrapper.appendChild(idLine);
-
-    if (node.id === 'dance-node') {
-        const label = document.createElement('label'); label.textContent = 'Set:'; label.style.display = 'block'; label.style.marginTop = '8px';
-        const select = document.createElement('select'); select.style.marginTop = '4px';
-        const emptyOpt = document.createElement('option'); emptyOpt.value = ''; emptyOpt.textContent = '(nicht gesetzt)'; select.appendChild(emptyOpt);
-        for (let i = 1; i <= 8; i++) {
-            const opt = document.createElement('option'); opt.value = i + 'C-Longwise Set'; opt.textContent = i + 'C-Longwise Set'; select.appendChild(opt);
-        }
-        try { select.value = meta.Set || ''; } catch (e) { }
-
-        select.addEventListener('change', function() {
-            meta.Set = select.value || '';
-            saveNodeMeta(node.id, meta);
-            if (pre) pre.textContent = JSON.stringify(meta, null, 2);
-        });
-
-        wrapper.appendChild(label);
-        wrapper.appendChild(select);
-    }
-
-    const pre = document.createElement('pre'); pre.style.background = '#f7f7f7'; pre.style.padding = '8px'; pre.style.borderRadius = '4px'; pre.style.marginTop = '10px'; pre.style.maxHeight = '240px'; pre.style.overflow = 'auto';
-    pre.textContent = JSON.stringify(meta, null, 2);
-    wrapper.appendChild(pre);
-
-    middle.appendChild(wrapper);
-}
-
-// Speichert Meta-Daten in der internen jsTree-Struktur für den Knoten
-function saveNodeMeta(nodeId, meta) {
-    const tree = $('#treeview').jstree(true);
-    if (!tree) return;
-    const n = tree.get_node(nodeId);
-    if (!n) return;
-
-    try {
-        n.li_attr = n.li_attr || {};
-        n.li_attr.meta = Object.assign({}, meta);
-        if (n.original) n.original.li_attr = n.original.li_attr || {}, n.original.li_attr.meta = Object.assign({}, meta);
-        if (tree._model && tree._model.data && tree._model.data[nodeId]) {
-            tree._model.data[nodeId].li_attr = tree._model.data[nodeId].li_attr || {};
-            tree._model.data[nodeId].li_attr.meta = Object.assign({}, meta);
-        }
-        try {
-            const $li = $('#' + nodeId.replace(/(:|\.|\[|\]|,|=|@)/g, "\\$1"));
-            if ($li && $li.length) $li.attr('data-meta', JSON.stringify(meta));
-        } catch (e) {}
-    } catch (err) {
-        console.warn('saveNodeMeta failed', err);
-    }
-}
-
-// Fügt die Funktionalität zum Laden und Anzeigen der Figuren-Karten hinzu
-function loadFigures() {
-    fetch('/figures')
-        .then(res => {
-            if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
-            return res.json();
-        })
-        .then(data => {
-            if (!Array.isArray(data)) data = [];
-            const extras = [
-                { Name: 'sequenzielle Gruppe', Desc: 'Sequenzielle Gruppe', Formation: 'group', mode: 'sequenziell' },
-                { Name: 'parallele Gruppe', Desc: 'Parallele Gruppe', Formation: 'group', mode: 'parallel' }
-            ];
-            extras.forEach(ex => {
-                const exists = data.some(f => {
-                    const n = (f.Name || f.name || f.text || '').toString();
-                    const form = (f.Formation || f.formation || f.formation_name || '').toString().toLowerCase();
-                    const m = (f.mode || f.Mode || '').toString().toLowerCase();
-                    return n === ex.Name || (form === (ex.Formation || '').toString().toLowerCase() && m === (ex.mode || '').toString().toLowerCase());
-                });
-                if (!exists) data.push(ex);
-            });
-
-            if (typeof populateFormationOptions === 'function') populateFormationOptions(data);
-
-            const container = document.getElementById('figure-list');
-            if (!container) return;
-            container.innerHTML = '';
-
-            data.forEach(fig => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.style.display = 'flex';
-                card.style.justifyContent = 'space-between';
-                card.style.padding = '6px 8px';
-                card.style.border = '1px solid #ddd';
-                card.style.borderRadius = '4px';
-                card.style.marginBottom = '6px';
-                card.style.alignItems = 'center';
-
-                const formation = (fig.Formation || fig.formation || '').toString().toLowerCase();
-                const mode = (fig.mode || fig.Mode || fig.Mode || '').toString().toLowerCase();
-                card.dataset.formation = formation;
-                card.dataset.mode = mode;
-
-                const isGroup = formation === 'group';
-                if (isGroup) {
-                    card.classList.add('group-card');
-                    if (mode === 'sequenziell') card.classList.add('group-sequenziell');
-                    if (mode === 'parallel') card.classList.add('group-parallel');
-                }
-
-                try { card.dataset.full = JSON.stringify(fig); } catch (e) { card.dataset.full = ''; }
-
-                const left = document.createElement('div'); left.style.flex = '1'; left.style.minWidth = '0';
-                const labelRow = document.createElement('div'); labelRow.className = 'group-label';
-                if (isGroup) {
-                    const icon = document.createElement('div'); icon.className = 'group-icon';
-                    icon.textContent = (mode === 'sequenziell') ? 'S' : 'P';
-                    icon.title = mode || 'group';
-                    labelRow.appendChild(icon);
-                }
-
-                const nameEl = document.createElement('strong');
-                nameEl.textContent = fig.name || fig.Name || fig.text || fig.Name || 'Unnamed';
-                nameEl.style.display = 'block'; nameEl.style.whiteSpace = 'nowrap'; nameEl.style.overflow = 'hidden'; nameEl.style.textOverflow = 'ellipsis';
-
-                const descEl = document.createElement('div');
-                descEl.textContent = fig.desc || fig.Desc || fig.Description || fig.description || fig.Desc || '';
-                descEl.style.fontSize = '0.9rem'; descEl.style.color = '#444';
-                descEl.style.display = 'block'; descEl.style.whiteSpace = 'normal'; descEl.style.overflow = 'hidden'; descEl.style.textOverflow = 'ellipsis'; descEl.style.lineHeight = '1.2'; descEl.style.maxHeight = '2.4em'; descEl.style.marginTop = '3px';
-
-                labelRow.appendChild(nameEl);
-                left.appendChild(labelRow);
-                left.appendChild(descEl);
-
-                const right = document.createElement('div'); right.style.marginLeft = '8px'; right.style.flex = '0 0 auto';
-                const barsVal = (fig.Bars ?? fig.bars ?? fig.barsCount ?? fig.BarsCount ?? fig.bar ?? fig.Bar);
-                right.textContent = (barsVal === undefined || barsVal === null || barsVal === '') ? 'Bars: —' : 'Bars: ' + barsVal;
-                right.style.fontSize = '0.9rem'; right.style.color = '#333';
-
-                card.appendChild(left); card.appendChild(right);
-
-                card.setAttribute('draggable', 'true');
-                card.addEventListener('dragstart', function(e) {
-                    try {
-                        if (isGroup) {
-                            const payload = { type: 'group', mode: mode || 'sequenziell', name: (fig.Name || fig.name || fig.text || ''), desc: (fig.Desc || fig.desc || fig.Description || fig.description || '') };
-                            e.dataTransfer.setData('application/x-figure', JSON.stringify(payload));
-                            e.dataTransfer.setData('application/json', JSON.stringify(payload));
-                        } else {
-                            e.dataTransfer.setData('application/x-figure', JSON.stringify(fig));
-                            e.dataTransfer.setData('application/json', JSON.stringify(fig));
-                        }
-                        e.dataTransfer.effectAllowed = 'copy';
-                    } catch (err) {}
-                });
-
-                card.addEventListener('click', function() {
-                    document.querySelectorAll('#figure-list .card').forEach(c => c.classList.remove('selected'));
-                    card.classList.add('selected');
-                    displayFigureDetails(fig);
-                });
-
-                container.appendChild(card);
-            });
-
-        })
-        .catch(err => console.error('Fehler beim Laden der Figuren:', err));
- }
-
-function displayFigureDetails(fig) {
-    const middle = document.getElementById('middle'); if (!middle) return;
-    middle.innerHTML = '<h3>Arbeitsbereich</h3>';
-    const wrap = document.createElement('div'); wrap.style.padding = '8px';
-    const title = document.createElement('h4'); title.textContent = fig.name || fig.Name || fig.text || 'Unnamed'; wrap.appendChild(title);
-    const desc = document.createElement('p'); desc.textContent = fig.desc || fig.Description || fig.description || fig.Desc || ''; wrap.appendChild(desc);
-    const pre = document.createElement('pre'); pre.textContent = JSON.stringify(fig, null, 2); pre.style.background = '#f7f7f7'; pre.style.padding = '8px'; pre.style.borderRadius = '4px'; pre.style.maxHeight = '240px'; pre.style.overflow = 'auto'; wrap.appendChild(pre);
-    middle.appendChild(wrap);
-}
-
-function populateFormationOptions(data) {
-    const select = document.getElementById('filter'); if (!select) return;
-
-    const previous = select.value || '';
-    const formationMap = new Map();
-
-    data.forEach(fig => {
-        const v = (fig.Formation || fig.formation || fig.formation_name || '').toString();
-        if (v) {
-            const key = v.toLowerCase();
-            if (!formationMap.has(key)) formationMap.set(key, v);
-        }
-    });
-
-    while (select.options.length > 1) select.remove(1);
-
-    Array.from(formationMap.entries()).sort((a,b)=>a[1].localeCompare(b[1])).forEach(([key, original]) => {
-        const opt = document.createElement('option'); opt.value = key; opt.textContent = original; select.appendChild(opt);
-    });
-
-    if (previous) {
-        const found = Array.from(select.options).some(o => o.value === previous.toString().toLowerCase());
-        select.value = found ? previous.toString().toLowerCase() : '';
-    }
-
-    if (typeof applyFilters === 'function') applyFilters();
-}
-
-function applyFilters() {
-    const filterEl = document.getElementById('filter'); const searchEl = document.getElementById('search');
-    const sel = filterEl ? (filterEl.value || '').toString().toLowerCase() : '';
-    const text = searchEl ? (searchEl.value || '').toString().toLowerCase() : '';
-    const cards = document.querySelectorAll('#figure-list .card');
-    cards.forEach(card => {
-        const cardFormation = (card.dataset.formation || '').toString().toLowerCase();
-        const matchesFormation = !sel || sel === cardFormation;
-        const nameEl = card.querySelector('strong'); const nameText = nameEl ? (nameEl.textContent || '').toString().toLowerCase() : '';
-        const matchesText = !text || nameText.includes(text);
-        const show = matchesFormation && matchesText; card.style.display = show ? 'flex' : 'none';
-    });
-}
-
-(function registerFilterListeners(){
-    const filterEl = document.getElementById('filter'); if (filterEl) { filterEl.addEventListener('change', applyFilters); filterEl.addEventListener('input', applyFilters); }
-    const searchEl = document.getElementById('search'); if (searchEl) searchEl.addEventListener('input', applyFilters);
-})();
-</script>
 </body>
 </html>

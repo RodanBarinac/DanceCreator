@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>GUI mit Resizable Bereichen</title>
+    <!-- Einbinden von CSS aus dem static-Ordner -->
+    <link rel="stylesheet" href="../static/Dance_Creator.css">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/themes/default/style.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
+
+</head>
+<body>
+  <div id="header">
+    <div id="header-left">
+        <h2>Dance Creator</h2>
+        <div id="file-path">Pfad: /path/to/current/file.dc</div>
+    </div>
+    <div id="header-right">
+        <button id="btn-load">Load</button>
+        <button id="btn-save">Save</button>
+    </div>
+  </div>
+<!-- Grundsätzlicher Aufbau -->
+  <div id="container">
+    <div id="left" class="panel">
+      <h3>Datensätze</h3>
+      <label for="filter">Filter:</label>
+      <select id="filter">
+        <option value="">Alle Typen</option>
+        <option value="Reel">Reel</option>
+        <option value="Figure of 8">"Figure of 8"</option>
+      </select>
+      <div class="card">Datensatz A<br>Typ: Bewegungspfad</div>
+      <div class="card">Datensatz B<br>Typ: Orientierungspfad</div>
+      <div class="card">Datensatz C<br>Typ: Zeitmarkierung</div>
+    </div>
+    <div class="splitter" id="splitter-left"></div>
+    <div id="middle" class="panel">
+      <h3>Arbeitsbereich</h3>
+    </div>
+    <div class="splitter" id="splitter-right"></div>
+    <div id="right" class="panel">
+      <h3>Dancestruktur</h3>
+      <p><em><div id="treeview"></div></em></p>
+    </div>
+  </div>
+
+  <script>
+          <!-- *************************** -->
+          <!-- *** Splitter funktionen *** -->
+          <!-- *************************** -->
+
+    function makeSplitter(splitterId, leftPanelId, rightPanelId) {
+      const splitter = document.getElementById(splitterId);
+      const leftPanel = document.getElementById(leftPanelId);
+      const rightPanel = document.getElementById(rightPanelId);
+
+      splitter.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        document.addEventListener('mousemove', resize);
+        document.addEventListener('mouseup', stopResize);
+      });
+
+      function resize(e) {
+        const totalWidth = splitter.parentNode.offsetWidth;
+        const leftWidth = e.clientX;
+        const rightWidth = totalWidth - leftWidth - 10; // 10 = 2 splitters width
+
+        if (leftWidth > 100 && rightWidth > 100) {
+          leftPanel.style.width = leftWidth + 'px';
+          rightPanel.style.width = rightWidth + 'px';
+        }
+      }
+
+      function stopResize() {
+        document.removeEventListener('mousemove', resize);
+        document.removeEventListener('mouseup', stopResize);
+      }
+    }
+
+    makeSplitter('splitter-left', 'left', 'middle');
+    makeSplitter('splitter-right', 'middle', 'right');
+  </script>
+
+<script>
+          <!-- *********************** -->
+          <!-- *** Tree funktionen *** -->
+          <!-- *********************** -->
+
+$(function() {
+  $('#treeview').jstree({
+    'core': {
+      'data': [
+        { "text": "Dance", "id": "dance-node" }
+      ]
+    }
+  });
+});
+</script>
+
+</body>
+</html>

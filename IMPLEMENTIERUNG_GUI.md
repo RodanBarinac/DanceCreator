@@ -19,6 +19,14 @@ Dieses Dokument beschreibt die Umsetzung der Web-GUI, die Anforderungen an die A
 - UI-Elemente: Aktueller Tanz-Name, Breadcrumbs, Status-Indikator (Speicher-/Render-Status), Spinner/Progressbar, Autosave-Toggle.
 - Verhalten: Long-running Aktionen (Video-Rendering) sollten asynchron mit Job-Status-API implementiert werden; UI zeigt Status und erlaubt Abbruch.
 
+1.2) Spalten-Resizing (Splitter)
+- Drei Spalten (linker Katalog, mittlerer Canvas, rechter Tanz-Baum) sind durch sichtbare Splitter trennbar.
+- Splitter-Verhalten:
+  - Mouse-Over: Splitter wird visuell hervorgehoben (Hover-Effekt).
+  - Mousedown + Drag: Spalte links wird breiter/schmäler; Spalte rechts passt sich an (flex-based Layout).
+  - Min-Width: Jede Spalte hat Mindestbreite (150px) um Unbrauchbarkeit zu verhindern.
+  - Persistenz: (optional Phase 2) Spalten-Breiten können in localStorage gespeichert werden.
+
 
 
 2) Komponenten & Verhalten
