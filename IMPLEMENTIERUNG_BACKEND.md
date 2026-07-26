@@ -55,14 +55,71 @@ Dieses Dokument beschreibt die minimale und vollständige Backend-API, Daten- un
   - GET /api/figures/<name> -> JSON of figure (Simple/Complex)
   - GET /api/figures/<name>/crips -> Ungefüllte Cripts (template)
   - GET /api/figures/<name>/thumbnail -> SVG string
-  - GET /api/dances -> list dances
-  - GET /api/dances/<name> -> dance JSON + tree
+  - GET /api/dances -> list of dances with metadata (name, version, bars, thumbnail)
+  - GET /api/dances/<name> -> dance JSON + jsTree-compatible tree structure (see Tree Format below)
+  - GET /api/dances/<name>/tree -> jsTree-compatible JSON only (optional convenience)
   - GET /api/dances/<name>/crips -> full cripts for dance
-  - GET /api/dances/<name>/visualization -> SVG for entire dancefloor
+  - GET /api/dances/<name>/visualization -> SVG for entire dancefloor or per-bar positions
   - POST /api/dancefloor/init -> {"couples": int} -> returns initial floor JSON
   - POST /api/dancefloor/execute -> {"figure": name_or_object, "anchor": [r,c], "addons": {}} -> returns new floor JSON + cripts
   - GET /api/dancefloor/state -> current floor JSON
   - GET /api/search?q=... -> filtered results
+
+Tree Format (jsTree-compatible)
+- The backend must return a tree structure compatible with jsTree so the frontend can render and manipulate nodes. Each node is an object with at least the following fields:
+  - id: string (unique within tree; use deterministic IDs when possible, e.g., "root", "fig-1", or path-like "0.1.2")
+  - text: string (label displayed in the tree, e.g., "Reel Across [Bar 1-8]")
+  - children: array of child nodes (can be empty)
+  - type: string (optional, e.g., "dance", "figure", "seq", "par")
+  - data: object (arbitrary payload used by frontend/backend): recommended keys:
+    - figureName: string (for leaf nodes representing a figure)
+    - version: int
+    - bars: [start,end] or int
+    - anchor: [row_offset,col_offset] (if present)
+    - addons: object (if the node encodes parameter overrides)
+    - original: the original FigureList entry (Anchor + Figure) to allow exact reconstruction
+
+- Representation rules for ComplexFigure FigureList:
+  - If a FigureList entry is a string (figure name), create a leaf node with type "figure" and data.figureName set.
+  - If an entry is a sequenced or parallel group (e.g., ["s", [...]] or ["p", [...]]), create a parent node with type "seq" or "par" and create child nodes recursively for its subentries.
+  - Anchors must be attached to the node's data (data.anchor) and preserved so the GUI can show offsets or edit them.
+  - Maintain the order of entries in the FigureList by emitting children in the same order.
+
+Example node (leaf):
+{
+  "id": "fig-3",
+  "text": "Reel Across [Bar 1-8]",
+  "type": "figure",
+  "data": {
+    "figureName": "Reel Across",
+    "version": 2,
+    "bars": [1,8],
+    "anchor": [0,0],
+    "addons": {},
+    "original": [[0,0], "Reel Across"]
+  },
+  "children": []
+}
+
+Example node (sequence):
+{
+  "id": "seq-1",
+  "text": "Sequence",
+  "type": "seq",
+  "data": {"original": [[0,0], ["s", [...]]]},
+  "children": [ ... ]
+}
+
+Frontend responsibilities
+- Use the provided node.id as unique identifier for operations (select, edit, move).
+- When a node is moved in the tree, emit a backend call to persist ordering/structure (PUT /api/dances/<name>/tree) with the updated tree or minimal delta.
+- When a figure leaf is double-clicked or clicked, load its details via GET /api/figures/<figureName> and render in the Canvas.
+
+Backend responsibilities
+- Build the jsTree structure deterministically from the dance JSON (FigureList) and return it as part of GET /api/dances/<name>.
+- Ensure all nodes have unique IDs.
+- Preserve anchors, addons and original FigureList entries in node.data so reconstruction and editing is lossless.
+- Provide PUT /api/dances/<name>/tree to accept updates from the frontend and persist changes to the dance JSON (update FigureList accordingly).
 
 6) JSON-Schemata (Kurz)
 - DanceFloor JSON:

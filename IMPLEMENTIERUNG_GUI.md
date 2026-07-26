@@ -8,11 +8,25 @@ Dieses Dokument beschreibt die Umsetzung der Web-GUI, die Anforderungen an die A
 - Responsive Anpassung: Tablet → 2-Spalten, Mobile → 1-Spalte
 - Frontend-Technologie: HTML5, JavaScript, jstree, SVG/Canvas; optional D3.js für komplexe Layouts
 
+1.1) Header/Toolbar (oberhalb der Spalten)
+- Zweck: Zentrale Steuer- und Managementleiste für Dance-Operationen (Load/Save/Export/Jobs).
+- Elemente & Aktionen:
+  - Tanz laden: Dropdown mit vorhandenen Tänzen oder Datei-Upload. Aktion: GET /api/dances/<name> (oder POST /api/dances/load). Lädt Tanz in den rechten Baum (jsTree) und aktualisiert Canvas.
+  - Tanz speichern (Save / Save As): Öffnet Modal für Metadaten (Name, Version). Aktion: POST /api/dances (create) oder PUT /api/dances/<name> (update). Antwort: Bestätigung + aktualisierte Tree-Node.
+  - Vollständige Cripts anfordern: Button "Get Full Cripts" → GET /api/dances/<name>/crips. Ergebnis: Anzeige im Panel und Download-Option (.txt/.md).
+  - Video anfordern (Render): Button "Render Video" → POST /api/dances/<name>/render-video (oder POST /api/render-jobs with dance + options). Response: Job-ID. Polling: GET /api/render-status/<jobid>. Fertiges Video: GET /api/dances/<name>/video or direct download URL. UI: Fortschrittsanzeige, Benachrichtigung, eingebetteter Player/Download-Link.
+  - Export / Drucken: PDF-Export-Button → GET /api/dances/<name>/export?format=pdf oder clientseitig generieren.
+- UI-Elemente: Aktueller Tanz-Name, Breadcrumbs, Status-Indikator (Speicher-/Render-Status), Spinner/Progressbar, Autosave-Toggle.
+- Verhalten: Long-running Aktionen (Video-Rendering) sollten asynchron mit Job-Status-API implementiert werden; UI zeigt Status und erlaubt Abbruch.
+
+
+
 2) Komponenten & Verhalten
 - Linke Spalte (Figures-Katalog): Suche, Filter, Kategoriebaum, Liste mit Thumbnails
   - Datenquelle: GET /api/figures
-  - Interaktion: Click → lädt Details in Canvas (GET /api/figures/<name>)
-  - Drag → Drop in Canvas (Phase 2)
+  - Interaktion:
+    - Click → lädt die Figur auf den Canvas (GET /api/figures/<name>)
+    - Drag & Drop → In den Tanz-Baum (rechte Spalte, jsTree): Figuren können per Drag&Drop in den Baum eingefügt werden; sie werden an der Position im Baum eingefügt, an der der Cursor losgelassen wird. (Phase 2)
 
 - Mittlerer Bereich (Canvas): 4 Modi
   - Modus A: Figur-Details (Name, Version, Beschreibung, Cripts ungefüllt)
@@ -20,6 +34,9 @@ Dieses Dokument beschreibt die Umsetzung der Web-GUI, die Anforderungen an die A
   - Modus B: Figur im Tanz-Kontext
     - benötigt: DanceFloor-State (GET /api/dancefloor/state)
     - Darstellung: Start/End-Positionen, Vektoren
+    - Interaktion: Parameter der Figur können verändert werden (z. B. Anchor/Offset, Addons/Varianten, Partner-Zuordnungen, Bars-Offset).
+      - UI-Controls: numeric Anchor-Eingaben, Addons Key/Value-Editor, Dropdowns für Partner-/Zielpositionen, Bars-Offset-Feld.
+      - Aktionen: "Preview" → zeigt lokal auf dem Canvas die Wirkung der geänderten Parameter; "Apply/Execute" → POST /api/dancefloor/execute mit aktuellen Parametern.
   - Modus C: Mehrere Figuren (Akkordeon/Tabs)
   - Modus D: Ganzer Tanz (komplette Choreografie, Playback controls optional)
 
