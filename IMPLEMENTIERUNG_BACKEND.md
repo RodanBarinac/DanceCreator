@@ -47,6 +47,7 @@ Dieses Dokument beschreibt die minimale und vollständige Backend-API, Daten- un
 4) Sequenzielle vs. parallele Ausführung
 - Sequenziell: Apply DanceMove eines Sub-Figure nacheinander, das resultierende DanceFloor ist Input für nächste
 - Parallel: Erst compute für jede Sub-Figure ein isoliertes DanceFloor (auf Basis des gleichen Input mit ggf. Anchor-Offsets), dann combine via combineDanceFloor
+  - Konfliktverhalten: Die Standardstrategie ist "raise" — bei paralleler Ausführung werden die Sub-Figuren separat berechnet; wenn mehrere Sub-Figuren dieselbe Tanzflächen-Position mit unterschiedlichen Tänzern belegen, wird ein CombineConflictError ausgelöst und die Gesamt-Ausführung abgebrochen. Das Backend sollte diesen Fehler in einen HTTP 409-Response mit detaillierten Konfliktangaben (Positionen und welche Sub-Figure welche Tänzer schreiben wollte) übersetzen, damit die GUI den Nutzer informieren und zur Behebung leiten kann.
 
 5) Minimal implementierungs-API (für Flask/GUI-Anbindung)
 - Intern (module functions) as above
@@ -62,6 +63,7 @@ Dieses Dokument beschreibt die minimale und vollständige Backend-API, Daten- un
   - GET /api/dances/<name>/visualization -> SVG for entire dancefloor or per-bar positions
   - POST /api/dancefloor/init -> {"couples": int} -> returns initial floor JSON
   - POST /api/dancefloor/execute -> {"figure": name_or_object, "anchor": [r,c], "addons": {}} -> returns new floor JSON + cripts
+    - Errors: 409 Conflict when parallel execution results in position write-conflicts. Response body: {"error": "message", "conflicts": {"pos": [{"floor": idx, "dancer": "name"}, ...]}}
   - GET /api/dancefloor/state -> current floor JSON
   - GET /api/search?q=... -> filtered results
 
@@ -206,6 +208,8 @@ Regeln:
 - Wenn mehrere Floors dieselbe Position belegen, Konfliktauflösung per Priorität (z. B. by sub-index) oder konfigurierbare Strategie.
 - Positionen, die nur in einem Floor geändert wurden, werden übernommen.
 - Facing/Meta werden deterministisch zusammengeführt.
+
+Standardverhalten: Die Referenzimplementierung wählt die Strategie "raise" für parallele Konflikte — das heißt, bei widersprüchlichen Positionsschreibzugriffen wird ein CombineConflictError ausgelöst (siehe DanceFloor.combine_dancefloors). Das ermöglicht der API, einen HTTP 409 zurückzugeben und der GUI eine klare Konfliktstruktur zur Anzeige zu liefern.
 
 Empfehlung: Implementiere eine Config-Option zur Konflikt-Auflösung: ["raise", "first-wins", "merge-with-offset"].
 

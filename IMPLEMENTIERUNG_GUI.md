@@ -37,6 +37,12 @@ Dieses Dokument beschreibt die Umsetzung der Web-GUI, die Anforderungen an die A
     - Interaktion: Parameter der Figur können verändert werden (z. B. Anchor/Offset, Addons/Varianten, Partner-Zuordnungen, Bars-Offset).
       - UI-Controls: numeric Anchor-Eingaben, Addons Key/Value-Editor, Dropdowns für Partner-/Zielpositionen, Bars-Offset-Feld.
       - Aktionen: "Preview" → zeigt lokal auf dem Canvas die Wirkung der geänderten Parameter; "Apply/Execute" → POST /api/dancefloor/execute mit aktuellen Parametern.
+      - Fehlerbehandlung (Parallel-Konflikte): Wenn das Backend bei paralleler Ausführung einen Konflikt erkennt, liefert es HTTP 409 mit einem JSON-Body {"error":..., "conflicts":{...}}. Die GUI muss dann:
+        1. Einen Fehler-Dialog anzeigen mit kurzer Erklärung ("Ausführung abgebrochen: Positionskonflikt in paralleler Figur").
+        2. Die Konflikt-Details zeigen (Positionsliste, welche Sub-Figur welche Tänzer schreiben wollte).
+        3. Aktionen anbieten: "Inspect in Tree" (springt zum betroffenen Knoten im jsTree), "Edit Parameters" (öffnet Modus B für eine beteiligte Figur), "Dismiss".
+        4. Optional: Vorschläge anzeigen (z. B. "Setze Anchor für Figur X auf [r,c]" oder "Ändere Reihenfolge/Modus"), basierend auf Konflikt-Daten.
+      - UX: Der Dialog sollte prominent, nicht-blockierend (modal) und enthalten: Fehlertext, Konflikt-Tabelle, Buttons: [Inspect in Tree] [Edit Parameters] [Dismiss].
   - Modus C: Mehrere Figuren (Akkordeon/Tabs)
   - Modus D: Ganzer Tanz (komplette Choreografie, Playback controls optional)
 
