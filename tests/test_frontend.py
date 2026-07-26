@@ -1,0 +1,23 @@
+from GUI_DanceCreator_App import app
+
+
+def test_index_served():
+    client = app.test_client()
+    rv = client.get('/')
+    assert rv.status_code == 200
+    assert b'DanceCreator' in rv.data
+
+
+def test_static_js():
+    client = app.test_client()
+    rv = client.get('/static/app.js')
+    assert rv.status_code == 200
+    assert b'loadFigures' in rv.data
+
+
+def test_api_dances_list():
+    client = app.test_client()
+    rv = client.get('/api/dances')
+    assert rv.status_code == 200
+    data = rv.get_json()
+    assert isinstance(data, list)

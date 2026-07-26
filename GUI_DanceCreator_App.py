@@ -4,10 +4,25 @@ import json
 from DanceFloor import DanceFloor
 import Dance
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', template_folder='templates')
 ROOT = os.path.dirname(__file__)
 FIGURES_DIR = os.path.join(ROOT, 'Figures')
 DANCES_DIR = os.path.join(ROOT, 'Dances')
+
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/api/dances')
+def list_dances():
+    files = []
+    for f in os.listdir(DANCES_DIR):
+        if f.endswith('.json'):
+            data = json.load(open(os.path.join(DANCES_DIR, f), 'r', encoding='utf-8'))
+            files.append({'Name': data.get('Name'), 'Version': data.get('Version'), 'file': f})
+    return jsonify(files)
 
 
 @app.route('/api/figures')
