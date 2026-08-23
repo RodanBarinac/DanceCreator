@@ -27,6 +27,17 @@ def test_figure_detail_panels_present():
     assert b'figure-crips' in rv.data
 
 
+def test_dance_detail_panels_present():
+    """Test that the dance detail placeholders exist in the HTML."""
+    client = app.test_client()
+    rv = client.get('/')
+    assert rv.status_code == 200
+    assert b'dance-title' in rv.data
+    assert b'dance-summary' in rv.data
+    assert b'dance-sequence' in rv.data
+    assert b'dance-json' in rv.data
+
+
 # NOTE: /api/dances endpoint may not exist in current routes
 # def test_api_dances_list():
 #     client = app.test_client()

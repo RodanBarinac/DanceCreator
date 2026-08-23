@@ -1,6 +1,7 @@
 // Minimal frontend to interact with backend API
 
 let currentFigureSummary = null;
+let currentDanceName = null;
 
 async function api(path, opts) {
  const res = await fetch(path, opts);
@@ -59,6 +60,41 @@ function renderCrips(data) {
  const crips = Array.isArray(data.CriptDesc) ? data.CriptDesc : [];
  if (!crips.length) return '<p class="empty-note">No crips available.</p>';
  return `<ol class="figure-crips">${crips.map(crip => `<li>${escapeHtml(crip)}</li>`).join('')}</ol>`;
+}
+
+function renderDanceSummary(data) {
+ const summary = document.getElementById('dance-summary');
+ if (!summary) return;
+ summary.innerHTML = `
+ <div><strong>Name:</strong> ${escapeHtml(data.Name || data.name || '')}</div>
+ <div><strong>Version:</strong> ${escapeHtml(data.Version || '')}</div>
+ <div><strong>Shape:</strong> ${escapeHtml(data.shape || data.Shape || '')}</div>
+ <div><strong>Description:</strong> ${escapeHtml(data.Desc || '')}</div>
+ `;
+}
+
+function renderDanceNode(node) {
+ const children = Array.isArray(node.children) ? node.children : [];
+ const label = node.type === 'group'
+ ? `${node.text}${node.data && node.data.mode ? ` (${node.data.mode})` : ''}`
+ : node.text;
+ const anchor = node.data && Array.isArray(node.data.anchor) ? ` ${formatPos(node.data.anchor)}` : '';
+ const suffix = node.type === 'figure' ? anchor : '';
+ const childHtml = children.length ? `<ul>${children.map(renderDanceNode).join('')}</ul>` : '';
+ return `<li><span class="dance-node">${escapeHtml(label)}${escapeHtml(suffix)}</span>${childHtml}</li>`;
+}
+
+function renderDanceSequence(tree) {
+ const panel = document.getElementById('dance-sequence');
+ if (!panel) return;
+ if (!tree) {
+ panel.innerHTML = '<p class="empty-note">No dance selected.</p>';
+ return;
+ }
+ const children = Array.isArray(tree.children) ? tree.children : [];
+ panel.innerHTML = children.length
+ ? `<ol class="dance-sequence-list">${children.map(renderDanceNode).join('')}</ol>`
+ : '<p class="empty-note">No sequence data available.</p>';
 }
 
 function renderFigureDetail(data) {
@@ -135,7 +171,14 @@ async function loadDances() {
 async function initJsTree(danceName) {
  const r = await api(`/api/dances/${encodeURIComponent(danceName)}`);
  const treeDiv = document.getElementById('dance-tree');
+ const title = document.getElementById('dance-title');
+ const json = document.getElementById('dance-json');
  if (r.status !== 200) { treeDiv.textContent = 'Failed to load tree'; return; }
+ currentDanceName = danceName;
+ if (title) title.textContent = r.body.dance && (r.body.dance.Name || r.body.dance.name) || danceName;
+ renderDanceSummary(r.body.dance || {});
+ renderDanceSequence(r.body.tree);
+ if (json) json.textContent = JSON.stringify(r.body.dance || {}, null, 2);
  const treeData = r.body.tree;
  // init jstree
  // destroy existing
@@ -146,7 +189,7 @@ async function initJsTree(danceName) {
  $(treeDiv).on('move_node.jstree', function(e, data) {
    const tree = $(treeDiv).jstree(true).get_json('#', { 'flat': false });
    // send to backend
-   fetch(`/api/dances/${encodeURIComponent(danceName)}/tree`, {
+   fetch(`/api/dances/${encodeURIComponent(currentDanceName)}/tree`, {
      method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ tree: tree[0] })
    }).then(r=>r.json()).then(j=>{ if (j.status==='ok') alert('Tree updated'); else alert('Update failed'); }).catch(err=>{ alert('Update failed'); });
  });
