@@ -1,5 +1,6 @@
 {"Name": "Marries Wedding",
   "Desc": "The Dance Marrie's Wedding",
+  "shape": "3/4",
   "FigureList": ["s",[
 					["p", [["s",[[[1,1], ["1cRT"  ,[]]], [[1,1], ["1cCast1p",[]]]]],
                           ["s",[[[2,1], ["1cWait",[]]], [[2,1], ["1cSU",    []]]]],

@@ -1,64 +1,125 @@
-from Figures import Figure
-from SimpleFigure import SimpleFigure
+import os
+import json
+import Figures as Fig
+import DanceFloor as DF
+import Dance
 
-class ComplexFigure(Figure):
-    def __init__(self, data):
-        super().__init__(name=data.get('Name'), version=data.get('Version'), desc=data.get('Desc'))
-        self.FigureList = data.get('FigureList', [])
+class ComplexFigure(Fig.Figure):
+    _FigureList = [[]]
+    _FigureObjs = []
+
+    def __init__(self, loadFile, Anchor = [0,0]):
+        self.name = loadFile
+        self.Anchor = Anchor
+#        self.loadFigure(loadFile)
+
+    def clear(self):
+        super().clear()
+        self._FigureList = [[]]
+        self._FigureObjs = []
+
+    def SubBars(self, FigObjs):
+        if isinstance(FigObjs, Fig.Figure):
+            return FigObjs.Bars
+        else:
+            if isinstance(FigObjs[0], Fig.Figure):
+                newBars = 0
+                for FigObj in FigObjs:
+                    newBars += self.SubBars(FigObj)
+                return newBars
+            else:
+                newBars = []
+                for FigObj in FigObjs:
+                    newBars.append(self.SubBars(FigObj))
+
+                if not newBars[:-1] == newBars[1:]:
+                    raise Exception("Sorry, not all the Bars are allocated")
+
+                return newBars[0]
+    @property
+    def Bars(self):
+        return self.SubBars(self._FigureObjs)
+
+    def subDanceMove(self, FigObjs, newDF):
+        if isinstance(FigObjs, Fig.Figure):
+            return FigObjs.DanceMove(newDF)
+        else:
+            if FigObjs[0] == "s":
+                for FigObj in FigObjs[1]:
+                    newDF = self.subDanceMove(FigObj, newDF)
+                return newDF
+            elif FigObjs[0] == "p":
+                newDFs = []
+                for FigObj in FigObjs[1]:
+                    newDFs.append(self.subDanceMove(FigObj, newDF))
+                return DF.combineDanceFloor(newDFs)
 
     def DanceMove(self, oldDF):
-        floor = oldDF
-        for entry in self.FigureList:
-            anchor, fig = entry[0], entry[1]
-            # fig can be string (name) or nested ["s", [...]] or ["p", [...]]
-            if isinstance(fig, str):
-                # lazy load via Dance.getFigure to avoid circular import; do dynamic import
-                from Dance import getFigure
-                fobj = getFigure(fig, anchor)
-                floor = fobj.DanceMove(floor)
-            elif isinstance(fig, list) and fig[0] == 's':
-                # sequential
-                for sub in fig[1]:
-                    sub_anchor, sub_fig = sub[0], sub[1]
-                    from Dance import getFigure
-                    fobj = getFigure(sub_fig, sub_anchor)
-                    floor = fobj.DanceMove(floor)
-            elif isinstance(fig, list) and fig[0] == 'p':
-                # parallel: compute floors and merge using combine_dancefloors
-                floors = []
-                for sub in fig[1]:
-                    sub_anchor, sub_fig = sub[0], sub[1]
-                    from Dance import getFigure
-                    fobj = getFigure(sub_fig, sub_anchor)
-                    floors.append(fobj.DanceMove(oldDF.copy()))
-                # use DanceFloor.combine_dancefloors to detect conflicts
-                from DanceFloor import combine_dancefloors
-                floor = combine_dancefloors(floors)
+        return self.subDanceMove(self._FigureObjs, oldDF)
+
+    def subgetCrips(self, FigObjs, newDF):
+        if isinstance(FigObjs, Fig.Figure):
+            return FigObjs.getCrips(newDF)
+        else:
+            if FigObjs[0] == "s":
+                newCrips = []
+                tmpDF = newDF.copy()
+                for FigObj in FigObjs[1]:
+                    newCrips.append(self.subgetCrips(FigObj, tmpDF))
+                    tmpDF = self.subDanceMove(FigObj, tmpDF)
+                return newCrips
+            elif FigObjs[0] == "p":
+                newCrips = [] #  ['While:']
+                for FigObj in FigObjs[1]:
+                    newCrips.append(self.subgetCrips(FigObj, newDF))
+                return newCrips
             else:
-                # unknown entry
-                continue
-        return floor
+                raise Exception("Sorry, no valid figure found!")
 
     def getCrips(self, oldDF):
-        lines = []
-        for entry in self.FigureList:
-            anchor, fig = entry[0], entry[1]
-            if isinstance(fig, str):
-                from Dance import getFigure
-                fobj = getFigure(fig, anchor)
-                lines.extend(fobj.getCrips(oldDF))
-            elif isinstance(fig, list):
-                mode = fig[0]
-                if mode == 's':
-                    for sub in fig[1]:
-                        sub_anchor, sub_fig = sub[0], sub[1]
-                        from Dance import getFigure
-                        fobj = getFigure(sub_fig, sub_anchor)
-                        lines.extend(fobj.getCrips(oldDF))
-                elif mode == 'p':
-                    for sub in fig[1]:
-                        sub_anchor, sub_fig = sub[0], sub[1]
-                        from Dance import getFigure
-                        fobj = getFigure(sub_fig, sub_anchor)
-                        lines.extend(fobj.getCrips(oldDF))
-        return lines
+        return self.subgetCrips(self._FigureObjs, oldDF)
+
+    def loadSubFigure(self, myFigList, myAnchor):
+        if len(myFigList) >> 1:
+            if type(myFigList[1]) != type([]):
+                return Dance.getFigure(myFigList[1], (myFigList[0][0] + myAnchor[0], myFigList[0][1] + myAnchor[1]),[]) # no Addons
+            elif type(myFigList[1][0]) == type('') and myFigList[1][0] != 's' and myFigList[1][0] != 'p':
+                return Dance.getFigure( myFigList[1][0], (myFigList[0][0]+myAnchor[0],myFigList[0][1]+myAnchor[1]), myFigList[1][1])
+            else:
+                retList = [myFigList[0],[]]
+                for FigList in myFigList[1]:
+                    retList[1].append(self.loadSubFigure(FigList, myAnchor))
+                return retList
+
+    def loadFigure(self, Filename = ''):
+        if Filename == '':
+            Filename = self.name
+
+        # Determine the actual file path.
+        # If an absolute path or a path containing separators is provided, use it (ensure .json suffix).
+        # Otherwise, assume the file is in the project's Figures directory and append .json.
+        if os.path.isabs(Filename) or (os.path.sep in Filename) or ('/' in Filename):
+            filepath = Filename if Filename.lower().endswith('.json') else Filename + '.json'
+        else:
+            filepath = os.path.join(os.getcwd(), 'Figures', Filename + '.json')
+
+        # Check if the file exists before attempting to open it.
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f"Figure file not found: {filepath}")
+
+        with open(filepath, 'r') as f:
+            FigData = json.load(f)
+        myKeys = FigData.keys()
+        if 'Version' in myKeys:
+            if FigData['Version'] != 3:
+                raise Exception("Sorry, not the right version")
+
+        if 'Name' in myKeys:
+            self.name = FigData['Name']
+        if 'Desc' in myKeys:
+            self.desc = FigData['Desc']
+
+        if 'FigureList' in myKeys:
+            self._FigureList = FigData['FigureList']
+
+        self._FigureObjs = self.loadSubFigure(self._FigureList, self.Anchor)

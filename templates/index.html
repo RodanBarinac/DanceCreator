@@ -87,9 +87,6 @@
       .modal-box h3 { margin-top: 0; }
       #conflict-details { background: #f5f5f5; padding: 8px; border-radius: 3px; max-height: 200px; overflow: auto; font-size: 11px; font-family: monospace; white-space: pre-wrap; word-break: break-word; margin-bottom: 10px; border: 1px solid #ddd; }
       .modal-buttons { display: flex; gap: 6px; justify-content: flex-end; margin-top: 10px; }
-      
-      /* jstree overrides */
-      .jstree-node { margin-left: 0; }
     </style>
 </head>
 <body>
@@ -180,7 +177,10 @@
     </div>
   </div>
 
-  <!-- Figure Management Scripts -->
+  <!-- Main Application Script (this loads app.js) -->
+  <script src="../static/app.js"></script>
+  
+  <!-- UI Component Scripts -->
   <script>
     // Resizable Splitters
     function makeSplitter(splitterId, leftPanelId, rightPanelId) {
@@ -193,7 +193,6 @@
         const startX = e.clientX;
         const startLeftWidth = leftPanel.offsetWidth;
         const startRightWidth = rightPanel.offsetWidth;
-        const container = document.getElementById('container');
         
         function onMouseMove(e) {
           const deltaX = e.clientX - startX;
@@ -215,26 +214,6 @@
         document.addEventListener('mouseup', onMouseUp);
       });
     }
-    
-    // Init splitters when DOM ready
-    document.addEventListener('DOMContentLoaded', () => {
-      makeSplitter('splitter-left', 'left', 'middle');
-      makeSplitter('splitter-right', 'middle', 'right');
-    });
-    
-    // Load & Save Buttons (Toolbar)
-    document.getElementById('btn-load').addEventListener('click', () => {
-      const danceSelect = document.getElementById('dance-select');
-      if (danceSelect && danceSelect.value) {
-        alert('Dance geladen: ' + danceSelect.value);
-      } else {
-        alert('Bitte zuerst einen Tanz aus der Liste auswählen');
-      }
-    });
-
-    document.getElementById('btn-save').addEventListener('click', () => {
-      alert('Save-Funktion: wird später implementiert (PUT /api/dances/<name>)');
-    });
 
     // Formation Filter Population
     async function populateFormations() {
@@ -273,11 +252,38 @@
       });
     }
 
-    document.getElementById('search').addEventListener('input', applyFilters);
-    document.getElementById('filter-formation').addEventListener('change', applyFilters);
+    // Main init after DOM and app.js are loaded
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Setup UI handlers
+      document.getElementById('btn-load').addEventListener('click', () => {
+        const danceSelect = document.getElementById('dance-select');
+        if (danceSelect && danceSelect.value) {
+          alert('Dance geladen: ' + danceSelect.value);
+        } else {
+          alert('Bitte zuerst einen Tanz aus der Liste auswählen');
+        }
+      });
 
-    // Init on load
-    window.addEventListener('DOMContentLoaded', populateFormations);
+      document.getElementById('btn-save').addEventListener('click', () => {
+        alert('Save-Funktion: wird später implementiert (PUT /api/dances/<name>)');
+      });
+
+      // Setup splitters
+      makeSplitter('splitter-left', 'left', 'middle');
+      makeSplitter('splitter-right', 'middle', 'right');
+
+      // Setup filters
+      document.getElementById('search').addEventListener('input', applyFilters);
+      document.getElementById('filter-formation').addEventListener('change', applyFilters);
+
+      // Populate formation filter
+      await populateFormations();
+
+      // Call app.js init functions IF they exist
+      if (typeof loadFigures !== 'undefined') await loadFigures();
+      if (typeof loadDances !== 'undefined') await loadDances();
+      if (typeof wire !== 'undefined') wire();
+    });
   </script>
 </body>
 </html>

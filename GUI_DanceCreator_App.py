@@ -1,141 +1,342 @@
-from flask import Flask, jsonify, request, send_file, render_template
-import os
+"""
+DanceTreeApp - ein kleines Flask-Backend f?r die HTML5-GUI.
+
+Beschreibung:
+ - Liefert die HTML-Seite (templates/index.html)
+ - Stellt statische Dateien unter /static bereit (style_old.css, app.js)
+ - Bietet einen einfachen API-Endpunkt /tree, der eine JSON-Datei (aus ./Figures)
+   einliest und als flache Liste von Knoten mit id/parent_id zur?ckgibt.
+
+Anleitung:
+1. Kopiere diese Ordnerstruktur in dein Projekt oder nutze sie standalone:
+    DanceTreeApp/
+    ??? GUI_DanceCreator_App.py
+    ??? templates/
+    ?   ??? index.html
+    ??? static/
+    ?   ??? style_old.css
+    ?   ??? app.js
+    ??? Figures/         <-- JSON-Dateien hier ablegen (z. B. HLReelAD.json)
+
+2. Abh?ngigkeiten installieren:
+    pip install flask
+
+3. Starten:
+    python GUI_DanceCreator_App.py
+
+4. ?ffne im Browser:
+    http://127.0.0.1:5000
+
+Hinweis:
+ - Die GUI zeigt links die Figurenliste und rechts die Baumstruktur.
+ - Die mittlere Tanzfl?che ist ein Platzhalter (keine Drag&Drop-Funktionalit?t).
+ - Diese Datei ist ausf?hrlich kommentiert; passe die Parserlogik im Bereich `build_tree_from_json`
+   an, falls deine JSON-Struktur st?rker von den Beispielen abweicht.
+"""
+
+from flask import Flask, jsonify, request, render_template
 import json
-from DanceFloor import DanceFloor
-import Dance
+import os
+import uuid
 
-app = Flask(__name__, static_folder='static', template_folder='templates')
-ROOT = os.path.dirname(__file__)
-FIGURES_DIR = os.path.join(ROOT, 'Figures')
-DANCES_DIR = os.path.join(ROOT, 'Dances')
+Figure_DB = {}
+Figure_File_DB = {}
+app = Flask(__name__, template_folder="templates", static_folder="static")
 
-
-@app.route('/')
-def index():
-    return render_template('index.html')
+# Ordner, in dem der Benutzer seine JSON-Files ablegen soll
+FIGURES_DIR = os.path.join(os.path.dirname(__file__), "Figures")
+DANCES_DIR = os.path.join(os.path.dirname(__file__), "Dances")
 
 
-@app.route('/api/dances')
-def list_dances():
-    files = []
-    for f in os.listdir(DANCES_DIR):
-        if f.endswith('.json'):
-            data = json.load(open(os.path.join(DANCES_DIR, f), 'r', encoding='utf-8'))
-            files.append({'Name': data.get('Name'), 'Version': data.get('Version'), 'file': f})
-    return jsonify(files)
+def iter_json_files(root_dir):
+    for base, _, files in os.walk(root_dir):
+        for fname in files:
+            if fname.lower().endswith('.json') and not fname.lower().endswith('.schema.json'):
+                yield os.path.join(base, fname)
 
 
-@app.route('/api/figures')
-def list_figures():
-    files = []
-    for f in os.listdir(FIGURES_DIR):
-        if f.endswith('.json'):
-            data = json.load(open(os.path.join(FIGURES_DIR,f),'r',encoding='utf-8'))
-            files.append({
-                'Name': data.get('Name'),
-                'Version': data.get('Version'),
-                'Bars': data.get('Bars'),
-                'Formation': data.get('Formation'),
-                'Desc': data.get('Desc'),
-                'file': f
-            })
-    return jsonify(files)
-
-
-@app.route('/api/figures/<name>')
-def get_figure(name):
-    path = os.path.join(FIGURES_DIR, f'{name}.json')
-    if os.path.exists(path):
-        return jsonify(json.load(open(path,'r',encoding='utf-8')))
-    return jsonify({'error':'not found'}), 404
-
-
-@app.route('/api/dances/<name>')
-def get_dance(name):
-    path = os.path.join(DANCES_DIR, f'{name}.json')
-    if os.path.exists(path):
-        data = json.load(open(path,'r',encoding='utf-8'))
-        # very small tree representation
-        tree = {
-            'id':'root',
-            'text': data.get('Name'),
-            'children': []
-        }
-        for i, entry in enumerate(data.get('FigureList', [])):
-            anchor, fig = entry[0], entry[1]
-            node = { 'id': f'node-{i}', 'text': str(fig), 'children': [], 'data': {'original': entry}}
-            tree['children'].append(node)
-        return jsonify({'dance': data, 'tree': tree})
-    return jsonify({'error':'not found'}), 404
-
-
-@app.route('/api/dances/<name>/tree', methods=['PUT'])
-def update_dance_tree(name):
-        path = os.path.join(DANCES_DIR, f'{name}.json')
-        if not os.path.exists(path):
-            return jsonify({'error':'not found'}), 404
-        body = request.get_json() or {}
-        tree = body.get('tree')
-        if not tree:
-            return jsonify({'error':'no tree provided'}), 400
-
-        def extract_figurelist(node):
-            # node is expected to have 'children'
-            res = []
-            for child in node.get('children', []):
-                data = child.get('data', {})
-                if 'original' in data:
-                    res.append(data['original'])
-                elif child.get('children'):
-                    # build sequential group from children
-                    sub = []
-                    for gc in child.get('children'):
-                        gd = gc.get('data', {})
-                        if 'original' in gd:
-                            sub.append(gd['original'])
-                    res.append([[0,0], ['s', sub]])
-                else:
-                    # skip unknown
-                    continue
-            return res
-
-        new_figurelist = extract_figurelist(tree)
-        # load json file and update
-        dance = json.load(open(path,'r',encoding='utf-8'))
-        dance['FigureList'] = new_figurelist
-        with open(path,'w',encoding='utf-8') as f:
-            json.dump(dance, f, indent=2)
-        return jsonify({'status':'ok', 'updated': len(new_figurelist)})
-
-
-@app.route('/api/dancefloor/init', methods=['POST'])
-def api_init():
-        body = request.get_json() or {}
-        couples = int(body.get('couples', 1))
-        floor = DanceFloor('init', couples)
-        return jsonify(floor.to_dict())
-
-
-@app.route('/api/dancefloor/execute', methods=['POST'])
-def api_execute():
-        body = request.get_json() or {}
-        figure = body.get('figure')
-        anchor = body.get('anchor', [0,0])
+def load_Figuers():
+    """L?dt alle .json Dateien aus FIGURES_DIR in das globale Figure_DB."""
+    global Figure_DB, Figure_File_DB
+    Figure_DB = {}
+    Figure_File_DB = {}
+    if not os.path.isdir(FIGURES_DIR):
+        return
+    for fpath in iter_json_files(FIGURES_DIR):
         try:
-            floor = DanceFloor(body.get('dance_name','exec'), int(body.get('couples',1)))
-            fobj = Dance.getFigure(figure, anchor)
-            new = fobj.DanceMove(floor)
-            crips = fobj.getCrips(floor)
-            return jsonify({'floor': new.to_dict(), 'crips': crips})
-        except Exception as e:
-            # handle combine conflict specially
-            try:
-                from DanceFloor import CombineConflictError
-                if isinstance(e, CombineConflictError):
-                    return jsonify({'error': str(e), 'conflicts': e.conflicts}), 409
-            except Exception:
-                pass
-            return jsonify({'error': str(e)}), 500
+            with open(fpath, encoding='utf-8') as f:
+                data = json.load(f)
+            key = data.get('Name') or data.get('name') or os.path.splitext(os.path.basename(fpath))[0]
+            Figure_DB[key] = data
+            Figure_File_DB[key] = os.path.relpath(fpath, FIGURES_DIR)
+        except Exception:
+            continue
+    return
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+
+def figure_summary(key, data):
+    return {
+        'file': Figure_File_DB.get(key, key + '.json'),
+        'key': key,
+        'Name': data.get('Name') or data.get('name') or key,
+        'Desc': data.get('Desc'),
+        'Bars': data.get('Bars'),
+        'Version': data.get('Version')
+    }
+
+
+def dance_summary(path, data):
+    rel_path = os.path.relpath(path, DANCES_DIR)
+    return {
+        'file': rel_path,
+        'Name': data.get('Name') or os.path.splitext(os.path.basename(path))[0],
+        'Desc': data.get('Desc'),
+        'shape': data.get('shape') or data.get('Shape'),
+        'Version': data.get('Version')
+    }
+
+
+def _resolve_json_path(filename, roots):
+    if not filename.lower().endswith('.json'):
+        filename = filename + '.json'
+
+    basename = os.path.basename(filename)
+    candidates = []
+    for root in roots:
+        candidates.append(os.path.join(os.getcwd(), root, filename))
+        candidates.append(os.path.join(os.getcwd(), root, basename))
+
+    for root in roots:
+        root_dir = os.path.join(os.getcwd(), root)
+        if not os.path.isdir(root_dir):
+            continue
+        for base, _, files in os.walk(root_dir):
+            for found in files:
+                if found.lower() == basename.lower():
+                    candidates.append(os.path.join(base, found))
+
+    for candidate in candidates:
+        if os.path.isfile(candidate):
+            return candidate
+
+    raise FileNotFoundError(filename)
+
+
+def _resolve_dance_path(filename):
+    return _resolve_json_path(filename, ['Dances'])
+
+
+def getDance(Filename):
+    from ComplexFigure import ComplexFigure  # Lazy Import, um zirkul?ren Import zu vermeiden
+
+    myDance = ComplexFigure(_resolve_dance_path(Filename), [0,0])
+    myDance.loadFigure()
+
+    return myDance
+
+
+def getFigure(Filename, Anchor = [0,0], Addons = []):
+    from ComplexFigure import ComplexFigure  # Lazy Import, um zirkul?ren Import zu vermeiden
+
+    figure_path = _resolve_json_path(Filename, ['Figures', 'Dances'])
+    with open(figure_path, 'r') as f:
+        FigData = json.load(f)
+
+    if 'FigureList' in FigData.keys():
+        myFig = ComplexFigure(figure_path, Anchor)
+        myFig.loadFigure()
+    else:
+        myFig = SimpleFigure(Filename, Anchor, Addons)
+
+    return myFig
+
+
+def printCrip(myCrips):
+    if type(myCrips) != type([]):
+        print(myCrips)
+    else:
+        if len(myCrips) == 0:
+            pass
+        elif type(myCrips[0]) != type([]):
+            print(myCrips[0])
+            if len(myCrips) > 1:
+                printCrip(myCrips[1:])
+        else:
+            for myCrip in myCrips:
+                printCrip(myCrip)
+
+
+def showCrips(myFig, myDF):
+    printCrip(myFig.getCrips(myDF))
+
+
+load_Figuers()
+
+# ***************************************
+# ***   Funktionen zum Baumdiagramm   ***
+# ***************************************
+
+# unique ID
+nid = f"_{uuid.uuid4().hex[:8]}"
+
+
+def make_node(item_id, Data):
+    """Erzeuge einen jsTree-kompatiblen Knoten aus einem Figure-Objekt."""
+    name = Data.get('Name') or Data.get('name') or str(item_id)
+    ntype = Data.get('type', 'unknown')
+    node = {
+        "id": f"{name}_{nid}",
+        "text": name,
+        "type": ntype,
+        "meta": Data
+    }
+    if ntype == 'complex':
+        node["children"] = True
+    return node
+
+
+def build_tree_from_json(data):
+    """Kleine Fallback-Funktion, die g?ngige JSON-Formate in eine flache Knotenliste umwandelt.
+
+    Das reicht f?r die GUI, die im Moment nur eine flache Liste/Root ben?tigt.
+    """
+    nodes = []
+    if isinstance(data, dict):
+        if 'FigureList' in data and isinstance(data['FigureList'], list):
+            for i, item in enumerate(data['FigureList']):
+                name = item.get('Name') or item.get('name') or f"Figure {i+1}"
+                nodes.append({'id': i+1, 'parent_id': None, 'name': name, 'type': item.get('type', 'unknown'), 'meta': item})
+        elif 'Name' in data or 'name' in data:
+            name = data.get('Name') or data.get('name')
+            nodes.append({'id': 1, 'parent_id': None, 'name': name, 'type': data.get('type', 'unknown'), 'meta': data})
+        else:
+            for k, v in data.items():
+                if isinstance(v, list):
+                    for i, item in enumerate(v):
+                        name = item.get('Name') or item.get('name') or f"{k}_{i+1}"
+                        nodes.append({'id': len(nodes)+1, 'parent_id': None, 'name': name, 'type': item.get('type', 'unknown'), 'meta': item})
+    elif isinstance(data, list):
+        for i, item in enumerate(data):
+            name = item.get('Name') or item.get('name') or str(i+1)
+            nodes.append({'id': i+1, 'parent_id': None, 'name': name, 'type': item.get('type', 'unknown'), 'meta': item})
+    return nodes
+
+
+@app.route('/get_nodes/<node_Name>')
+def get_nodes(node_Name):
+    if node_Name in Figure_DB:
+        data = Figure_DB[node_Name]
+        return make_node(node_Name, data)
+    else:
+        node = {
+            "id": "Dance (leer)",
+            "parent_id": None,
+            "name": "Dance (leer)",
+            "meta": {}
+        }
+    return node
+
+
+@app.route("/")
+def index():
+    """
+    Liefert die Hauptseite (templates/index.html).
+    """
+    return render_template("index.html")
+
+
+@app.route("/tree")
+def tree():
+    fname = request.args.get("file") or "HLReelAD.json"
+    candidates = [
+        fname,
+        os.path.join(FIGURES_DIR, fname),
+        os.path.join(DANCES_DIR, fname),
+        os.path.join(os.path.dirname(__file__), fname)
+    ]
+    if not os.path.splitext(fname)[1]:
+        candidates.append(fname + ".json")
+
+    for root_dir in (FIGURES_DIR, DANCES_DIR):
+        if os.path.isdir(root_dir):
+            for fpath in iter_json_files(root_dir):
+                base = os.path.basename(fpath).lower()
+                if base == os.path.basename(fname).lower() or base == os.path.basename(fname + ".json").lower():
+                    candidates.append(fpath)
+
+    data = None
+    for c in candidates:
+        if os.path.isfile(c):
+            with open(c, "r", encoding="utf-8") as f:
+                try:
+                    data = json.load(f)
+                except Exception:
+                    data = None
+            break
+
+    if data is None:
+        nodes = [{
+            "id": 1,
+            "parent_id": None,
+            "name": "Dance (leer)",
+            "meta": {}
+        }]
+        return jsonify(nodes)
+
+    try:
+        nodes = build_tree_from_json(data)
+    except Exception:
+        nodes = []
+        if isinstance(data, list):
+            for i, item in enumerate(data):
+                nodes.append({
+                    "id": i + 1,
+                    "parent_id": None,
+                    "name": item.get('Name') or item.get('name') or str(i + 1),
+                    "meta": item
+                })
+
+    if not nodes:
+        nodes = [{
+            "id": 1,
+            "parent_id": None,
+            "name": "Dance (leer)",
+            "meta": {}
+        }]
+    return jsonify(nodes)
+
+
+@app.route('/figures')
+def figures():
+    """Gibt normalisierte Figuren-Summaries zur?ck."""
+    load_Figuers()
+    result = [figure_summary(key, obj) for key, obj in Figure_DB.items() if isinstance(obj, dict)]
+    result.sort(key=lambda x: str(x.get('Name', '')).lower())
+    return jsonify(result)
+
+
+@app.route('/dances')
+def list_dances():
+    """Gibt normalisierte Dance-Summaries f?r vollst?ndige Dances zur?ck."""
+    try:
+        if not os.path.isdir(DANCES_DIR):
+            return jsonify({'error': 'Dances directory not found'}), 404
+        files = []
+        for fpath in iter_json_files(DANCES_DIR):
+            rel = os.path.relpath(fpath, DANCES_DIR)
+            if rel.startswith('subDances' + os.sep):
+                continue
+            with open(fpath, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            files.append(dance_summary(fpath, data))
+        files.sort(key=lambda x: str(x.get('Name', '')).lower())
+        return jsonify(files)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+if __name__ == "__main__":
+    os.makedirs(FIGURES_DIR, exist_ok=True)
+    load_Figuers()
+    print("\nStarte DanceTreeApp (Flask). Lege JSON-Dateien in das Verzeichnis 'Figures'.")
+    app.run(debug=True)

@@ -1,5 +1,6 @@
 {"Name": "Marries Wedding",
   "Desc": "The Dance Marrie's Wedding",
+  "shape": "3/4",
   "FigureList": ["s",[
 					[[1,1], ["Marries Wedding_Bar 1-8"  ,[]]],
 					[[1,1], ["Marries Wedding_Bar 9-12"  ,[]]], 

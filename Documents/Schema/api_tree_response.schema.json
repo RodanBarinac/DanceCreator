@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GET /tree Response",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "parent_id", "name", "meta"],
+    "properties": {
+      "id": { "type": ["number", "integer", "string"] },
+      "parent_id": { "type": ["number", "integer", "string", "null"] },
+      "name": { "type": "string" },
+      "type": { "type": "string" },
+      "meta": { "type": "object" }
+    },
+    "additionalProperties": true
+  }
+}

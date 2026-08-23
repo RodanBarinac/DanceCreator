@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "API Dance Detail",
+  "type": "object",
+  "required": ["dance", "tree"],
+  "properties": {
+    "file": { "type": "string" },
+    "dance": { "$ref": "./dance.schema.json" },
+    "tree": { "$ref": "./jstree_node.schema.json" }
+  },
+  "additionalProperties": true
+}

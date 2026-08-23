@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "API Dancefloor Execute",
+  "type": "object",
+  "required": ["status"],
+  "properties": {
+    "status": { "type": "string", "enum": ["ok", "conflict", "error"] },
+    "floor": { "$ref": "./dancefloor.schema.json" },
+    "error": { "type": "string" },
+    "conflicts": { "type": "array" }
+  },
+  "additionalProperties": true
+}

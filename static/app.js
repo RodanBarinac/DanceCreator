@@ -29,15 +29,29 @@ async function loadDances() {
  const r = await api('/api/dances');
  if (r.status !== 200) { console.error('Failed to load dances'); return; }
  const sel = document.getElementById('dance-select');
- sel.innerHTML = '';
+ sel.innerHTML = '<option value="">-- Select a dance --</option>';
  r.body.forEach(d => {
    const opt = document.createElement('option');
    opt.value = d.file.replace('.json','');
    opt.textContent = d.Name || d.file;
    sel.appendChild(opt);
  });
- sel.addEventListener('change', () => initJsTree(sel.value));
- if (r.body.length) initJsTree(r.body[0].file.replace('.json',''));
+  
+ // Remove old listener if any
+ const newSel = sel.cloneNode(true);
+ sel.parentNode.replaceChild(newSel, sel);
+  
+ // Add new listener
+ const currentSel = document.getElementById('dance-select');
+ currentSel.addEventListener('change', (e) => {
+   if (e.target.value) initJsTree(e.target.value);
+ });
+  
+ // Load first dance if available
+ if (r.body.length) {
+   currentSel.value = r.body[0].file.replace('.json','');
+   initJsTree(r.body[0].file.replace('.json',''));
+ }
 }
 
 async function initJsTree(danceName) {

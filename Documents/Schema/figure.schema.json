@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Dance Figure",
+  "type": "object",
+  "properties": {
+    "Name": { "type": "string" },
+    "Desc": { "type": "string" },
+    "Anker": { "type": "array", "items": { "type": "number" } },
+    "Addons": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/Addon" },
+      "default": {}
+    },
+    "FigureList": {
+      "type": "array",
+      "items": { "type": ["object", "array", "string", "number"] }
+    },
+    "Bars": { "type": "number" },
+    "Version": { "type": ["number", "integer"] },
+    "StartPos": { "type": "array" },
+    "EndPos": { "type": "array" },
+    "CriptDesc": { "type": "array", "items": { "type": "string" } }
+  },
+  "oneOf": [
+    {
+      "required": ["Name", "Desc", "Formation", "Version", "Addons", "Bars", "StartPos", "EndPos", "CriptDesc"],
+      "not": { "required": ["FigureList"] }
+    },
+    {
+      "required": ["Name", "Desc", "Formation", "Version", "FigureList"],
+      "not": { "required": ["Addons", "Bars", "StartPos", "EndPos", "CriptDesc"] }
+    }
+  ],
+  "definitions": {
+    "Addon": {
+      "type": "object",
+      "properties": {
+        "Name": { "type": "string" },
+        "Desc": { "type": "string" },
+        "Version": { "type": ["number", "integer"] }
+      },
+      "required": ["Name", "Desc", "Version"],
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

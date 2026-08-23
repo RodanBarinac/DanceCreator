@@ -6,8 +6,8 @@ import sys
 from jsonschema import Draft7Validator
 
 ROOT = os.path.dirname(__file__)
-SCHEMA_PATH = os.path.join(ROOT, 'Documents', 'Schema', 'figure.schema.json')
-FIGURES_DIR = os.path.join(ROOT, 'Figures')
+SCHEMA_PATH = os.path.join(ROOT, 'Documents', 'Schema', 'dance.schema.json')
+DANCES_DIR = os.path.join(ROOT, 'Dances')
 
 
 def load_json(path):
@@ -22,18 +22,19 @@ def main():
 
     schema = load_json(SCHEMA_PATH)
     validator = Draft7Validator(schema)
-    files = glob.glob(os.path.join(FIGURES_DIR, '**', '*.json'), recursive=True)
+    files = glob.glob(os.path.join(DANCES_DIR, '**', '*.json'), recursive=True)
     if not files:
-        print('No figure files found')
+        print('No dance files found')
         sys.exit(0)
 
     ok_all = True
     for f in files:
-        if os.path.basename(f) == 'figure.schema.json':
+        rel = os.path.relpath(f, ROOT)
+        if 'subDances' in rel:
+            print(f'SKIP: {rel} (fragment)')
             continue
         instance = load_json(f)
         errors = list(validator.iter_errors(instance))
-        rel = os.path.relpath(f, ROOT)
         if not errors:
             print(f'OK: {rel}')
         else:
@@ -43,10 +44,10 @@ def main():
                 loc = '/' + '/'.join([str(p) for p in e.path]) if e.path else '/'
                 print(' - At', loc + ':', e.message)
     if ok_all:
-        print('\nAll Figures valid against figure.schema.json')
+        print('\nAll Dances valid against dance.schema.json')
         sys.exit(0)
     else:
-        print('\nSome Figures invalid')
+        print('\nSome Dances invalid')
         sys.exit(1)
 
 
