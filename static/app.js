@@ -97,6 +97,12 @@ function renderDanceSequence(tree) {
  : '<p class="empty-note">No sequence data available.</p>';
 }
 
+function renderDanceJson(data) {
+ const json = document.getElementById('dance-json');
+ if (!json) return;
+ json.textContent = JSON.stringify(data || {}, null, 2);
+}
+
 function renderFigureDetail(data) {
  const header = document.getElementById('figure-name');
  const meta = document.getElementById('figure-meta');
@@ -172,13 +178,12 @@ async function initJsTree(danceName) {
  const r = await api(`/api/dances/${encodeURIComponent(danceName)}`);
  const treeDiv = document.getElementById('dance-tree');
  const title = document.getElementById('dance-title');
- const json = document.getElementById('dance-json');
  if (r.status !== 200) { treeDiv.textContent = 'Failed to load tree'; return; }
  currentDanceName = danceName;
  if (title) title.textContent = r.body.dance && (r.body.dance.Name || r.body.dance.name) || danceName;
  renderDanceSummary(r.body.dance || {});
  renderDanceSequence(r.body.tree);
- if (json) json.textContent = JSON.stringify(r.body.dance || {}, null, 2);
+ renderDanceJson(r.body.dance || {});
  const treeData = r.body.tree;
  // init jstree
  // destroy existing

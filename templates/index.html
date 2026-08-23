@@ -84,12 +84,31 @@
       /* Right Panel - Tree */
       #right h3 { margin: 0 0 10px 0; font-size: 14px; }
       #dance-select { padding: 6px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px; margin-bottom: 8px; }
-      #dance-summary { font-size: 11px; line-height: 1.5; color: #444; margin-bottom: 8px; }
-      #dance-sequence { border: 1px solid #ddd; padding: 6px; background: #fafafa; overflow: auto; border-radius: 3px; margin-bottom: 8px; font-size: 11px; }
+      #dance-summary {
+        font-size: 11px;
+        line-height: 1.35;
+        color: #444;
+        margin-bottom: 8px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2px 8px;
+        max-height: 84px;
+        overflow: auto;
+      }
+      #dance-sequence {
+        border: 1px solid #ddd;
+        padding: 6px;
+        background: #fafafa;
+        overflow: auto;
+        border-radius: 3px;
+        margin-bottom: 8px;
+        font-size: 11px;
+        max-height: 160px;
+      }
       .dance-sequence-list { margin: 0; padding-left: 18px; }
       .dance-sequence-list ul { margin-top: 4px; padding-left: 18px; }
       .dance-node { display: inline-block; margin: 2px 0; }
-      #dance-tree { flex: 1; border: 1px solid #ddd; padding: 6px; background: #fafafa; overflow: auto; border-radius: 3px; }
+      #dance-tree { flex: 1; min-height: 180px; border: 1px solid #ddd; padding: 6px; background: #fafafa; overflow: auto; border-radius: 3px; }
       
       /* Modal */
       .hidden { display: none !important; }
