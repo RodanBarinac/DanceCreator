@@ -279,12 +279,7 @@ async function initJsTree(danceName) {
   var node = data && data.node ? data.node : null;
   if (!node || !node.data || !node.data.figureName) return;
   document.body.dataset.selectedFigure = node.data.figureName;
-  await showFigure(node.data.figureName, null, {
-   anchor: node.data.anchor || [1, 1],
-   addons: node.data.addons || {},
-   couples: currentDanceCouples,
-   dance_name: currentDanceName
-  });
+  await showFigure(node.data.figureName, null);
  });
 
  // when node moved, send updated tree to backend
