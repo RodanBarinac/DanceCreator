@@ -50,6 +50,20 @@ These are the routes currently present in `GUI_DanceCreator_App.py`:
 - `GET /tree?file=<name>` - tree view for one figure or dance file
 - `GET /get_nodes/<node_Name>` - tree node lookup for loaded figures
 
+## Versioned API routes
+
+The `/api/` namespace mirrors the current backend contract and is the preferred entry point for GUI consumption:
+
+- `GET /api/figures`
+- `GET /api/figures/<name>` - full figure JSON
+- `GET /api/dances`
+- `GET /api/dances/<name>` - dance JSON plus nested tree
+- `GET /api/dances/<name>/tree` - nested tree only
+- `GET /api/tree?file=<name>`
+- `GET /api/get_nodes/<node_Name>`
+- `POST /api/dancefloor/init`
+- `POST /api/dancefloor/execute` - serialized floor plus crips
+
 ## Normalized contract
 
 The list endpoints should return summary objects, not raw filenames or raw figure payloads.
@@ -88,6 +102,4 @@ Use `Documents/Schema/jstree_node.schema.json` for the intended GUI shape.
 - Files under `Dances/subDances/` are legacy fragments; they are loadable by the resolver but are not yet treated as full dances in validation.
 - The GUI may consume these routes later via `/api/*`, but that is not the current truth.
 - Contract work should follow the backend routes and data files first.
-
-
 
