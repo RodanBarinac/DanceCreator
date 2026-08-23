@@ -312,8 +312,6 @@ async function showFigure(identifier, selectedElement, canvasOptions) {
    if (li.dataset.figureKey === identifier || li.dataset.figureFile === identifier) li.classList.add('selected');
   });
  }
-
- await renderFigureOnCanvas(identifier, canvasOptions || getCanvasOptions());
 }
 
 async function onFigureClick(e) {
@@ -322,26 +320,11 @@ async function onFigureClick(e) {
 }
 
 async function previewFigure() {
- const name = document.body.dataset.selectedFigure;
- if (!name) { alert('No figure selected'); return; }
- const anchor = [parseInt(document.getElementById('anchor-row').value||0,10), parseInt(document.getElementById('anchor-col').value||0,10)];
- let addons = {};
- try { addons = JSON.parse(document.getElementById('addons-json').value); } catch(e) { alert('Invalid addons JSON'); return; }
- await renderFigureOnCanvas(name, { anchor: anchor, addons: addons, couples: currentDanceCouples, dance_name: 'preview' });
- alert('Preview updated');
+ alert('Floor rendering is paused for now.');
 }
 
 async function executeFigure() {
- const name = document.body.dataset.selectedFigure;
- if (!name) { alert('No figure selected'); return; }
- const anchor = [parseInt(document.getElementById('anchor-row').value||0,10), parseInt(document.getElementById('anchor-col').value||0,10)];
- let addons = {};
- try { addons = JSON.parse(document.getElementById('addons-json').value); } catch(e) { alert('Invalid addons JSON'); return; }
- const floor = await renderFigureOnCanvas(name, { anchor: anchor, addons: addons, couples: currentDanceCouples, dance_name: 'UI-exec' });
- if (floor) {
-   document.getElementById('status').textContent = 'Executed';
-   alert('Execution succeeded.');
- }
+ alert('Floor rendering is paused for now.');
 }
 
 function showConflict(body) {
