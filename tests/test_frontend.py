@@ -17,6 +17,16 @@ def test_static_js():
     assert b'loadFigures' in rv.data
 
 
+def test_figure_detail_panels_present():
+    """Test that the figure detail placeholders exist in the HTML."""
+    client = app.test_client()
+    rv = client.get('/')
+    assert rv.status_code == 200
+    assert b'figure-meta' in rv.data
+    assert b'figure-steps' in rv.data
+    assert b'figure-crips' in rv.data
+
+
 # NOTE: /api/dances endpoint may not exist in current routes
 # def test_api_dances_list():
 #     client = app.test_client()

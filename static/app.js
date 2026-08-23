@@ -1,5 +1,7 @@
 // Minimal frontend to interact with backend API
 
+let currentFigureSummary = null;
+
 async function api(path, opts) {
  const res = await fetch(path, opts);
  const contentType = res.headers.get('content-type') || '';
@@ -9,20 +11,96 @@ async function api(path, opts) {
  return { status: res.status, body };
 }
 
+function escapeHtml(value) {
+ const text = String(value == null ? '' : value);
+ return text.replace(/[&<>"']/g, ch => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+ }[ch]));
+}
+
+function formatPos(value) {
+ if (!Array.isArray(value) || value.length < 2) return '';
+ return `(${value[0]}, ${value[1]})`;
+}
+
+function renderSteps(data) {
+ const rows = [];
+ const starts = Array.isArray(data.StartPos) ? data.StartPos : [];
+ const ends = Array.isArray(data.EndPos) ? data.EndPos : [];
+ const facings = Array.isArray(data.Faceing) ? data.Faceing : Array.isArray(data.Facing) ? data.Facing : [];
+ const partners = Array.isArray(data.Partner) ? data.Partner : [];
+ const count = Math.max(starts.length, ends.length, facings.length, partners.length);
+
+ for (let i = 0; i < count; i += 1) {
+  rows.push(
+   `<tr>
+     <td>${i + 1}</td>
+     <td>${escapeHtml(formatPos(starts[i]))}</td>
+     <td>${escapeHtml(formatPos(ends[i]))}</td>
+     <td>${escapeHtml(formatPos(facings[i]))}</td>
+     <td>${escapeHtml(formatPos(partners[i]))}</td>
+   </tr>`
+  );
+ }
+
+ return rows.length
+  ? `<table class="figure-table">
+       <thead><tr><th>#</th><th>Start</th><th>End</th><th>Face</th><th>Partner</th></tr></thead>
+       <tbody>${rows.join('')}</tbody>
+     </table>`
+  : '<p class="empty-note">No step data available.</p>';
+}
+
+function renderCrips(data) {
+ const crips = Array.isArray(data.CriptDesc) ? data.CriptDesc : [];
+ if (!crips.length) return '<p class="empty-note">No crips available.</p>';
+ return `<ol class="figure-crips">${crips.map(crip => `<li>${escapeHtml(crip)}</li>`).join('')}</ol>`;
+}
+
+function renderFigureDetail(data) {
+ const header = document.getElementById('figure-name');
+ const meta = document.getElementById('figure-meta');
+ const steps = document.getElementById('figure-steps');
+ const crips = document.getElementById('figure-crips');
+ const json = document.getElementById('figure-json');
+
+ header.textContent = data.Name || data.name || 'Figure';
+ meta.innerHTML = `
+  <div><strong>Version:</strong> ${escapeHtml(data.Version || '')}</div>
+  <div><strong>Bars:</strong> ${escapeHtml(data.Bars || '')}</div>
+  <div><strong>Formation:</strong> ${escapeHtml(data.Formation || data.Type || '')}</div>
+  <div><strong>Description:</strong> ${escapeHtml(data.Desc || '')}</div>
+ `;
+ steps.innerHTML = renderSteps(data);
+ crips.innerHTML = renderCrips(data);
+ json.textContent = JSON.stringify(data, null, 2);
+}
+
 async function loadFigures() {
  const r = await api('/api/figures');
  if (r.status !== 200) { console.error('Failed to load figures'); return; }
  const list = document.getElementById('fig-list');
  list.innerHTML = '';
+ currentFigureSummary = null;
  r.body.forEach(f => {
-   if (!f.file || f.file.endsWith('figure.schema.json')) return; // skip schema file
+   if (!f.file || f.file.endsWith('figure.schema.json')) return;
    const li = document.createElement('li');
    li.textContent = `${f.Name || f.file} (${f.Bars || '?'} bars)`;
-   li.dataset.file = f.file.replace('.json','');
+   li.dataset.figureKey = f.key || f.file.replace('.json', '');
+   li.dataset.figureFile = f.file.replace('.json','');
    li.dataset.formation = f.Formation || f.Type || 'Other';
    li.addEventListener('click', onFigureClick);
    list.appendChild(li);
+   if (!currentFigureSummary) currentFigureSummary = f;
  });
+
+ if (currentFigureSummary) {
+   await showFigure(currentFigureSummary.key || currentFigureSummary.file.replace('.json', ''), list.querySelector('li'));
+ }
 }
 
 async function loadDances() {
@@ -74,16 +152,31 @@ async function initJsTree(danceName) {
  });
 }
 
-async function onFigureClick(e) {
- const name = e.currentTarget.dataset.file;
+async function showFigure(identifier, selectedElement) {
  const detail = document.getElementById('figure-json');
  const header = document.getElementById('figure-name');
- const r = await api(`/api/figures/${encodeURIComponent(name)}`);
- if (r.status !== 200) { detail.textContent = 'Error loading figure'; return; }
- header.textContent = r.body.Name || name;
- detail.textContent = JSON.stringify(r.body, null, 2);
- // store current selected name
- document.body.dataset.selectedFigure = name;
+ const r = await api(`/api/figures/${encodeURIComponent(identifier)}`);
+ if (r.status !== 200) {
+  detail.textContent = 'Error loading figure';
+  return;
+ }
+ renderFigureDetail(r.body);
+ document.body.dataset.selectedFigure = identifier;
+
+ const items = document.querySelectorAll('#fig-list li');
+ items.forEach(li => li.classList.remove('selected'));
+ if (selectedElement) {
+  selectedElement.classList.add('selected');
+ } else {
+  items.forEach(li => {
+   if (li.dataset.figureKey === identifier || li.dataset.figureFile === identifier) li.classList.add('selected');
+  });
+ }
+}
+
+async function onFigureClick(e) {
+ const identifier = e.currentTarget.dataset.figureKey || e.currentTarget.dataset.figureFile;
+ await showFigure(identifier, e.currentTarget);
 }
 
 async function previewFigure() {

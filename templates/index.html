@@ -49,6 +49,7 @@
       #middle h3 { margin: 0 0 10px 0; font-size: 14px; }
       #figure-details { flex: 1; overflow-y: auto; }
       #figure-name { display: block; font-size: 14px; font-weight: bold; margin-bottom: 8px; }
+      #figure-meta { font-size: 11px; line-height: 1.5; margin-bottom: 10px; color: #444; }
       #figure-json { 
         background: #fafafa; 
         padding: 8px; 
@@ -62,6 +63,11 @@
         border: 1px solid #e0e0e0;
         margin-bottom: 10px;
       }
+      .figure-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px; }
+      .figure-table th, .figure-table td { border: 1px solid #e0e0e0; padding: 4px 6px; text-align: left; vertical-align: top; }
+      .figure-table th { background: #f7f7f7; }
+      .figure-crips { margin: 0; padding-left: 18px; font-size: 11px; }
+      .empty-note { font-size: 11px; color: #777; font-style: italic; }
       
       /* Control Section */
       .control-section { border-top: 1px solid #e0e0e0; padding-top: 10px; font-size: 12px; }
@@ -126,6 +132,9 @@
       
       <div id="figure-details">
         <span id="figure-name">Keine Figur gewählt</span>
+        <div id="figure-meta"></div>
+        <div id="figure-steps"></div>
+        <div id="figure-crips"></div>
         <div id="figure-json"></div>
       </div>
       
