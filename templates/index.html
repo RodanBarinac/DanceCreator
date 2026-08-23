@@ -95,6 +95,9 @@
         max-height: 72px;
         overflow: auto;
       }
+      #floor-panel { margin-bottom: 8px; }
+      #floor-status { font-size: 10px; color: #666; margin-bottom: 6px; }
+      #dance-floor-canvas { width: 100%; min-height: 220px; border: 1px solid #ddd; border-radius: 3px; background: #fff; display: block; margin-bottom: 8px; }
       #dance-tree { flex: 1; min-height: 180px; border: 1px solid #ddd; padding: 6px; background: #fafafa; overflow: auto; border-radius: 3px; }
       
       /* Modal */
@@ -178,6 +181,10 @@
       <select id="dance-select"></select>
       <div id="dance-title" style="font-size: 13px; font-weight: bold; margin-bottom: 6px;"></div>
       <div id="dance-summary"></div>
+      <div id="floor-panel">
+        <div id="floor-status">No floor loaded</div>
+        <svg id="dance-floor-canvas" viewBox="0 0 420 240" aria-label="Dance floor canvas"></svg>
+      </div>
       <div id="dance-tree"></div>
     </div>
   </div>

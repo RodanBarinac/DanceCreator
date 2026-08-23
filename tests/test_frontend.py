@@ -34,6 +34,8 @@ def test_dance_detail_panels_present():
     assert rv.status_code == 200
     assert b'dance-title' in rv.data
     assert b'dance-summary' in rv.data
+    assert b'dance-floor-canvas' in rv.data
+    assert b'floor-status' in rv.data
     assert b'dance-tree' in rv.data
 
 

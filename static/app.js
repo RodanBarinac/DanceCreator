@@ -2,6 +2,7 @@
 
 let currentFigureSummary = null;
 let currentDanceName = null;
+let currentDanceCouples = 3;
 
 async function api(path, opts) {
  const res = await fetch(path, opts);
@@ -26,6 +27,119 @@ function escapeHtml(value) {
 function formatPos(value) {
  if (!Array.isArray(value) || value.length < 2) return '';
  return `(${value[0]}, ${value[1]})`;
+}
+
+function normalizeAnchor(anchor) {
+ if (!Array.isArray(anchor) || anchor.length < 2) return [1, 1];
+ var row = parseInt(anchor[0], 10);
+ var col = parseInt(anchor[1], 10);
+ if (!isFinite(row) || row < 1) row = 1;
+ if (!isFinite(col) || col < 1) col = 1;
+ return [row, col];
+}
+
+function getCanvasOptions(anchorOverride, addonsOverride) {
+ var rowInput = document.getElementById('anchor-row');
+ var colInput = document.getElementById('anchor-col');
+ var parsedRow = rowInput ? parseInt(rowInput.value || '1', 10) : 1;
+ var parsedCol = colInput ? parseInt(colInput.value || '1', 10) : 1;
+ var anchor = normalizeAnchor(anchorOverride || [parsedRow, parsedCol]);
+ var addons = addonsOverride;
+ if (typeof addons === 'undefined') {
+  addons = {};
+  var addonInput = document.getElementById('addons-json');
+  if (addonInput) {
+   try { addons = JSON.parse(addonInput.value || '{}'); } catch (e) { addons = {}; }
+  }
+ }
+ return { anchor: anchor, addons: addons };
+}
+
+function renderFloorCanvas(floor) {
+ var canvas = document.getElementById('dance-floor-canvas');
+ var status = document.getElementById('floor-status');
+ if (!canvas) return;
+
+ if (!floor) {
+  canvas.innerHTML = '<text x="16" y="24" class="empty-note">No floor data.</text>';
+  if (status) status.textContent = 'No floor loaded';
+  return;
+ }
+
+ var couples = parseInt(floor.couples || currentDanceCouples || 3, 10);
+ if (!isFinite(couples) || couples < 1) couples = 3;
+ currentDanceCouples = couples;
+
+ var cellW = 120;
+ var cellH = 60;
+ var pad = 18;
+ var cols = 3;
+ var width = pad * 2 + cols * cellW;
+ var height = pad * 2 + couples * cellH + 24;
+ canvas.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+ canvas.setAttribute('width', '100%');
+ canvas.setAttribute('height', Math.max(180, height));
+
+ var svg = [];
+ svg.push('<rect x="0" y="0" width="' + width + '" height="' + height + '" fill="#ffffff" stroke="#ddd"/>');
+ svg.push('<text x="' + pad + '" y="14" font-size="11" fill="#666">Floor: ' + escapeHtml(floor.name || '') + ' | Bar ' + escapeHtml(floor.tick || 0) + '</text>');
+ svg.push('<text x="' + (pad + 10) + '" y="' + (pad + 24) + '" font-size="10" fill="#666">Men</text>');
+ svg.push('<text x="' + (pad + cellW + 10) + '" y="' + (pad + 24) + '" font-size="10" fill="#666">Between</text>');
+ svg.push('<text x="' + (pad + cellW * 2 + 10) + '" y="' + (pad + 24) + '" font-size="10" fill="#666">Lady</text>');
+
+ for (var r = 1; r <= couples; r += 1) {
+  var rowY = pad + 24 + (r - 1) * cellH;
+  svg.push('<text x="' + (pad - 4) + '" y="' + (rowY + 36) + '" font-size="10" text-anchor="end" fill="#666">' + r + '</text>');
+  for (var c = 1; c <= cols; c += 1) {
+   var x = pad + (c - 1) * cellW;
+   svg.push('<rect x="' + x + '" y="' + rowY + '" width="' + cellW + '" height="' + cellH + '" fill="#fafafa" stroke="#ddd"/>');
+  }
+ }
+
+ var positions = floor.positions || {};
+ Object.keys(positions).forEach(function (key) {
+  var item = positions[key] || {};
+  var coord = Array.isArray(item.coord) ? item.coord : null;
+  if (!coord || coord.length < 2) return;
+  var row = parseInt(coord[0], 10);
+  var col = parseInt(coord[1], 10);
+  if (!isFinite(row) || !isFinite(col)) return;
+  var posX = pad + (col - 1) * cellW + cellW / 2;
+  var posY = pad + 24 + (row - 1) * cellH + cellH / 2;
+  var dancer = item.dancer || {};
+  var label = dancer.name || key;
+  svg.push('<circle cx="' + posX + '" cy="' + posY + '" r="16" fill="#e3f2fd" stroke="#1565c0" stroke-width="2"/>');
+  svg.push('<text x="' + posX + '" y="' + (posY + 4) + '" text-anchor="middle" font-size="10" fill="#0d47a1">' + escapeHtml(label) + '</text>');
+ });
+
+ canvas.innerHTML = svg.join('');
+ if (status) status.textContent = 'Loaded floor: ' + (floor.name || '') + ' (bar ' + (floor.tick || 0) + ')';
+}
+
+async function renderFigureOnCanvas(figureName, options) {
+ options = options || {};
+ var body = {
+  figure: figureName,
+  anchor: options.anchor || [1, 1],
+  addons: options.addons || {},
+  couples: options.couples || currentDanceCouples || 3,
+  dance_name: options.dance_name || currentDanceName || 'preview'
+ };
+ var res = await api('/api/dancefloor/execute', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body)
+ });
+ if (res.status === 200) {
+  renderFloorCanvas(res.body.floor);
+  return res.body.floor;
+ }
+ if (res.status === 409) {
+  showConflict(res.body);
+  return null;
+ }
+ alert('Execution failed: ' + (res.body && res.body.error));
+ return null;
 }
 
 function renderSteps(data) {
@@ -150,6 +264,8 @@ async function initJsTree(danceName) {
  const title = document.getElementById('dance-title');
  if (r.status !== 200) { treeDiv.textContent = 'Failed to load tree'; return; }
  currentDanceName = danceName;
+ currentDanceCouples = parseInt((r.body.dance && r.body.dance.shape ? String(r.body.dance.shape).split('/')[0] : '3'), 10);
+ if (!isFinite(currentDanceCouples) || currentDanceCouples < 1) currentDanceCouples = 3;
  if (title) title.textContent = r.body.dance && (r.body.dance.Name || r.body.dance.name) || danceName;
  renderDanceSummary(r.body.dance || {});
  const treeData = r.body.tree;
@@ -157,6 +273,19 @@ async function initJsTree(danceName) {
  // destroy existing
  try { $(treeDiv).jstree(true).destroy(); } catch(e) {}
  $(treeDiv).jstree({ 'core': { 'data': [ treeData ], 'check_callback': true }, 'plugins': ['dnd','wholerow'] });
+
+ $(treeDiv).off('select_node.jstree');
+ $(treeDiv).on('select_node.jstree', async function (e, data) {
+  var node = data && data.node ? data.node : null;
+  if (!node || !node.data || !node.data.figureName) return;
+  document.body.dataset.selectedFigure = node.data.figureName;
+  await showFigure(node.data.figureName, null, {
+   anchor: node.data.anchor || [1, 1],
+   addons: node.data.addons || {},
+   couples: currentDanceCouples,
+   dance_name: currentDanceName
+  });
+ });
 
  // when node moved, send updated tree to backend
  $(treeDiv).on('move_node.jstree', function(e, data) {
@@ -168,7 +297,7 @@ async function initJsTree(danceName) {
  });
 }
 
-async function showFigure(identifier, selectedElement) {
+async function showFigure(identifier, selectedElement, canvasOptions) {
  const detail = document.getElementById('figure-json');
  const header = document.getElementById('figure-name');
  const r = await api(`/api/figures/${encodeURIComponent(identifier)}`);
@@ -188,6 +317,8 @@ async function showFigure(identifier, selectedElement) {
    if (li.dataset.figureKey === identifier || li.dataset.figureFile === identifier) li.classList.add('selected');
   });
  }
+
+ await renderFigureOnCanvas(identifier, canvasOptions || getCanvasOptions());
 }
 
 async function onFigureClick(e) {
@@ -201,16 +332,8 @@ async function previewFigure() {
  const anchor = [parseInt(document.getElementById('anchor-row').value||0,10), parseInt(document.getElementById('anchor-col').value||0,10)];
  let addons = {};
  try { addons = JSON.parse(document.getElementById('addons-json').value); } catch(e) { alert('Invalid addons JSON'); return; }
- const body = { figure: name, anchor: anchor, addons: addons, couples: 3, dance_name: 'preview' };
- const res = await api('/api/dancefloor/execute', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
- if (res.status === 200) {
-   console.log('Preview floor', res.body.floor);
-   alert('Preview succeeded (see console)');
- } else if (res.status === 409) {
-   showConflict(res.body);
- } else {
-   alert('Preview failed: '+(res.body && res.body.error));
- }
+ await renderFigureOnCanvas(name, { anchor: anchor, addons: addons, couples: currentDanceCouples, dance_name: 'preview' });
+ alert('Preview updated');
 }
 
 async function executeFigure() {
@@ -219,16 +342,10 @@ async function executeFigure() {
  const anchor = [parseInt(document.getElementById('anchor-row').value||0,10), parseInt(document.getElementById('anchor-col').value||0,10)];
  let addons = {};
  try { addons = JSON.parse(document.getElementById('addons-json').value); } catch(e) { alert('Invalid addons JSON'); return; }
- const body = { figure: name, anchor: anchor, addons: addons, couples: 3, dance_name: 'UI-exec' };
- const res = await api('/api/dancefloor/execute', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
- if (res.status === 200) {
+ const floor = await renderFigureOnCanvas(name, { anchor: anchor, addons: addons, couples: currentDanceCouples, dance_name: 'UI-exec' });
+ if (floor) {
    document.getElementById('status').textContent = 'Executed';
-   alert('Execution succeeded. Check console for floor.');
-   console.log(res.body.floor);
- } else if (res.status === 409) {
-   showConflict(res.body);
- } else {
-   alert('Execution failed: ' + (res.body && res.body.error));
+   alert('Execution succeeded.');
  }
 }
 
