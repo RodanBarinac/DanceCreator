@@ -92,22 +92,9 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 2px 8px;
-        max-height: 84px;
+        max-height: 72px;
         overflow: auto;
       }
-      #dance-sequence {
-        border: 1px solid #ddd;
-        padding: 6px;
-        background: #fafafa;
-        overflow: auto;
-        border-radius: 3px;
-        margin-bottom: 8px;
-        font-size: 11px;
-        max-height: 160px;
-      }
-      .dance-sequence-list { margin: 0; padding-left: 18px; }
-      .dance-sequence-list ul { margin-top: 4px; padding-left: 18px; }
-      .dance-node { display: inline-block; margin: 2px 0; }
       #dance-tree { flex: 1; min-height: 180px; border: 1px solid #ddd; padding: 6px; background: #fafafa; overflow: auto; border-radius: 3px; }
       
       /* Modal */
@@ -191,9 +178,7 @@
       <select id="dance-select"></select>
       <div id="dance-title" style="font-size: 13px; font-weight: bold; margin-bottom: 6px;"></div>
       <div id="dance-summary"></div>
-      <div id="dance-sequence"></div>
       <div id="dance-tree"></div>
-      <div id="dance-json" style="display:none;"></div>
     </div>
   </div>
 

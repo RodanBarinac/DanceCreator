@@ -73,42 +73,6 @@ function renderDanceSummary(data) {
  `;
 }
 
-function renderDanceNode(node) {
- const children = Array.isArray(node.children) ? node.children : [];
- const label = node.type === 'group'
- ? `${node.text}${node.data && node.data.mode ? ` (${node.data.mode})` : ''}`
- : node.text;
- const anchor = node.data && Array.isArray(node.data.anchor) ? ` ${formatPos(node.data.anchor)}` : '';
- const suffix = node.type === 'figure' ? anchor : '';
- const childHtml = children.length ? `<ul>${children.map(renderDanceNode).join('')}</ul>` : '';
- return `<li><span class="dance-node">${escapeHtml(label)}${escapeHtml(suffix)}</span>${childHtml}</li>`;
-}
-
-function renderDanceSequence(tree) {
- const panel = document.getElementById('dance-sequence');
- if (!panel) return;
- if (!tree) {
- panel.innerHTML = '<p class="empty-note">No dance selected.</p>';
- return;
- }
- const children = Array.isArray(tree.children) ? tree.children : [];
- panel.innerHTML = children.length
- ? `<ol class="dance-sequence-list">${children.map(renderDanceNode).join('')}</ol>`
- : '<p class="empty-note">No sequence data available.</p>';
-}
-
-function renderDanceJson(data) {
- const json = document.getElementById('dance-json');
- if (!json) return;
- const summary = {
-  Name: data && (data.Name || data.name || ''),
-  Desc: data && (data.Desc || ''),
-  shape: data && (data.shape || data.Shape || ''),
-  Version: data && (data.Version || '')
- };
- json.textContent = JSON.stringify(summary, null, 2);
-}
-
 function renderFigureDetail(data) {
  const header = document.getElementById('figure-name');
  const meta = document.getElementById('figure-meta');
@@ -188,8 +152,6 @@ async function initJsTree(danceName) {
  currentDanceName = danceName;
  if (title) title.textContent = r.body.dance && (r.body.dance.Name || r.body.dance.name) || danceName;
  renderDanceSummary(r.body.dance || {});
- renderDanceSequence(r.body.tree);
- renderDanceJson(r.body.dance || {});
  const treeData = r.body.tree;
  // init jstree
  // destroy existing
