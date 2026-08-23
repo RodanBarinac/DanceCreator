@@ -55,6 +55,17 @@ def test_api_dance_detail():
     assert _has_nested_figure_leaf(data['tree'])
 
 
+def test_api_dance_detail_expands_modular_figures():
+    rv = _client().get('/api/dances/Marries%20Wedding')
+    assert rv.status_code == 200
+    data = rv.get_json()
+    tree = data['tree']
+    assert tree['children']
+    first_branch = tree['children'][0]
+    assert first_branch['children']
+    assert _has_nested_figure_leaf(first_branch)
+
+
 def _has_nested_figure_leaf(node):
     if node.get('type') == 'figure' and not node.get('children'):
         return True

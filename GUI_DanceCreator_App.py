@@ -159,12 +159,14 @@ def _is_figure_call(entry):
     )
 
 
-def _build_dance_tree(entry, node_id):
+def _build_dance_tree(entry, node_id, seen=None):
+    seen = seen or set()
+
     if _is_group_entry(entry):
         mode = entry[0]
         children = []
         for index, child in enumerate(entry[1]):
-            children.append(_build_dance_tree(child, f"{node_id}-{index}"))
+            children.append(_build_dance_tree(child, f"{node_id}-{index}", seen))
         return {
             'id': str(node_id),
             'text': 'Sequential Group' if mode == 's' else 'Parallel Group',
@@ -178,7 +180,7 @@ def _build_dance_tree(entry, node_id):
         fig_spec = entry[1]
         figure_name = fig_spec[0] if len(fig_spec) > 0 else 'Figure'
         addons = fig_spec[1] if len(fig_spec) > 1 else []
-        return {
+        node = {
             'id': str(node_id),
             'text': figure_name,
             'children': [],
@@ -190,11 +192,33 @@ def _build_dance_tree(entry, node_id):
                 'original': entry
             }
         }
+        figure_path = _figure_detail_path(figure_name)
+        if figure_path and figure_path not in seen:
+            try:
+                figure_data = _load_json_file(figure_path)
+            except Exception:
+                figure_data = None
+            if isinstance(figure_data, dict) and isinstance(figure_data.get('FigureList'), list):
+                nested_seen = set(seen)
+                nested_seen.add(figure_path)
+                child_entries = figure_data.get('FigureList')
+                child_nodes = []
+                if _is_group_entry(child_entries):
+                    child_nodes.append(_build_dance_tree(child_entries, f"{node_id}-0", nested_seen))
+                else:
+                    for index, child in enumerate(child_entries):
+                        child_nodes.append(_build_dance_tree(child, f"{node_id}-{index}", nested_seen))
+                if child_nodes:
+                    node['type'] = 'group'
+                    node['text'] = figure_name
+                    node['children'] = child_nodes
+                    node['data']['expanded'] = True
+        return node
 
     if isinstance(entry, list):
         children = []
         for index, child in enumerate(entry):
-            children.append(_build_dance_tree(child, f"{node_id}-{index}"))
+            children.append(_build_dance_tree(child, f"{node_id}-{index}", seen))
         return {
             'id': str(node_id),
             'text': 'Group',
@@ -216,10 +240,10 @@ def build_dance_tree(data, name='Dance'):
     children = []
     figure_list = data.get('FigureList') if isinstance(data, dict) else []
     if _is_group_entry(figure_list):
-        children.append(_build_dance_tree(figure_list, 'node-0'))
+        children.append(_build_dance_tree(figure_list, 'node-0', set()))
     elif isinstance(figure_list, list):
         for index, entry in enumerate(figure_list):
-            children.append(_build_dance_tree(entry, f"node-{index}"))
+            children.append(_build_dance_tree(entry, f"node-{index}", set()))
     return {
         'id': 'root',
         'text': name,

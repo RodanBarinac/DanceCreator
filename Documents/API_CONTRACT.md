@@ -102,6 +102,7 @@ Use `Documents/Schema/jstree_node.schema.json` for the intended GUI shape.
 - Legacy dance files may exist without `shape`, but should be migrated.
 - Files under `Dances/subDances/` are legacy fragments; they are loadable by the resolver but are not yet treated as full dances in validation.
 - Dance trees are recursive and should keep expanding groups until only simple figures remain.
+- Modular figure references should expand to their own trees when the figure file contains a `FigureList`.
 - `FigureList` belongs to the tree response, not the metadata summary.
 - The GUI may consume these routes later via `/api/*`, but that is not the current truth.
 - Contract work should follow the backend routes and data files first.
