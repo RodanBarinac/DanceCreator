@@ -77,6 +77,7 @@ Each item should include:
 - `Name`
 - `Desc` when available
 - `Bars` when available
+- `Formation` when available
 - `Version` when available
 
 ### `GET /dances`
@@ -102,4 +103,3 @@ Use `Documents/Schema/jstree_node.schema.json` for the intended GUI shape.
 - Files under `Dances/subDances/` are legacy fragments; they are loadable by the resolver but are not yet treated as full dances in validation.
 - The GUI may consume these routes later via `/api/*`, but that is not the current truth.
 - Contract work should follow the backend routes and data files first.
-

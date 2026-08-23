@@ -16,6 +16,7 @@ def test_api_figures_list():
     assert 'file' in data[0]
     assert 'key' in data[0]
     assert 'Name' in data[0]
+    assert 'Formation' in data[0]
 
 
 def test_api_figure_detail():

@@ -11,6 +11,7 @@
       "Name": { "type": "string" },
       "Desc": { "type": "string" },
       "Bars": { "type": ["number", "integer"] },
+      "Formation": { "type": "string" },
       "Version": { "type": ["number", "integer"] }
     },
     "additionalProperties": true

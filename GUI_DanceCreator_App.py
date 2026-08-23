@@ -81,6 +81,7 @@ def figure_summary(key, data):
         'Name': data.get('Name') or data.get('name') or key,
         'Desc': data.get('Desc'),
         'Bars': data.get('Bars'),
+        'Formation': data.get('Formation'),
         'Version': data.get('Version')
     }
 
