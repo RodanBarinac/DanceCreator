@@ -105,6 +105,28 @@ class DanceFloor:
         newDF.AktBar = self.AktBar
         return newDF
 
+    def _short_name(self, myName):
+        if myName is None:
+            return ''
+        myName = str(myName).strip()
+        if len(myName) <= 3:
+            return myName
+        return myName[-3:]
+
+    def _cell_label(self, row, col):
+        pos = (row, col)
+        if pos not in self._DanceFloorMap:
+            return '   '
+
+        dancer = self._DanceFloorMap[pos][0]
+        name = self._short_name(getattr(dancer, 'name', ''))
+        gender = str(getattr(dancer, 'gender', '')).lower()
+        if gender.startswith('m'):
+            return '○' + name
+        if gender.startswith('f'):
+            return '□' + name
+        return '·' + name
+
     def __str__(self):
         maxRow = 0
         maxCol = 0
@@ -113,15 +135,17 @@ class DanceFloor:
                 maxRow = nPos[0]
             if maxCol < nPos[1]:
                 maxCol = nPos[1]
-#        print(str(maxRow) + ' / ' + str(maxCol))
-        myDesc = '\nEnd of Bar: ' + str(self.AktBar-1) + '\n            Men                 Lady'
-        for i in range(int(self._Row * maxRow) + 1):
-            for j in range(int(self._Col * maxCol) + 1):
-                locDesc = '    '
-                if (i/self._Row,j/self._Col) in self._DanceFloorMap.keys():
-                    locDesc = locDesc + self._DanceFloorMap[(i/self._Row, j/self._Col)][0].name
-                myDesc = myDesc + locDesc[-4:] + ' '
-            myDesc = myDesc + '\n'
+        if maxRow == 0:
+            maxRow = self.maxRow
+
+        myDesc = '\nEnd of Bar: ' + str(self.AktBar - 1) + '\n'
+        myDesc = myDesc + '    Row |   Men   | Between |   Lady  \n'
+        myDesc = myDesc + '   ------+---------+---------+---------\n'
+
+        for row in range(1, int(maxRow) + 1):
+            men = self._cell_label(row, 1)
+            middle = self._cell_label(row, 2)
+            lady = self._cell_label(row, 3)
+            myDesc = myDesc + '    {0:>3} | {1:^7} | {2:^7} | {3:^7}\n'.format(row, men, middle, lady)
 
         return myDesc
-

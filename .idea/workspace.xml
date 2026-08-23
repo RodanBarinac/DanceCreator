@@ -8,11 +8,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7aaaf50a-c70e-40e5-a0da-48518b5e3409" name="Changes" comment="- Stand 20260726">
-      <change beforePath="$PROJECT_DIR$/.idea/DanceCreator.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/DanceCreator.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/IMPLEMENTIERUNG_BACKEND.md" beforeDir="false" afterPath="$PROJECT_DIR$/IMPLEMENTIERUNG_BACKEND.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/KONZEPT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/KONZEPT_CLEAN.md" beforeDir="false" afterPath="$PROJECT_DIR$/KONZEPT_CLEAN.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DanceFloor.py" beforeDir="false" afterPath="$PROJECT_DIR$/DanceFloor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_dancefloor.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_dancefloor.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -79,46 +79,49 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "Python.ComplexFigure.executor": "Debug",
-    "Python.DanceCreator.executor": "Debug",
-    "Python.DanceCreatorUI.executor": "Run",
-    "Python.DanceCreator_old.executor": "Run",
-    "Python.DanceFloor.executor": "Run",
-    "Python.Dance_Tree.executor": "Run",
-    "Python.Figures.executor": "Run",
-    "Python.GUI_DanceCreator_App.executor": "Run",
-    "Python.KomplexFigure.executor": "Run",
-    "Python.SimpleFigure.executor": "Run",
-    "Python.app.executor": "Run",
-    "Python.dance_tree_app.executor": "Run",
-    "Python.dancecreator_server.executor": "Run",
-    "Python.scratch.executor": "Run",
-    "Python.scratch_1.executor": "Run",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "copilot.chat.legacySessionMetadata.migrated": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "E:/Git/DanceCreator/Dances",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;Python tests.Python tests in test_new_system_only.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python.ComplexFigure.executor&quot;: &quot;Debug&quot;,
+    &quot;Python.DanceCreator.executor&quot;: &quot;Debug&quot;,
+    &quot;Python.DanceCreatorUI.executor&quot;: &quot;Run&quot;,
+    &quot;Python.DanceCreator_old.executor&quot;: &quot;Run&quot;,
+    &quot;Python.DanceFloor.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Dance_Tree.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Figures.executor&quot;: &quot;Run&quot;,
+    &quot;Python.GUI_DanceCreator_App.executor&quot;: &quot;Run&quot;,
+    &quot;Python.KomplexFigure.executor&quot;: &quot;Run&quot;,
+    &quot;Python.SimpleFigure.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Test_Comparison.executor&quot;: &quot;Run&quot;,
+    &quot;Python.app.executor&quot;: &quot;Run&quot;,
+    &quot;Python.dance_tree_app.executor&quot;: &quot;Run&quot;,
+    &quot;Python.dancecreator_server.executor&quot;: &quot;Run&quot;,
+    &quot;Python.scratch.executor&quot;: &quot;Run&quot;,
+    &quot;Python.scratch_1.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/Git/DanceCreator/tests&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   },
-  "keyToStringList": {
-    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
-      "Python"
+  &quot;keyToStringList&quot;: {
+    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
+      &quot;Python&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\Git\DanceCreator\tests" />
       <recent name="E:\Git\DanceCreator\Dances" />
       <recent name="E:\Git\DanceCreator\templates" />
       <recent name="E:\Git\DanceCreator\Figures" />
@@ -128,7 +131,7 @@
       <recent name="E:\Git\DanceCreator\Figures" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.GUI_DanceCreator_App">
+  <component name="RunManager">
     <configuration name="GUI_DanceCreator_App" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="DanceCreator" />
       <option name="ENV_FILES" value="" />
