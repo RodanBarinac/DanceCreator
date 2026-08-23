@@ -100,7 +100,13 @@ function renderDanceSequence(tree) {
 function renderDanceJson(data) {
  const json = document.getElementById('dance-json');
  if (!json) return;
- json.textContent = JSON.stringify(data || {}, null, 2);
+ const summary = {
+  Name: data && (data.Name || data.name || ''),
+  Desc: data && (data.Desc || ''),
+  shape: data && (data.shape || data.Shape || ''),
+  Version: data && (data.Version || '')
+ };
+ json.textContent = JSON.stringify(summary, null, 2);
 }
 
 function renderFigureDetail(data) {
