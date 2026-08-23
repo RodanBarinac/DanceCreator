@@ -51,6 +51,17 @@ def test_api_dance_detail():
     assert 'dance' in data
     assert 'tree' in data
     assert isinstance(data['tree'], dict)
+    assert data['tree'].get('children')
+    assert _has_nested_figure_leaf(data['tree'])
+
+
+def _has_nested_figure_leaf(node):
+    if node.get('type') == 'figure' and not node.get('children'):
+        return True
+    for child in node.get('children', []):
+        if _has_nested_figure_leaf(child):
+            return True
+    return False
 
 
 def test_api_tree():

@@ -144,60 +144,80 @@ def _dance_detail_path(identifier):
     return _find_json_file(identifier, ['Dances'])
 
 
-def _figure_node_name(entry):
-    if isinstance(entry, list):
-        if len(entry) > 1 and isinstance(entry[1], list):
-            if len(entry[1]) > 0 and isinstance(entry[1][0], str) and entry[1][0] not in ('s', 'p'):
-                return entry[1][0]
-            return 'Group'
-        if len(entry) > 1:
-            return str(entry[1])
-    if isinstance(entry, dict):
-        return entry.get('Name') or entry.get('name') or 'Figure'
-    return str(entry)
+def _is_group_entry(entry):
+    return isinstance(entry, list) and len(entry) == 2 and entry[0] in ('s', 'p') and isinstance(entry[1], list)
+
+
+def _is_figure_call(entry):
+    return (
+        isinstance(entry, list)
+        and len(entry) == 2
+        and isinstance(entry[0], list)
+        and len(entry[0]) == 2
+        and isinstance(entry[1], list)
+        and len(entry[1]) >= 1
+    )
 
 
 def _build_dance_tree(entry, node_id):
-    if not isinstance(entry, list) or len(entry) < 2:
-        return {
-            'id': str(node_id),
-            'text': str(entry),
-            'children': [],
-            'data': {'original': entry}
-        }
-
-    anchor = entry[0] if isinstance(entry[0], list) and len(entry[0]) == 2 else [0, 0]
-    fig = entry[1]
-
-    if isinstance(fig, list) and len(fig) == 2 and fig[0] in ('s', 'p'):
+    if _is_group_entry(entry):
+        mode = entry[0]
         children = []
-        for index, child in enumerate(fig[1]):
+        for index, child in enumerate(entry[1]):
             children.append(_build_dance_tree(child, f"{node_id}-{index}"))
         return {
             'id': str(node_id),
-            'text': 'Sequential Group' if fig[0] == 's' else 'Parallel Group',
+            'text': 'Sequential Group' if mode == 's' else 'Parallel Group',
             'children': children,
             'type': 'group',
-            'data': {'mode': fig[0], 'anchor': anchor, 'original': entry}
+            'data': {'mode': mode, 'original': entry}
         }
 
-    node_name = _figure_node_name(fig)
-    data = {'figureName': node_name, 'anchor': anchor, 'original': entry}
-    if isinstance(fig, list) and len(fig) > 1 and isinstance(fig[1], list) and len(fig[1]) == 2:
-        data['addons'] = fig[1][1]
+    if _is_figure_call(entry):
+        anchor = entry[0]
+        fig_spec = entry[1]
+        figure_name = fig_spec[0] if len(fig_spec) > 0 else 'Figure'
+        addons = fig_spec[1] if len(fig_spec) > 1 else []
+        return {
+            'id': str(node_id),
+            'text': figure_name,
+            'children': [],
+            'type': 'figure',
+            'data': {
+                'figureName': figure_name,
+                'anchor': anchor,
+                'addons': addons,
+                'original': entry
+            }
+        }
+
+    if isinstance(entry, list):
+        children = []
+        for index, child in enumerate(entry):
+            children.append(_build_dance_tree(child, f"{node_id}-{index}"))
+        return {
+            'id': str(node_id),
+            'text': 'Group',
+            'children': children,
+            'type': 'group',
+            'data': {'original': entry}
+        }
+
     return {
         'id': str(node_id),
-        'text': node_name,
+        'text': str(entry),
         'children': [],
         'type': 'figure',
-        'data': data
+        'data': {'figureName': str(entry), 'original': entry}
     }
 
 
 def build_dance_tree(data, name='Dance'):
     children = []
     figure_list = data.get('FigureList') if isinstance(data, dict) else []
-    if isinstance(figure_list, list):
+    if _is_group_entry(figure_list):
+        children.append(_build_dance_tree(figure_list, 'node-0'))
+    elif isinstance(figure_list, list):
         for index, entry in enumerate(figure_list):
             children.append(_build_dance_tree(entry, f"node-{index}"))
     return {
