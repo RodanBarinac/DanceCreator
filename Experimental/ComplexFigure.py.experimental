@@ -1,0 +1,59 @@
+from Figures import Figure
+from SimpleFigure import SimpleFigure
+
+class ComplexFigure(Figure):
+    def __init__(self, data):
+        super().__init__(name=data.get('Name'), version=data.get('Version'), desc=data.get('Desc'))
+        self.FigureList = data.get('FigureList', [])
+
+    def _process_move(self, fig_structure, oldDF):
+        """Recursively process figure structure for DanceMove."""
+        if isinstance(fig_structure, Figure):
+            return fig_structure.DanceMove(oldDF)
+        elif isinstance(fig_structure, list):
+            if len(fig_structure) < 2:
+                return oldDF
+            mode = fig_structure[0]
+            items = fig_structure[1]
+            
+            if mode == 's':  # Sequential
+                floor = oldDF
+                for item in items:
+                    floor = self._process_move(item, floor)
+                return floor
+            elif mode == 'p':  # Parallel
+                floors = []
+                for item in items:
+                    floors.append(self._process_move(item, oldDF.copy()))
+                from DanceFloor import combine_dancefloors
+                return combine_dancefloors(floors)
+        return oldDF
+
+    def DanceMove(self, oldDF):
+        if not self.FigureList:
+            return oldDF
+        return self._process_move(self.FigureList, oldDF)
+
+    def _process_crips(self, fig_structure, oldDF):
+        """Recursively process figure structure for getCrips."""
+        lines = []
+        if isinstance(fig_structure, Figure):
+            return fig_structure.getCrips(oldDF)
+        elif isinstance(fig_structure, list):
+            if len(fig_structure) < 2:
+                return lines
+            mode = fig_structure[0]
+            items = fig_structure[1]
+            
+            if mode == 's':  # Sequential
+                for item in items:
+                    lines.extend(self._process_crips(item, oldDF))
+            elif mode == 'p':  # Parallel
+                for item in items:
+                    lines.extend(self._process_crips(item, oldDF))
+        return lines
+
+    def getCrips(self, oldDF):
+        if not self.FigureList:
+            return []
+        return self._process_crips(self.FigureList, oldDF)

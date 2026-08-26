@@ -1,0 +1,18 @@
+{
+  "name": "dancecreator-ui-tests",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test:unit": "jest --config=jest.config.cjs",
+    "test:integration": "node tests/integration/run_playwright_tests.js",
+    "test": "npm run test:unit && npm run test:integration"
+  },
+  "devDependencies": {
+    "jest": "29.6.1",
+    "jest-environment-jsdom": "^30.4.1",
+    "playwright": "1.36.0"
+  },
+  "allowScripts": {
+    "playwright@1.36.0": true
+  }
+}

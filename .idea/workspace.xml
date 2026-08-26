@@ -7,12 +7,10 @@
     <option name="selectedModelId" value="auto" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7aaaf50a-c70e-40e5-a0da-48518b5e3409" name="Changes" comment="- Stand 20260726">
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+    <list default="true" id="7aaaf50a-c70e-40e5-a0da-48518b5e3409" name="Changes" comment="Tree is working">
+      <change afterPath="$PROJECT_DIR$/static/Dancefloor_Render.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DanceFloor.py" beforeDir="false" afterPath="$PROJECT_DIR$/DanceFloor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_dancefloor.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_dancefloor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/gui_ArbeitsVersion.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/gui_ArbeitsVersion.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,6 +30,7 @@
       <list>
         <option value="HTML File" />
         <option value="Python Script" />
+        <option value="JavaScript File" />
       </list>
     </option>
   </component>
@@ -63,7 +62,7 @@
   <component name="ProjectSessionTemplates">
     <option name="panelTemplate">
       <template>
-        <option name="modeId" value="Agent" />
+        <option name="modeId" value="Ask" />
         <option name="model">
           <model>
             <option name="modelType" value="builtin_id" />
@@ -79,46 +78,46 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
-    &quot;Python tests.Python tests in test_new_system_only.py.executor&quot;: &quot;Run&quot;,
-    &quot;Python.ComplexFigure.executor&quot;: &quot;Debug&quot;,
-    &quot;Python.DanceCreator.executor&quot;: &quot;Debug&quot;,
-    &quot;Python.DanceCreatorUI.executor&quot;: &quot;Run&quot;,
-    &quot;Python.DanceCreator_old.executor&quot;: &quot;Run&quot;,
-    &quot;Python.DanceFloor.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Dance_Tree.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Figures.executor&quot;: &quot;Run&quot;,
-    &quot;Python.GUI_DanceCreator_App.executor&quot;: &quot;Run&quot;,
-    &quot;Python.KomplexFigure.executor&quot;: &quot;Run&quot;,
-    &quot;Python.SimpleFigure.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Test_Comparison.executor&quot;: &quot;Run&quot;,
-    &quot;Python.app.executor&quot;: &quot;Run&quot;,
-    &quot;Python.dance_tree_app.executor&quot;: &quot;Run&quot;,
-    &quot;Python.dancecreator_server.executor&quot;: &quot;Run&quot;,
-    &quot;Python.scratch.executor&quot;: &quot;Run&quot;,
-    &quot;Python.scratch_1.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;E:/Git/DanceCreator/tests&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
+    "Python tests.Python tests in test_new_system_only.py.executor": "Run",
+    "Python.ComplexFigure.executor": "Debug",
+    "Python.DanceCreator.executor": "Debug",
+    "Python.DanceCreatorUI.executor": "Run",
+    "Python.DanceCreator_old.executor": "Run",
+    "Python.DanceFloor.executor": "Run",
+    "Python.Dance_Tree.executor": "Run",
+    "Python.Figures.executor": "Run",
+    "Python.GUI_DanceCreator_App.executor": "Run",
+    "Python.KomplexFigure.executor": "Run",
+    "Python.SimpleFigure.executor": "Run",
+    "Python.Test_Comparison.executor": "Run",
+    "Python.app.executor": "Run",
+    "Python.dance_tree_app.executor": "Run",
+    "Python.dancecreator_server.executor": "Run",
+    "Python.scratch.executor": "Run",
+    "Python.scratch_1.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "copilot.chat.legacySessionMetadata.migrated": "true",
+    "git-widget-placeholder": "master",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "E:/Git/DanceCreator/tests",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "settings.javascript.runtime"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
-      &quot;Python&quot;
+  "keyToStringList": {
+    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
+      "Python"
     ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="E:\Git\DanceCreator\tests" />
@@ -131,7 +130,7 @@
       <recent name="E:\Git\DanceCreator\Figures" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.GUI_DanceCreator_App">
     <configuration name="GUI_DanceCreator_App" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="DanceCreator" />
       <option name="ENV_FILES" value="" />
@@ -194,7 +193,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-c6d794e1806d-5bd6d13a2a75-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-262.8665.309" />
+        <option value="bundled-python-sdk-821f704e66d9-5bd6d13a2a75-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-262.9437.214" />
       </set>
     </attachedChunks>
   </component>
@@ -351,7 +350,15 @@
       <option name="project" value="LOCAL" />
       <updated>1785061315447</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="Tree is working">
+      <option name="closed" value="true" />
+      <created>1787505022679</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1787505022679</updated>
+    </task>
+    <option name="localTasksCounter" value="20" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -392,7 +399,8 @@
     <MESSAGE value="- Stand 20260412&#10;- jsTree statisch befüllt.&#10;- dnd für JSTree und cards enabled." />
     <MESSAGE value="- Stand 20260412" />
     <MESSAGE value="- Stand 20260726" />
-    <option name="LAST_COMMIT_MESSAGE" value="- Stand 20260726" />
+    <MESSAGE value="Tree is working" />
+    <option name="LAST_COMMIT_MESSAGE" value="Tree is working" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

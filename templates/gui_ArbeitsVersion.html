@@ -48,6 +48,7 @@
     <div class="splitter" id="splitter-right"></div>
     <div id="right" class="panel">
       <h3>Dancestruktur</h3>
+      <div id="floor-preview" style="height:320px; margin-bottom:10px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden;"></div>
       <p><em><div id="treeview"></div></em></p>
     </div>
   </div>
@@ -145,6 +146,41 @@ $(function() {
       ]
     }
   });
+
+  // When a node (dance) is selected, fetch its dance JSON and render starting floor
+  $('#treeview').on('select_node.jstree', async function (e, data) {
+    try {
+      const node = data.node;
+      const identifier = node && (node.text || node.id);
+      if (!identifier) return;
+      // fetch dance detail
+      const resp = await fetch('/api/dances/' + encodeURIComponent(identifier));
+      if (!resp.ok) {
+        console.warn('Dance detail not found for', identifier);
+        return;
+      }
+      const payload = await resp.json();
+      const dance = payload && payload.dance ? payload.dance : payload;
+      // determine couple count heuristically
+      let couples = dance && (dance.couples || dance.Couples || dance.CoupleCount || dance.shape || dance.Shape) || null;
+      if (typeof couples === 'object' && couples != null) {
+        // maybe shape contains couples
+        couples = (dance.shape && dance.shape.couples) || (dance.Shape && dance.Shape.couples) || null;
+      }
+      couples = Number(couples) || 4;
+
+      // init floor and render
+      const initResp = await fetch('/api/dancefloor/init', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ couples: couples, name: identifier })
+      });
+      const floorJson = await initResp.json();
+      if (window.renderDanceFloorJSON) window.renderDanceFloorJSON(floorJson);
+    } catch (err) {
+      console.error('Error rendering starting dancefloor:', err);
+    }
+  });
 });
 </script>
 
@@ -211,5 +247,64 @@ document.getElementById('search').addEventListener('input', applyFilters);
 document.addEventListener('DOMContentLoaded', loadFigures);
 </script>
 
+<script type="module">
+import { renderDanceFloor } from '/static/Dancefloor_Render.js';
+
+const preview = document.getElementById('floor-preview');
+
+function getPreviewSize() {
+  return { width: preview.clientWidth || 600, height: preview.clientHeight || 320 };
+}
+
+async function renderFromJSON(json) {
+  if (!preview) return;
+  preview.innerHTML = '';
+  const { width, height } = getPreviewSize();
+  const svg = renderDanceFloor(json, { width, height, paddingPx: 18, tokenLogicalRadius: 0.5 });
+  preview.appendChild(svg);
+}
+
+window.renderDanceFloorJSON = renderFromJSON;
+
+window.renderDanceFloorExecute = async function(figure, couples=4, anchor=[0,0], addons=[], dance_name='preview') {
+  try {
+    const resp = await fetch('/api/dancefloor/execute', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ figure, couples, anchor, addons, dance_name })
+    });
+    const data = await resp.json();
+    if (data && data.status === 'ok' && data.floor) {
+      renderFromJSON(data.floor);
+    } else if (data && data.name && data.positions) {
+      renderFromJSON(data);
+    } else {
+      console.warn('Unexpected dancefloor execute response', data);
+    }
+  } catch(e){ console.error(e); }
+}
+
+// initial hardcoded starting floor for 4 couples (original places)
+const initialFloor = {
+  name: 'Preview',
+  couples: 4,
+  tick: 0,
+  positions: {
+    '1m': { dancer: { name: '1M', gender: 'M' }, coord: [1,1], facing: 0 },
+    '1w': { dancer: { name: '1W', gender: 'F' }, coord: [1,3], facing: 0 },
+    '2m': { dancer: { name: '2M', gender: 'M' }, coord: [2,1], facing: 0 },
+    '2w': { dancer: { name: '2W', gender: 'F' }, coord: [2,3], facing: 0 },
+    '3m': { dancer: { name: '3M', gender: 'M' }, coord: [3,1], facing: 0 },
+    '3w': { dancer: { name: '3W', gender: 'F' }, coord: [3,3], facing: 0 },
+    '4m': { dancer: { name: '4M', gender: 'M' }, coord: [4,1], facing: 0 },
+    '4w': { dancer: { name: '4W', gender: 'F' }, coord: [4,3], facing: 0 }
+  }
+};
+
+// render initial preview immediately
+window.addEventListener('load', ()=>{
+  try { renderFromJSON(initialFloor); } catch(e){ console.error(e); }
+});
+</script>
 </body>
 </html>

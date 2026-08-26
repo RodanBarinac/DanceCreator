@@ -1,8 +1,10 @@
 
-function makeSplitter(splitterId, leftPanelId, rightPanelId) {
+export function makeSplitter(splitterId, leftPanelId, rightPanelId) {
   const splitter = document.getElementById(splitterId);
   const leftPanel = document.getElementById(leftPanelId);
   const rightPanel = document.getElementById(rightPanelId);
+
+  if (!splitter || !leftPanel || !rightPanel) return;
 
   splitter.addEventListener('mousedown', function(e) {
     e.preventDefault();
@@ -27,5 +29,7 @@ function makeSplitter(splitterId, leftPanelId, rightPanelId) {
   }
 }
 
-makeSplitter('splitter-left', 'left', 'middle');
-makeSplitter('splitter-right', 'middle', 'right');
+if (typeof document !== 'undefined' && document.getElementById('splitter-left')) {
+  makeSplitter('splitter-left', 'left', 'middle');
+  makeSplitter('splitter-right', 'middle', 'right');
+}

@@ -2,7 +2,7 @@
 /**
  * Initialisiert jsTree im treeContainer mit den übergebenen Daten.
  */
-function renderJsTree(nodes) {
+export function renderJsTree(nodes) {
   const treeContainer = $('#treeContainer');
   treeContainer.jstree('destroy'); // Vorherigen Baum entfernen
   treeContainer.jstree({

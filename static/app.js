@@ -4,41 +4,41 @@ let currentFigureSummary = null;
 let currentDanceName = null;
 let currentDanceCouples = 3;
 
-async function api(path, opts) {
- const res = await fetch(path, opts);
- const contentType = res.headers.get('content-type') || '';
- let body = null;
- if (contentType.includes('application/json')) body = await res.json();
- else body = await res.text();
- return { status: res.status, body };
+export async function api(path, opts) {
+  const res = await fetch(path, opts);
+  const contentType = res.headers.get('content-type') || '';
+  let body = null;
+  if (contentType.includes('application/json')) body = await res.json();
+  else body = await res.text();
+  return { status: res.status, body };
 }
 
-function escapeHtml(value) {
- const text = String(value == null ? '' : value);
- return text.replace(/[&<>"']/g, ch => ({
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;'
- }[ch]));
+export function escapeHtml(value) {
+  const text = String(value == null ? '' : value);
+  return text.replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
 }
 
-function formatPos(value) {
- if (!Array.isArray(value) || value.length < 2) return '';
- return `(${value[0]}, ${value[1]})`;
+export function formatPos(value) {
+  if (!Array.isArray(value) || value.length < 2) return '';
+  return `(${value[0]}, ${value[1]})`;
 }
 
 function normalizeAnchor(anchor) {
- if (!Array.isArray(anchor) || anchor.length < 2) return [1, 1];
- var row = parseInt(anchor[0], 10);
- var col = parseInt(anchor[1], 10);
- if (!isFinite(row) || row < 1) row = 1;
- if (!isFinite(col) || col < 1) col = 1;
- return [row, col];
+  if (!Array.isArray(anchor) || anchor.length < 2) return [1, 1];
+  var row = parseInt(anchor[0], 10);
+  var col = parseInt(anchor[1], 10);
+  if (!isFinite(row) || row < 1) row = 1;
+  if (!isFinite(col) || col < 1) col = 1;
+  return [row, col];
 }
 
-function getCanvasOptions(anchorOverride, addonsOverride) {
+export function getCanvasOptions(anchorOverride, addonsOverride) {
  var rowInput = document.getElementById('anchor-row');
  var colInput = document.getElementById('anchor-col');
  var parsedRow = rowInput ? parseInt(rowInput.value || '1', 10) : 1;
@@ -142,38 +142,38 @@ async function renderFigureOnCanvas(figureName, options) {
  return null;
 }
 
-function renderSteps(data) {
- const rows = [];
- const starts = Array.isArray(data.StartPos) ? data.StartPos : [];
- const ends = Array.isArray(data.EndPos) ? data.EndPos : [];
- const facings = Array.isArray(data.Faceing) ? data.Faceing : Array.isArray(data.Facing) ? data.Facing : [];
- const partners = Array.isArray(data.Partner) ? data.Partner : [];
- const count = Math.max(starts.length, ends.length, facings.length, partners.length);
+export function renderSteps(data) {
+  const rows = [];
+  const starts = Array.isArray(data.StartPos) ? data.StartPos : [];
+  const ends = Array.isArray(data.EndPos) ? data.EndPos : [];
+  const facings = Array.isArray(data.Faceing) ? data.Faceing : Array.isArray(data.Facing) ? data.Facing : [];
+  const partners = Array.isArray(data.Partner) ? data.Partner : [];
+  const count = Math.max(starts.length, ends.length, facings.length, partners.length);
 
- for (let i = 0; i < count; i += 1) {
-  rows.push(
-   `<tr>
+  for (let i = 0; i < count; i += 1) {
+   rows.push(
+     `<tr>
      <td>${i + 1}</td>
      <td>${escapeHtml(formatPos(starts[i]))}</td>
      <td>${escapeHtml(formatPos(ends[i]))}</td>
      <td>${escapeHtml(formatPos(facings[i]))}</td>
      <td>${escapeHtml(formatPos(partners[i]))}</td>
    </tr>`
-  );
- }
+   );
+  }
 
- return rows.length
-  ? `<table class="figure-table">
+  return rows.length
+   ? `<table class="figure-table">
        <thead><tr><th>#</th><th>Start</th><th>End</th><th>Face</th><th>Partner</th></tr></thead>
        <tbody>${rows.join('')}</tbody>
      </table>`
-  : '<p class="empty-note">No step data available.</p>';
+   : '<p class="empty-note">No step data available.</p>';
 }
 
-function renderCrips(data) {
- const crips = Array.isArray(data.CriptDesc) ? data.CriptDesc : [];
- if (!crips.length) return '<p class="empty-note">No crips available.</p>';
- return `<ol class="figure-crips">${crips.map(crip => `<li>${escapeHtml(crip)}</li>`).join('')}</ol>`;
+export function renderCrips(data) {
+  const crips = Array.isArray(data.CriptDesc) ? data.CriptDesc : [];
+  if (!crips.length) return '<p class="empty-note">No crips available.</p>';
+  return `<ol class="figure-crips">${crips.map(crip => `<li>${escapeHtml(crip)}</li>`).join('')}</ol>`;
 }
 
 function renderDanceSummary(data) {
