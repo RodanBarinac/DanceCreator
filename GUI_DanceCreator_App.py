@@ -635,6 +635,32 @@ def api_dancefloor_execute():
     })
 
 
+@app.route('/dancefloor_mockup.html')
+def dancefloor_mockup():
+    """Serve the dancefloor mockup page with H1DR demonstration."""
+    return render_template('dancefloor_mockup.html')
+
+
+@app.route('/dancefloor_test.html')
+def dancefloor_test():
+    """Serve the dancefloor test page."""
+    return render_template('dancefloor_test.html')
+
+
+@app.route('/svg_test.html')
+def svg_test():
+    """Serve the SVG test page."""
+    return render_template('svg_test.html')
+
+
+@app.route('/schema/<filename>')
+def serve_schema(filename):
+    """Serve schema files from the schema directory."""
+    from flask import send_from_directory
+    schema_dir = os.path.join(os.path.dirname(__file__), 'schema')
+    return send_from_directory(schema_dir, filename, mimetype='application/json')
+
+
 if __name__ == "__main__":
     os.makedirs(FIGURES_DIR, exist_ok=True)
     load_Figuers()
