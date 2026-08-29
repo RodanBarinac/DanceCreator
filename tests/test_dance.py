@@ -1,5 +1,9 @@
-import Dance
-import DanceFloor as DF
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+from engine.models import Dance
+from engine.models import DanceFloor as DF
 
 
 def test_get_figure():

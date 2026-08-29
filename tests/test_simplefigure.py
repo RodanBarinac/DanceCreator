@@ -1,4 +1,4 @@
-"""
+﻿"""
 Unit tests for DanceFloor class - Position Management and Dancer Placement.
 
 Tests critical DanceFloor functionality to prevent regressions:
@@ -10,9 +10,13 @@ Tests critical DanceFloor functionality to prevent regressions:
 Part of Phase 1 Critical Tests (TEST_COVERAGE_ANALYSIS.md)
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
 import pytest
-import DanceFloor as DF
-from Dancer import Dancer
+from engine.models import DanceFloor as DF
+from engine.models.Dancer import Dancer
 
 
 @pytest.fixture
@@ -162,4 +166,6 @@ class TestDanceFloorIntegration:
         floor_str = str(empty_floor)
         assert floor_str is not None
         assert 'test' in floor_str.lower()
+
+
 

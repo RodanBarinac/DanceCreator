@@ -38,15 +38,18 @@ from flask import Flask, jsonify, request, render_template
 import json
 import os
 import uuid
-from SimpleFigure import SimpleFigure
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+from engine.figures.SimpleFigure import SimpleFigure
 
 Figure_DB = {}
 Figure_File_DB = {}
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
 # Ordner, in dem der Benutzer seine JSON-Files ablegen soll
-FIGURES_DIR = os.path.join(os.path.dirname(__file__), "Figures")
-DANCES_DIR = os.path.join(os.path.dirname(__file__), "Dances")
+FIGURES_DIR = os.path.join(os.path.dirname(__file__), "data", "Figures")
+DANCES_DIR = os.path.join(os.path.dirname(__file__), "data", "Dances")
 
 
 def iter_json_files(root_dir):
@@ -653,12 +656,12 @@ def svg_test():
     return render_template('svg_test.html')
 
 
-@app.route('/schema/<filename>')
+@app.route('/schema/<path:filename>')
 def serve_schema(filename):
-    """Serve schema files from the schema directory."""
+    """Serve schema files from the config directory."""
     from flask import send_from_directory
-    schema_dir = os.path.join(os.path.dirname(__file__), 'schema')
-    return send_from_directory(schema_dir, filename, mimetype='application/json')
+    config_dir = os.path.join(os.path.dirname(__file__), 'config')
+    return send_from_directory(config_dir, filename, mimetype='application/json')
 
 
 if __name__ == "__main__":

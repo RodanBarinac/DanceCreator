@@ -1,8 +1,8 @@
 import os
 import json
-import Figures as Fig
-import DanceFloor as DF
-import Dance
+from ..models import Figures as Fig
+from ..models import DanceFloor as DF
+from ..models import Dance
 
 class ComplexFigure(Fig.Figure):
     _FigureList = [[]]

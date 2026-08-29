@@ -1,7 +1,7 @@
 import os
 import json
-import Figures
-import DanceFloor as DF
+from ..models import Figures
+from ..models import DanceFloor as DF
 
 class SimpleFigure(Figures.Figure):
     _Partner = []
@@ -132,7 +132,24 @@ class SimpleFigure(Figures.Figure):
         return myCrips
 
     def loadFigure(self, Filename, Addons):
-        with open(os.getcwd()+'/Figures/' + Filename + '.json', 'r') as f:
+        # Try both data/Figures and data/Dances directories
+        paths_to_try = [
+            os.path.join(os.getcwd(), 'data', 'Figures', Filename + '.json'),
+            os.path.join(os.getcwd(), 'data', 'Dances', Filename + '.json'),
+            os.path.join(os.getcwd(), 'Figures', Filename + '.json'),  # Legacy path
+            os.path.join(os.getcwd(), 'Dances', Filename + '.json')    # Legacy path
+        ]
+        
+        fig_path = None
+        for path in paths_to_try:
+            if os.path.isfile(path):
+                fig_path = path
+                break
+        
+        if not fig_path:
+            raise FileNotFoundError(f"Figure file not found: {Filename}.json in {', '.join(paths_to_try)}")
+        
+        with open(fig_path, 'r') as f:
             FigData = json.load(f)
         myKeys = FigData.keys()
         if 'Version' in myKeys:

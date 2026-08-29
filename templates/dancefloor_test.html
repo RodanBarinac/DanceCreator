@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dancefloor Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #test-panel { border: 1px solid #ccc; width: 600px; height: 400px; margin: 20px 0; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Dancefloor Render Test</h1>
+    <div id="test-panel"></div>
+    <div id="debug" class="debug"></div>
+
+    <script type="module">
+        import { renderDanceFloor } from '/static/Dancefloor_Render.js';
+
+        const debugDiv = document.getElementById('debug');
+        function debug(msg) {
+            console.log(msg);
+            debugDiv.innerHTML += msg + '\n';
+        }
+
+        try {
+            debug('Starting test...');
+
+            // Simple hardcoded test data
+            const testFloor = {
+                name: "Test Floor",
+                couples: 3,
+                tick: 0,
+                positions: {
+                    "1m": {"dancer": {"name": "1m", "gender": "M"}, "coord": [1, 1], "facing": 0},
+                    "1w": {"dancer": {"name": "1w", "gender": "F"}, "coord": [1, 3], "facing": 0},
+                    "2m": {"dancer": {"name": "2m", "gender": "M"}, "coord": [2, 1], "facing": 0},
+                    "2w": {"dancer": {"name": "2w", "gender": "F"}, "coord": [2, 3], "facing": 0},
+                    "3m": {"dancer": {"name": "3m", "gender": "M"}, "coord": [3, 1], "facing": 0},
+                    "3w": {"dancer": {"name": "3w", "gender": "F"}, "coord": [3, 3], "facing": 0}
+                }
+            };
+
+            debug('Test data: ' + JSON.stringify(testFloor));
+
+            const opts = {width: 600, height: 400, paddingPx: 30, tokenLogicalRadius: 0.45, couples: 3};
+            debug('Calling renderDanceFloor with options: ' + JSON.stringify(opts));
+
+            const svg = renderDanceFloor(testFloor, opts);
+            debug('SVG created: ' + (svg ? 'YES' : 'NO'));
+            debug('SVG tag name: ' + svg.tagName);
+            debug('SVG attributes: width=' + svg.getAttribute('width') + ', height=' + svg.getAttribute('height') + ', viewBox=' + svg.getAttribute('viewBox'));
+            debug('SVG children count: ' + svg.children.length);
+
+            // Log what's in the SVG
+            debug('SVG content structure:');
+            for (let i = 0; i < Math.min(10, svg.children.length); i++) {
+                const child = svg.children[i];
+                debug('  [' + i + '] ' + child.tagName + ' - ' + (child.getAttribute('class') || child.getAttribute('id') || child.getAttribute('d') || ''));
+            }
+
+            const panel = document.getElementById('test-panel');
+            panel.innerHTML = '';
+            panel.appendChild(svg);
+            debug('SVG appended to panel');
+
+        } catch (err) {
+            debug('ERROR: ' + err.message);
+            debug(err.stack);
+        }
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-from SimpleFigure import SimpleFigure
+from ..figures.SimpleFigure import SimpleFigure
 import json
 import os
 
@@ -27,11 +27,11 @@ def _resolve_json_path(filename, roots):
 
 
 def _resolve_dance_path(filename):
-    return _resolve_json_path(filename, ['Dances'])
+    return _resolve_json_path(filename, ['data/Dances'])
 
 
 def getDance(Filename):
-    from ComplexFigure import ComplexFigure  # Lazy Import, um zirkul?ren Import zu vermeiden
+    from ..figures.ComplexFigure import ComplexFigure  # Lazy Import, um zirkul?ren Import zu vermeiden
 
     myDance = ComplexFigure(_resolve_dance_path(Filename), [0,0])
     myDance.loadFigure()
@@ -39,9 +39,9 @@ def getDance(Filename):
     return myDance
 
 def getFigure(Filename, Anchor = [0,0], Addons = []):
-    from ComplexFigure import ComplexFigure  # Lazy Import, um zirkul?ren Import zu vermeiden
+    from ..figures.ComplexFigure import ComplexFigure  # Lazy Import, um zirkul?ren Import zu vermeiden
 
-    figure_path = _resolve_json_path(Filename, ['Figures', 'Dances'])
+    figure_path = _resolve_json_path(Filename, ['data/Figures', 'data/Dances'])
     with open(figure_path, 'r') as f:
         FigData = json.load(f)
 

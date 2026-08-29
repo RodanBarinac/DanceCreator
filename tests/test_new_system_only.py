@@ -1,4 +1,4 @@
-"""
+﻿"""
 Simple test: Shows Crips and DanceFloor for Marries Wedding (NEW system only)
 """
 import sys
@@ -11,8 +11,8 @@ os.chdir(str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT))
 
 # Import new system
-import Dance
-import DanceFloor as DF
+from engine.models import Dance
+from engine.models import DanceFloor as DF
 
 if __name__ == "__main__":
     print("="*60)
@@ -64,3 +64,5 @@ if __name__ == "__main__":
     print("\n" + "="*60)
     print("TEST COMPLETE")
     print("="*60)
+
+

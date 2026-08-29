@@ -30,7 +30,7 @@ class DancefloorValidator {
     if (this.schemaLoaded) return;
     
     try {
-      const response = await fetch('/schema/dancefloor_contract.schema.json');
+      const response = await fetch('/schema/contract/dancefloor_contract.schema.json');
       if (!response.ok) {
         throw new Error(`Failed to load schema: ${response.status}`);
       }

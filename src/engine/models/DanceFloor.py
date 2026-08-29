@@ -1,4 +1,4 @@
-import Dancer
+from . import Dancer
 
 def combineDanceFloor(oldDFs = []):
     newDF = DanceFloor('dummy')

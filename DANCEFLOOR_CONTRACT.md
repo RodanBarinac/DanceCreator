@@ -11,16 +11,17 @@ All contract documentation is in the **`Documents/`** directory:
 
 ## 📋 Schema Files
 
-All JSON schemas are in the **`schema/`** directory:
+All JSON schemas are in the **`config/`** directory:
 
-- **[dancefloor_contract.schema.json](schema/dancefloor_contract.schema.json)** - Machine-readable contract specification (Draft 7)
-- **[dancefloor.schema.json](schema/dancefloor.schema.json)** - Legacy schema
+- **[config/contract/dancefloor_contract.schema.json](config/contract/dancefloor_contract.schema.json)** - Machine-readable contract specification (Draft 7)
+- **[config/api/](config/api/)** - API schemas
+- **[config/data/](config/data/)** - Data schemas
 
 ## 🔧 Implementation Files
 
 ### Python Backend
-- **[DancefloorContractValidator.py](DancefloorContractValidator.py)** - Validation and serialization for Python
-- **[GUI_DanceCreator_App.py](GUI_DanceCreator_App.py)** - Flask API with schema route (`/schema/<filename>`)
+- **[src/engine/validators/DancefloorContractValidator.py](src/engine/validators/DancefloorContractValidator.py)** - Validation and serialization for Python
+- **[GUI_DanceCreator_App.py](GUI_DanceCreator_App.py)** - Flask API with schema route (`/schema/<path>`)
 
 ### JavaScript Frontend
 - **[static/DancefloorContractValidator.js](static/DancefloorContractValidator.js)** - Validation for JavaScript
@@ -30,10 +31,10 @@ All JSON schemas are in the **`schema/`** directory:
 
 ### For Python Developers
 ```python
-from DancefloorContractValidator import validate_dancefloor
+from src.engine.validators import DancefloorContractValidator
 
-# After creating dancefloor data
-validate_dancefloor(floor_json)
+validator = DancefloorContractValidator.DancefloorValidator()
+validator.validate(floor_json)
 return jsonify(floor_json)
 ```
 

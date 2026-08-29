@@ -27,14 +27,17 @@ class DancefloorValidator:
         """Initialize validator by loading the schema."""
         schema_path = os.path.join(
             os.path.dirname(__file__),
-            'schema',
+            '..',
+            '..',
+            'config',
+            'contract',
             'dancefloor_contract.schema.json'
         )
         
         if not os.path.exists(schema_path):
             raise FileNotFoundError(
                 f"Schema file not found: {schema_path}\n"
-                "Make sure schema/dancefloor_contract.schema.json exists in project root."
+                "Make sure config/contract/dancefloor_contract.schema.json exists in project root."
             )
         
         with open(schema_path, 'r') as f:

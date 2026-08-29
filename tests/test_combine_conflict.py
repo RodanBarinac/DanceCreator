@@ -1,4 +1,4 @@
-"""
+﻿"""
 Test conflict handling in parallel dance moves.
 
 NOTE: This test requires CombineConflictError and set_dancer() methods
@@ -10,11 +10,15 @@ To re-enable, implement:
 3. Test data fixtures for collision scenarios
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
 import os
 import json
-import Dance
-import DanceFloor as DF
-from Dancer import Dancer
+from engine.models import Dance
+from engine.models import DanceFloor as DF
+from engine.models.Dancer import Dancer
 
 FIG_DIR = os.path.join(os.path.dirname(__file__), '..', 'Figures')
 FIG_DIR = os.path.abspath(FIG_DIR)
@@ -23,3 +27,4 @@ FIG_DIR = os.path.abspath(FIG_DIR)
 # DISABLED: Waiting for CombineConflictError implementation
 # def test_parallel_conflict_raises():
 #     pass
+

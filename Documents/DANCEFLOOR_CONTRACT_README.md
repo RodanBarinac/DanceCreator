@@ -10,13 +10,13 @@ This solution consists of 4 key files that establish a formal contract between t
 - Includes examples, validation rules, and future considerations
 - **For**: Developers, architects, reviewers
 
-### 2. **schema/dancefloor_contract.schema.json** (JSON Schema)
+### 2. **config/contract/dancefloor_contract.schema.json** (JSON Schema)
 - Formal JSON Schema (Draft 7) for automated validation
 - Defines all required fields, types, ranges, and patterns
 - Can be used by validation tools and IDEs
 - **For**: Automated validation, IDE integration, documentation
 
-### 3. **DancefloorContractValidator.py** (Python Validator)
+### 3. **src/engine/validators/DancefloorContractValidator.py** (Python Validator)
 - Python module for contract validation and serialization
 - Integrates with Python backend (Flask API)
 - Provides `DancefloorValidator` class with validation methods

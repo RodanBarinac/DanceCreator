@@ -1,4 +1,4 @@
-"""
+﻿"""
 Unit tests for Dance module - File loading and figure management.
 
 Tests critical Dance module functionality:
@@ -10,9 +10,13 @@ Tests critical Dance module functionality:
 Part of Phase 1 Critical Tests (TEST_COVERAGE_ANALYSIS.md)
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
 import pytest
-import Dance
-import DanceFloor as DF
+from engine.models import Dance
+from engine.models import DanceFloor as DF
 
 
 class TestFigureLoading:
@@ -101,3 +105,4 @@ class TestShowCrips:
         
         result = Dance.showCrips(dance, floor)
         assert isinstance(result, list) or result is None
+

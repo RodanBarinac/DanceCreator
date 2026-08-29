@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dancefloor Mockup - H1DR Figure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f3f4f6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        .panels {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #1f2937;
+            margin-bottom: 15px;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .panel-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 500px;
+            background: #fafafa;
+            border: 2px solid #ddd;
+        }
+
+        .panel svg {
+            width: 100%;
+            height: auto;
+            max-width: 100%;
+            display: block;
+            background: white;
+            border: 1px solid #ccc;
+        }
+
+        .legend {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .legend h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .legend-symbol {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+        }
+
+        .legend-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #111827;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .legend-square {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 2px solid #111827;
+        }
+
+        .legend-text {
+            color: #374151;
+        }
+
+        .color-0 { background-color: #0072B2; }
+        .color-1 { background-color: #E69F00; }
+        .color-2 { background-color: #CC79A7; }
+
+        @media (max-width: 1024px) {
+            .panels {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dancefloor Visualization</h1>
+        <p class="subtitle">3-Couple Set: Starting Positions → After H1DR → After H1DR Again</p>
+
+        <div class="panels">
+            <div class="panel">
+                <div class="panel-title">Initial Positions</div>
+                <div class="panel-content">
+                    <div id="panel-initial"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">After First H1DR</div>
+                <div class="panel-content">
+                    <div id="panel-after-first"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">After Second H1DR</div>
+                <div class="panel-content">
+                    <div id="panel-after-second"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <h3>Legend</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <div class="legend-symbol">
+                        <div class="legend-circle color-0"></div>
+                    </div>
+                    <div class="legend-text">Couple 1 - Man</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-symbol">
+                        <div class="legend-square" style="background-color: #0072B2;"></div>
+                    </div>
+                    <div class="legend-text">Couple 1 - Woman</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-symbol">
+                        <div class="legend-circle color-1"></div>
+                    </div>
+                    <div class="legend-text">Couple 2 - Man</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-symbol">
+                        <div class="legend-square" style="background-color: #E69F00;"></div>
+                    </div>
+                    <div class="legend-text">Couple 2 - Woman</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-symbol">
+                        <div class="legend-circle color-2"></div>
+                    </div>
+                    <div class="legend-text">Couple 3 - Man</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-symbol">
+                        <div class="legend-square" style="background-color: #CC79A7;"></div>
+                    </div>
+                    <div class="legend-text">Couple 3 - Woman</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the render function
+        import { renderDanceFloor } from '/static/Dancefloor_Render.js';
+
+        async function initializeDemo() {
+            try {
+                console.log('Module loaded successfully');
+                console.log('renderDanceFloor function:', typeof renderDanceFloor);
+                
+                // Fetch initial 3-couple dancefloor from API
+                console.log('Fetching initial dancefloor...');
+                const initResp = await fetch('/api/dancefloor/init', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ couples: 3, name: 'Initial' })
+                });
+                
+                if (!initResp.ok) {
+                    throw new Error(`Failed to fetch initial dancefloor: ${initResp.status}`);
+                }
+                
+                const initialFloor = await initResp.json();
+                console.log('✓ Initial floor from API:', initialFloor);
+                
+                // Normalize facing vectors in the floor data
+                for (const key in initialFloor.positions) {
+                    const pos = initialFloor.positions[key];
+                    if (Array.isArray(pos.facing) && pos.facing.length === 2) {
+                        // Convert coordinate pair to direction vector (dx, dy)
+                        const [targetRow, targetCol] = pos.facing;
+                        const [currentRow, currentCol] = pos.coord;
+                        pos.facing = [targetCol - currentCol, targetRow - currentRow];
+                    }
+                }
+
+                // Execute H1DR figure to get first state
+                console.log('Executing first H1DR...');
+                const firstH1DRResp = await fetch('/api/dancefloor/execute', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        figure: 'H1DR',
+                        couples: 3,
+                        anchor: [0, 0],
+                        addons: [],
+                        dance_name: 'After First H1DR'
+                    })
+                });
+                
+                if (!firstH1DRResp.ok) {
+                    throw new Error(`Failed to execute first H1DR: ${firstH1DRResp.status}`);
+                }
+                
+                const afterFirstH1DR = await firstH1DRResp.json();
+                console.log('✓ After first H1DR:', afterFirstH1DR);
+                
+                // Extract floor data from response
+                const firstFloor = afterFirstH1DR.floor || afterFirstH1DR;
+                firstFloor.name = 'After First H1DR';
+                
+                // Normalize facing vectors in the floor data
+                for (const key in firstFloor.positions) {
+                    const pos = firstFloor.positions[key];
+                    if (Array.isArray(pos.facing) && pos.facing.length === 2) {
+                        // Convert coordinate pair to direction vector (dx, dy)
+                        const [targetRow, targetCol] = pos.facing;
+                        const [currentRow, currentCol] = pos.coord;
+                        pos.facing = [targetCol - currentCol, targetRow - currentRow];
+                    }
+                }
+
+                // Execute H1DR figure again to get second state
+                console.log('Executing second H1DR...');
+                const secondH1DRResp = await fetch('/api/dancefloor/execute', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        figure: 'H1DR',
+                        couples: 3,
+                        anchor: [0, 0],
+                        addons: [],
+                        dance_name: 'After Second H1DR'
+                    })
+                });
+                
+                if (!secondH1DRResp.ok) {
+                    throw new Error(`Failed to execute second H1DR: ${secondH1DRResp.status}`);
+                }
+                
+                const afterSecondH1DR = await secondH1DRResp.json();
+                console.log('✓ After second H1DR:', afterSecondH1DR);
+                
+                // Extract floor data from response
+                const secondFloor = afterSecondH1DR.floor || afterSecondH1DR;
+                secondFloor.name = 'After Second H1DR';
+                
+                // Normalize facing vectors in the floor data
+                for (const key in secondFloor.positions) {
+                    const pos = secondFloor.positions[key];
+                    if (Array.isArray(pos.facing) && pos.facing.length === 2) {
+                        // Convert coordinate pair to direction vector (dx, dy)
+                        const [targetRow, targetCol] = pos.facing;
+                        const [currentRow, currentCol] = pos.coord;
+                        pos.facing = [targetCol - currentCol, targetRow - currentRow];
+                    }
+                }
+
+                const renderOptions = {
+                    width: 500,
+                    height: 600,
+                    paddingPx: 40,
+                    tokenLogicalRadius: 0.45,
+                    couples: 3
+                };
+
+                // Render all three panels
+                console.log('Starting render process...');
+                
+                const svg1 = renderDanceFloor(initialFloor, renderOptions);
+                console.log('✓ SVG1 created with', svg1.children.length, 'elements');
+                const container1 = document.getElementById('panel-initial');
+                if (!container1) throw new Error('panel-initial container not found');
+                container1.innerHTML = '';
+                container1.appendChild(svg1);
+                console.log('✓ Panel 1 rendered');
+
+                const svg2 = renderDanceFloor(firstFloor, renderOptions);
+                console.log('✓ SVG2 created with', svg2.children.length, 'elements');
+                const container2 = document.getElementById('panel-after-first');
+                if (!container2) throw new Error('panel-after-first container not found');
+                container2.innerHTML = '';
+                container2.appendChild(svg2);
+                console.log('✓ Panel 2 rendered');
+
+                const svg3 = renderDanceFloor(secondFloor, renderOptions);
+                console.log('✓ SVG3 created with', svg3.children.length, 'elements');
+                const container3 = document.getElementById('panel-after-second');
+                if (!container3) throw new Error('panel-after-second container not found');
+                container3.innerHTML = '';
+                container3.appendChild(svg3);
+                console.log('✓ Panel 3 rendered');
+                
+                console.log('✓✓✓ All panels rendered successfully! ✓✓✓');
+                
+            } catch (err) {
+                console.error('❌ Error initializing demo:', err.message);
+                console.error(err.stack);
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'color: red; padding: 20px; background: #ffe0e0; border: 2px solid red; margin: 20px; border-radius: 8px;';
+                errorDiv.innerHTML = `<strong>Error loading dancefloor:</strong><br/>${err.message}<br/><br/><small>${err.stack}</small>`;
+                document.body.insertBefore(errorDiv, document.body.firstChild);
+            }
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeDemo);
+        } else {
+            initializeDemo();
+        }
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-"""
+﻿"""
 Comparison Test: New vs Old System
 Compares the new DanceCreator with the Archive version.
 Tests:
@@ -11,14 +11,15 @@ from pathlib import Path
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / 'src'))
 sys.path.insert(0, str(PROJECT_ROOT))
 
 # Change working directory to project root so relative paths work
 os.chdir(str(PROJECT_ROOT))
 
 # Import new system
-import Dance as NewDance
-import DanceFloor as NewDF
+from engine.models import Dance as NewDance
+from engine.models import DanceFloor as NewDF
 
 # Import old system from Archive using importlib to avoid naming conflicts
 import importlib.util

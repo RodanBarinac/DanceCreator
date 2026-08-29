@@ -1,4 +1,4 @@
-"""
+﻿"""
 Unit tests for Error Handling and Integration scenarios.
 
 Tests critical error conditions and integration flows:
@@ -10,10 +10,14 @@ Tests critical error conditions and integration flows:
 Part of Phase 1 Critical Tests (TEST_COVERAGE_ANALYSIS.md)
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
 import pytest
-import Dance
-import DanceFloor as DF
-from Dancer import Dancer
+from engine.models import Dance
+from engine.models import DanceFloor as DF
+from engine.models.Dancer import Dancer
 
 
 class TestErrorConditions:
@@ -160,3 +164,5 @@ class TestRegressionPrevention:
         """Test that bar counter initializes correctly."""
         floor = DF.DanceFloor('test', 1)
         assert floor.AktBar == 1, "Initial bar should be 1, not 0"
+
+
