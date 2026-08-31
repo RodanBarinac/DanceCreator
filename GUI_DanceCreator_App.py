@@ -102,8 +102,16 @@ def figure_summary(key, data):
         summary['EndPos'] = data['EndPos']
     if 'HasFacing' in data:
         summary['HasFacing'] = data['HasFacing']
+    
+    # Transform Addons from dict to array of addon names
     if 'Addons' in data:
-        summary['Addons'] = data['Addons']
+        addons = data['Addons']
+        if isinstance(addons, dict):
+            summary['Addons'] = list(addons.keys())
+        elif isinstance(addons, list):
+            summary['Addons'] = addons
+        else:
+            summary['Addons'] = []
     
     return summary
 

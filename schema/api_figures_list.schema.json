@@ -75,8 +75,7 @@
         },
         "Formation": {
           "type": "string",
-          "enum": ["turn", "reel", "hey", "circle", "line", "other"],
-          "description": "Type of formation"
+          "description": "Type of formation (e.g., turn, reel, hey, circle, line, cast, wait, hands round, step up/down)"
         },
         "Bars": {
           "oneOf": [
