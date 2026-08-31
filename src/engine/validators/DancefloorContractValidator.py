@@ -29,15 +29,15 @@ class DancefloorValidator:
             os.path.dirname(__file__),
             '..',
             '..',
-            'config',
-            'contract',
+            '..',
+            'schema',
             'dancefloor_contract.schema.json'
         )
         
         if not os.path.exists(schema_path):
             raise FileNotFoundError(
                 f"Schema file not found: {schema_path}\n"
-                "Make sure config/contract/dancefloor_contract.schema.json exists in project root."
+                "Make sure schema/dancefloor_contract.schema.json exists in project root."
             )
         
         with open(schema_path, 'r') as f:

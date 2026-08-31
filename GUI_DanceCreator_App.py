@@ -39,9 +39,12 @@ import json
 import os
 import uuid
 import sys
+from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from engine.figures.SimpleFigure import SimpleFigure
+from engine.validators.ApiRequestValidator import ApiRequestValidator, ApiValidationError
+from engine.validators.ApiResponseValidator import get_validator
 
 Figure_DB = {}
 Figure_File_DB = {}
@@ -78,26 +81,86 @@ def load_Figuers():
 
 
 def figure_summary(key, data):
-    return {
+    """Create a figure summary with all required fields for API response."""
+    summary = {
         'file': Figure_File_DB.get(key, key + '.json'),
         'key': key,
         'Name': data.get('Name') or data.get('name') or key,
-        'Desc': data.get('Desc'),
-        'Bars': data.get('Bars'),
-        'Formation': data.get('Formation'),
-        'Version': data.get('Version')
+        'Version': data.get('Version', 1)  # Required field with default
     }
+    
+    # Optional fields
+    if 'Desc' in data:
+        summary['Desc'] = data['Desc']
+    if 'Bars' in data:
+        summary['Bars'] = data['Bars']
+    if 'Formation' in data:
+        summary['Formation'] = data['Formation']
+    if 'StartPos' in data:
+        summary['StartPos'] = data['StartPos']
+    if 'EndPos' in data:
+        summary['EndPos'] = data['EndPos']
+    if 'HasFacing' in data:
+        summary['HasFacing'] = data['HasFacing']
+    if 'Addons' in data:
+        summary['Addons'] = data['Addons']
+    
+    return summary
 
 
 def dance_summary(path, data):
+    """Create a dance summary with all required fields and calculated metadata."""
     rel_path = os.path.relpath(path, DANCES_DIR)
-    return {
+    shape = data.get('shape') or data.get('Shape', '1/1')
+    
+    summary = {
         'file': rel_path,
         'Name': data.get('Name') or os.path.splitext(os.path.basename(path))[0],
-        'Desc': data.get('Desc'),
-        'shape': data.get('shape') or data.get('Shape'),
-        'Version': data.get('Version')
+        'shape': shape,
+        'Version': data.get('Version', 1)  # Required with default
     }
+    
+    # Optional description
+    if 'Desc' in data:
+        summary['Desc'] = data['Desc']
+    
+    # Extract couples from shape (e.g., "3/32" -> 3 couples)
+    try:
+        couples_str = shape.split('/')[0]
+        summary['Couples'] = int(couples_str) if couples_str.isdigit() else couples_str
+    except:
+        summary['Couples'] = 1
+    
+    # Calculate EstimatedBars from FigureList
+    estimated_bars = _calculate_dance_bars(data)
+    if estimated_bars > 0:
+        summary['EstimatedBars'] = estimated_bars
+    
+    # Optional formation
+    if 'Formation' in data:
+        summary['Formation'] = data['Formation']
+    
+    return summary
+
+
+def _calculate_dance_bars(dance_data):
+    """Calculate estimated bars for a dance from its FigureList."""
+    # This is a simplified calculation - actual implementation would need
+    # to load each figure and sum bars, handling series/parallel groups correctly
+    figure_list = dance_data.get('FigureList', [])
+    if not figure_list:
+        return 0
+    
+    # For now, return bar count from shape or a simple estimate
+    shape = dance_data.get('shape') or dance_data.get('Shape', '')
+    try:
+        parts = shape.split('/')
+        if len(parts) == 2 and parts[1].isdigit():
+            return int(parts[1])  # e.g., "3/32" -> 32 bars
+    except:
+        pass
+    
+    return 0
 
 
 def _load_json_file(path):
@@ -162,27 +225,42 @@ def _is_figure_call(entry):
     )
 
 
-def _build_dance_tree(entry, node_id, seen=None):
+def _build_dance_tree(entry, node_id, seen=None, depth=0, max_depth=50):
+    """Build dance tree with recursion protection."""
     seen = seen or set()
+    
+    # Prevent infinite recursion
+    if depth > max_depth:
+        return {
+            'id': str(node_id),
+            'text': '[Max depth reached]',
+            'children': [],
+            'type': 'figure',
+            'data': {'error': 'max_depth_exceeded'}
+        }
 
     if _is_group_entry(entry):
         mode = entry[0]
         children = []
         for index, child in enumerate(entry[1]):
-            children.append(_build_dance_tree(child, f"{node_id}-{index}", seen))
+            children.append(_build_dance_tree(child, f"{node_id}-{index}", seen, depth + 1, max_depth))
         return {
             'id': str(node_id),
             'text': 'Sequential Group' if mode == 's' else 'Parallel Group',
             'children': children,
             'type': 'group',
-            'data': {'mode': mode, 'original': entry}
+            'data': {
+                'groupType': mode,
+                'groupIndex': depth,
+                'original': entry
+            }
         }
 
     if _is_figure_call(entry):
         anchor = entry[0]
         fig_spec = entry[1]
         figure_name = fig_spec[0] if len(fig_spec) > 0 else 'Figure'
-        addons = fig_spec[1] if len(fig_spec) > 1 else []
+        addons = fig_spec[1:] if len(fig_spec) > 1 else []
         node = {
             'id': str(node_id),
             'text': figure_name,
@@ -207,10 +285,10 @@ def _build_dance_tree(entry, node_id, seen=None):
                 child_entries = figure_data.get('FigureList')
                 child_nodes = []
                 if _is_group_entry(child_entries):
-                    child_nodes.append(_build_dance_tree(child_entries, f"{node_id}-0", nested_seen))
+                    child_nodes.append(_build_dance_tree(child_entries, f"{node_id}-0", nested_seen, depth + 1, max_depth))
                 else:
                     for index, child in enumerate(child_entries):
-                        child_nodes.append(_build_dance_tree(child, f"{node_id}-{index}", nested_seen))
+                        child_nodes.append(_build_dance_tree(child, f"{node_id}-{index}", nested_seen, depth + 1, max_depth))
                 if child_nodes:
                     node['type'] = 'group'
                     node['text'] = figure_name
@@ -221,7 +299,7 @@ def _build_dance_tree(entry, node_id, seen=None):
     if isinstance(entry, list):
         children = []
         for index, child in enumerate(entry):
-            children.append(_build_dance_tree(child, f"{node_id}-{index}", seen))
+            children.append(_build_dance_tree(child, f"{node_id}-{index}", seen, depth + 1, max_depth))
         return {
             'id': str(node_id),
             'text': 'Group',
@@ -538,7 +616,119 @@ def figures():
 
 @app.route('/api/figures')
 def api_figures():
-    return figures()
+    """
+    GET /api/figures - List figures with filtering, pagination, and sorting.
+    
+    Query Parameters:
+        - version: Filter by schema version
+        - formation: Filter by formation type
+        - minBars, maxBars: Filter by bar count
+        - search: Search by name or description
+        - limit, offset: Pagination
+        - sort, order: Sorting
+    """
+    try:
+        # Validate query parameters
+        validated_params = ApiRequestValidator.validate_figure_list_params(request.args.to_dict())
+    except ApiValidationError as e:
+        return jsonify({
+            "status": "error",
+            "error": "validation_error",
+            "field": e.field,
+            "message": e.message
+        }), 400
+    
+    # Load all figures
+    load_Figuers()
+    all_figures = [
+        figure_summary(key, obj) 
+        for key, obj in Figure_DB.items() 
+        if isinstance(obj, dict)
+    ]
+    
+    # Apply filters
+    filtered = all_figures
+    filters_applied = {}
+    
+    if 'version' in validated_params:
+        version = validated_params['version']
+        filtered = [f for f in filtered if f.get('Version') == version]
+        filters_applied['version'] = version
+    
+    if 'formation' in validated_params:
+        formation = validated_params['formation']
+        filtered = [f for f in filtered if f.get('Formation', '').lower() == formation]
+        filters_applied['formation'] = formation
+    
+    if 'minBars' in validated_params:
+        min_bars = validated_params['minBars']
+        filtered = [f for f in filtered if _get_bar_count(f.get('Bars')) >= min_bars]
+        filters_applied['minBars'] = min_bars
+    
+    if 'maxBars' in validated_params:
+        max_bars = validated_params['maxBars']
+        filtered = [f for f in filtered if _get_bar_count(f.get('Bars')) <= max_bars]
+        filters_applied['maxBars'] = max_bars
+    
+    if 'search' in validated_params:
+        search_term = validated_params['search'].lower()
+        filtered = [
+            f for f in filtered
+            if search_term in f.get('Name', '').lower() 
+            or search_term in f.get('Desc', '').lower()
+        ]
+        filters_applied['search'] = validated_params['search']
+    
+    # Total count after filtering
+    total = len(filtered)
+    
+    # Sort
+    sort_field = validated_params.get('sort', 'name')
+    reverse = validated_params.get('order', 'ASC') == 'DESC'
+    
+    if sort_field == 'name':
+        filtered.sort(key=lambda x: x.get('Name', '').lower(), reverse=reverse)
+    elif sort_field == 'bars':
+        filtered.sort(key=lambda x: _get_bar_count(x.get('Bars')), reverse=reverse)
+    elif sort_field == 'version':
+        filtered.sort(key=lambda x: x.get('Version', 0), reverse=reverse)
+    
+    # Pagination
+    offset = validated_params['offset']
+    limit = validated_params['limit']
+    paginated = filtered[offset:offset + limit]
+    
+    # Build response
+    response = {
+        "status": "ok",
+        "version": "1",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "count": len(paginated),
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "filters_applied": filters_applied,
+        "figures": paginated
+    }
+    
+    # Validate response against schema (in development mode)
+    try:
+        validator = get_validator()
+        validator.validate_figure_list_response(response)
+    except Exception as validation_error:
+        # Log validation error but don't fail the request in production
+        print(f"Warning: Response validation failed: {validation_error}")
+    
+    return jsonify(response)
+
+
+def _get_bar_count(bars):
+    """Extract numeric bar count from Bars field (handles int or array)."""
+    if isinstance(bars, int):
+        return bars
+    if isinstance(bars, list) and len(bars) > 0:
+        return bars[0]  # Use first value if array
+    return 0
 
 
 @app.route('/api/figures/<path:identifier>')
@@ -570,7 +760,135 @@ def list_dances():
 
 @app.route('/api/dances')
 def api_dances():
-    return list_dances()
+    """
+    GET /api/dances - List dances with filtering, pagination, and sorting.
+    
+    Query Parameters:
+        - version: Filter by schema version
+        - minCouples, maxCouples: Filter by couple count
+        - search: Search by name or description
+        - limit, offset: Pagination
+        - sort, order: Sorting
+    """
+    try:
+        # Validate query parameters
+        validated_params = ApiRequestValidator.validate_dance_list_params(request.args.to_dict())
+    except ApiValidationError as e:
+        return jsonify({
+            "status": "error",
+            "error": "validation_error",
+            "field": e.field,
+            "message": e.message
+        }), 400
+    
+    # Load all dances
+    try:
+        if not os.path.isdir(DANCES_DIR):
+            return jsonify({
+                "status": "error",
+                "error": "dances_directory_not_found",
+                "message": "Dances directory not found"
+            }), 404
+        
+        all_dances = []
+        for fpath in iter_json_files(DANCES_DIR):
+            rel = os.path.relpath(fpath, DANCES_DIR)
+            # Skip subdances directory
+            if rel.startswith('subDances' + os.sep):
+                continue
+            try:
+                data = _load_json_file(fpath)
+                all_dances.append(dance_summary(fpath, data))
+            except Exception:
+                continue  # Skip malformed files
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": "internal_error",
+            "message": str(e)
+        }), 500
+    
+    # Apply filters
+    filtered = all_dances
+    filters_applied = {}
+    
+    if 'version' in validated_params:
+        version = validated_params['version']
+        filtered = [d for d in filtered if d.get('Version') == version]
+        filters_applied['version'] = version
+    
+    if 'minCouples' in validated_params:
+        min_couples = validated_params['minCouples']
+        filtered = [d for d in filtered if _get_couple_count(d.get('Couples')) >= min_couples]
+        filters_applied['minCouples'] = min_couples
+    
+    if 'maxCouples' in validated_params:
+        max_couples = validated_params['maxCouples']
+        filtered = [d for d in filtered if _get_couple_count(d.get('Couples')) <= max_couples]
+        filters_applied['maxCouples'] = max_couples
+    
+    if 'search' in validated_params:
+        search_term = validated_params['search'].lower()
+        filtered = [
+            d for d in filtered
+            if search_term in d.get('Name', '').lower() 
+            or search_term in d.get('Desc', '').lower()
+        ]
+        filters_applied['search'] = validated_params['search']
+    
+    # Total count after filtering
+    total = len(filtered)
+    
+    # Sort
+    sort_field = validated_params.get('sort', 'name')
+    reverse = validated_params.get('order', 'ASC') == 'DESC'
+    
+    if sort_field == 'name':
+        filtered.sort(key=lambda x: x.get('Name', '').lower(), reverse=reverse)
+    elif sort_field == 'couples':
+        filtered.sort(key=lambda x: _get_couple_count(x.get('Couples')), reverse=reverse)
+    elif sort_field == 'version':
+        filtered.sort(key=lambda x: x.get('Version', 0), reverse=reverse)
+    elif sort_field == 'bars':
+        filtered.sort(key=lambda x: x.get('EstimatedBars', 0), reverse=reverse)
+    
+    # Pagination
+    offset = validated_params['offset']
+    limit = validated_params['limit']
+    paginated = filtered[offset:offset + limit]
+    
+    # Build response
+    response = {
+        "status": "ok",
+        "version": "1",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "count": len(paginated),
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "filters_applied": filters_applied,
+        "dances": paginated
+    }
+    
+    # Validate response against schema (in development mode)
+    try:
+        validator = get_validator()
+        validator.validate(response, 'api_dances_list.schema.json')
+    except Exception as validation_error:
+        # Log validation error but don't fail the request in production
+        print(f"Warning: Response validation failed: {validation_error}")
+    
+    return jsonify(response)
+
+
+def _get_couple_count(couples):
+    """Extract numeric couple count from Couples field (handles int or string)."""
+    if isinstance(couples, int):
+        return couples
+    if isinstance(couples, str) and couples.isdigit():
+        return int(couples)
+    return 1  # Default
 
 
 @app.route('/api/dances/<path:identifier>')
@@ -588,11 +906,73 @@ def api_dance_detail(identifier):
 
 @app.route('/api/dances/<path:identifier>/tree')
 def api_dance_tree(identifier):
-    response = api_dance_detail(identifier)
-    if isinstance(response, tuple):
-        return response
-    payload = response.get_json()
-    return jsonify(payload.get('tree', {}))
+    """
+    GET /api/dances/<identifier>/tree - Get dance tree structure.
+    
+    Returns jsTree-compatible tree with metadata envelope.
+    """
+    try:
+        # Validate identifier
+        identifier = ApiRequestValidator.validate_dance_tree_identifier(identifier)
+    except ApiValidationError as e:
+        return jsonify({
+            "status": "error",
+            "error": "validation_error",
+            "field": e.field,
+            "message": e.message
+        }), 400
+    
+    # Find dance file
+    dance_path = _dance_detail_path(identifier)
+    if dance_path is None:
+        return jsonify({
+            "status": "error",
+            "error": "not_found",
+            "message": f"Dance not found: {identifier}"
+        }), 404
+    
+    # Load dance data
+    try:
+        dance_data = _load_json_file(dance_path)
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": "load_error",
+            "message": f"Failed to load dance: {str(e)}"
+        }), 500
+    
+    # Build tree
+    dance_name = dance_data.get('Name') or os.path.splitext(os.path.basename(dance_path))[0]
+    tree = build_dance_tree(dance_data, dance_name)
+    
+    # Build response with metadata envelope
+    response = {
+        "status": "ok",
+        "version": "1",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "format": "jstree",
+        "dance": {
+            "file": os.path.relpath(dance_path, DANCES_DIR),
+            "Name": dance_name,
+            "shape": dance_data.get('shape') or dance_data.get('Shape', '1/1'),
+            "Version": dance_data.get('Version', 1)
+        },
+        "tree": tree
+    }
+    
+    # Add optional dance fields
+    if 'Desc' in dance_data:
+        response['dance']['Desc'] = dance_data['Desc']
+    
+    # Validate response against schema
+    try:
+        validator = get_validator()
+        validator.validate_dance_tree_response(response)
+    except Exception as validation_error:
+        # Log validation error but don't fail the request in production
+        print(f"Warning: Dance tree response validation failed: {validation_error}")
+    
+    return jsonify(response)
 
 
 @app.route('/api/dancefloor/init', methods=['POST'])
@@ -658,10 +1038,10 @@ def svg_test():
 
 @app.route('/schema/<path:filename>')
 def serve_schema(filename):
-    """Serve schema files from the config directory."""
+    """Serve schema files from the schema directory."""
     from flask import send_from_directory
-    config_dir = os.path.join(os.path.dirname(__file__), 'config')
-    return send_from_directory(config_dir, filename, mimetype='application/json')
+    schema_dir = os.path.join(os.path.dirname(__file__), 'schema')
+    return send_from_directory(schema_dir, filename, mimetype='application/json')
 
 
 if __name__ == "__main__":

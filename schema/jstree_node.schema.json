@@ -1,0 +1,25 @@
+{
+  "$schema":"http://json-schema.org/draft-07/schema#",
+  "title":"jsTree Node",
+  "type":"object",
+  "required":["id","text","children","data"],
+  "properties":{
+    "id":{"type":"string"},
+    "text":{"type":"string"},
+    "children":{"type":"array"},
+    "type":{"type":"string"},
+    "data":{
+      "type":"object",
+      "properties":{
+        "figureName":{"type":"string"},
+        "version":{"type":"integer"},
+        "bars":{"oneOf":[{"type":"integer"},{"type":"array"}]},
+        "anchor":{"type":"array","minItems":2,"maxItems":2,"items":[{"type":"integer"},{"type":"integer"}]},
+        "addons":{"type":"object"},
+        "original":{"type":"array"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
