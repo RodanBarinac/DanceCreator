@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "POST /api/dances Request Body",
+  "description": "Schema for creating a new dance. All required fields must be provided.",
+  "$comment": "Create requests must provide complete dance definition.",
+  "type": "object",
+  "properties": {
+    "Name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Dance name (must be unique)"
+    },
+    "Desc": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 5000,
+      "description": "Human-readable description of the dance"
+    },
+    "shape": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*/[1-9][0-9]*$",
+      "description": "Dance formation shape (e.g., '3/32' = 3 couples, 32 bars)"
+    },
+    "FigureList": {
+      "$ref": "#/definitions/DanceGroup",
+      "description": "Hierarchical list of figures that make up the dance"
+    },
+    "Version": {
+      "const": 3,
+      "description": "Schema version - must be 3 for current format"
+    }
+  },
+  "required": ["Name", "Desc", "FigureList", "Version"],
+  "additionalProperties": true,
+  "definitions": {
+    "Position": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": [
+        { "type": ["number", "integer"] },
+        { "type": ["number", "integer"] }
+      ]
+    },
+    "FigureTarget": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "description": "Figure name reference"
+        },
+        {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": [
+            { 
+              "type": "string",
+              "minLength": 1,
+              "description": "Figure name"
+            },
+            { 
+              "type": "array",
+              "description": "Addons or parameters"
+            }
+          ]
+        }
+      ]
+    },
+    "FigureCall": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": [
+        { "$ref": "#/definitions/Position" },
+        { "$ref": "#/definitions/FigureTarget" }
+      ]
+    },
+    "DanceGroup": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": [
+        { 
+          "type": "string", 
+          "enum": ["s", "p"],
+          "description": "s=series (sequential), p=parallel (simultaneous)"
+        },
+        {
+          "type": "array",
+          "items": { "$ref": "#/definitions/DanceElement" },
+          "minItems": 1,
+          "description": "List of dance elements in this group"
+        }
+      ]
+    },
+    "DanceElement": {
+      "oneOf": [
+        { "$ref": "#/definitions/FigureCall" },
+        { "$ref": "#/definitions/DanceGroup" }
+      ]
+    }
+  }
+}

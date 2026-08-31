@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PUT /api/figures/<id> Request Body",
+  "description": "Schema for updating an existing figure. Must include all required fields.",
+  "$comment": "Update requests must provide complete figure definition. Supports both atomic and complex figures.",
+  "type": "object",
+  "properties": {
+    "Name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Figure name (unique identifier)"
+    },
+    "Desc": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 5000,
+      "description": "Human-readable description"
+    },
+    "Formation": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Formation type (turn, reel, hey, circle, etc.)"
+    },
+    "Version": {
+      "type": ["number", "integer"],
+      "minimum": 1,
+      "description": "Schema version of the figure definition"
+    },
+    "Anker": {
+      "type": "array",
+      "items": { "type": "number" },
+      "description": "Anchor points for positioning"
+    },
+    "Addons": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/Addon" },
+      "default": {},
+      "description": "Map of addon variations for this figure"
+    },
+    "Bars": {
+      "type": "number",
+      "minimum": 1,
+      "description": "Number of bars this figure takes"
+    },
+    "StartPos": {
+      "type": "array",
+      "description": "Starting positions for dancers"
+    },
+    "EndPos": {
+      "type": "array",
+      "description": "Ending positions for dancers"
+    },
+    "CriptDesc": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Cribs descriptions for each dancer"
+    },
+    "FigureList": {
+      "type": "array",
+      "items": { "type": ["object", "array", "string", "number"] },
+      "description": "List of sub-figures (for complex figures)"
+    }
+  },
+  "oneOf": [
+    {
+      "description": "Atomic figure: has execution details",
+      "required": ["Name", "Desc", "Formation", "Version", "Addons", "Bars", "StartPos", "EndPos", "CriptDesc"],
+      "not": { "required": ["FigureList"] }
+    },
+    {
+      "description": "Complex figure: composed of other figures",
+      "required": ["Name", "Desc", "Formation", "Version", "FigureList"],
+      "not": { "required": ["Addons", "Bars", "StartPos", "EndPos", "CriptDesc"] }
+    }
+  ],
+  "definitions": {
+    "Addon": {
+      "type": "object",
+      "properties": {
+        "Name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Addon identifier"
+        },
+        "Desc": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Addon description"
+        },
+        "Version": {
+          "type": ["number", "integer"],
+          "minimum": 1,
+          "description": "Addon version"
+        },
+        "StartPos": {
+          "type": "array",
+          "description": "Modified starting positions"
+        },
+        "EndPos": {
+          "type": "array",
+          "description": "Modified ending positions"
+        },
+        "Faceing": {
+          "type": "array",
+          "description": "Modified facing directions"
+        },
+        "CriptDesc": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Modified crib descriptions"
+        },
+        "CriptReplace": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Replacement cribs"
+        }
+      },
+      "required": ["Name", "Desc", "Version"],
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

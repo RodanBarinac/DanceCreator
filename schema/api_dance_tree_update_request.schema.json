@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PUT /api/dances/<id>/tree Request Body",
+  "description": "Schema for updating a dance via jsTree structure. The tree will be converted to Dance.FigureList format.",
+  "$comment": "Accepts jsTree JSON format and converts to internal dance representation",
+  "type": "object",
+  "properties": {
+    "tree": {
+      "$ref": "#/definitions/JsTreeNode",
+      "description": "Root node of jsTree structure"
+    }
+  },
+  "required": ["tree"],
+  "additionalProperties": false,
+  "definitions": {
+    "JsTreeNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique node identifier"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Display text for the node"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["figure", "group", "root"],
+          "description": "Node type"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "figureName": {
+              "type": "string",
+              "description": "Name of the figure (for type=figure)"
+            },
+            "groupType": {
+              "type": "string",
+              "enum": ["s", "p"],
+              "description": "Group type: s=series, p=parallel (for type=group)"
+            },
+            "anchor": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": [
+                { "type": ["number", "integer"] },
+                { "type": ["number", "integer"] }
+              ],
+              "description": "Position anchor for figure execution"
+            },
+            "addons": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "List of addon names to apply"
+            }
+          },
+          "additionalProperties": true
+        },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/JsTreeNode" },
+          "description": "Child nodes (for groups)"
+        }
+      },
+      "required": ["id", "text", "type"],
+      "additionalProperties": true
+    }
+  }
+}
