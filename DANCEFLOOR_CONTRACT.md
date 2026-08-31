@@ -13,9 +13,8 @@ All contract documentation is in the **`Documents/`** directory:
 
 All JSON schemas are in the **`config/`** directory:
 
-- **[config/contract/dancefloor_contract.schema.json](config/contract/dancefloor_contract.schema.json)** - Machine-readable contract specification (Draft 7)
-- **[config/api/](config/api/)** - API schemas
-- **[config/data/](config/data/)** - Data schemas
+- **[schema/dancefloor_contract.schema.json](schema/dancefloor_contract.schema.json)** - Machine-readable contract specification (Draft 7)
+- **[schema/](schema/)** - API and data schemas
 
 ## 🔧 Implementation Files
 

@@ -1,0 +1,10 @@
+{"Name": "1cWait",
+  "Desc": "One couple waits.",
+  "Formation": "wait",
+  "Addons": {},
+  "CriptDesc": ["", ""],
+  "StartPos": [[0, 0], [0, 2]],
+  "EndPos": [[0, 0], [0, 2]],
+  "Bars": 2,
+  "Version": 2}
+

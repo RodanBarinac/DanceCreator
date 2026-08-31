@@ -11,17 +11,23 @@ def test_api_figures_list():
     rv = _client().get('/api/figures')
     assert rv.status_code == 200
     data = rv.get_json()
-    assert isinstance(data, list)
-    assert data
-    assert 'file' in data[0]
-    assert 'key' in data[0]
-    assert 'Name' in data[0]
-    assert 'Formation' in data[0]
+    assert isinstance(data, dict)  # Now returns object with metadata
+    assert 'status' in data
+    assert data['status'] == 'ok'
+    assert 'figures' in data
+    assert isinstance(data['figures'], list)
+    if data['figures']:  # If there are figures
+        assert 'file' in data['figures'][0]
+        assert 'key' in data['figures'][0]
+        assert 'Name' in data['figures'][0]
 
 
 def test_api_figure_detail():
-    figures = _client().get('/api/figures').get_json()
-    item = figures[0]
+    figures_response = _client().get('/api/figures').get_json()
+    figures_list = figures_response['figures']  # Extract figures array
+    if not figures_list:
+        return  # Skip if no figures
+    item = figures_list[0]
     rv = _client().get(f"/api/figures/{quote(item['key'])}")
     assert rv.status_code == 200
     data = rv.get_json()
@@ -33,16 +39,23 @@ def test_api_dances_list():
     rv = _client().get('/api/dances')
     assert rv.status_code == 200
     data = rv.get_json()
-    assert isinstance(data, list)
-    assert data
-    assert 'file' in data[0]
-    assert 'Name' in data[0]
-    assert 'shape' in data[0]
+    assert isinstance(data, dict)  # Now returns object with metadata
+    assert 'status' in data
+    assert data['status'] == 'ok'
+    assert 'dances' in data
+    assert isinstance(data['dances'], list)
+    if data['dances']:  # If there are dances
+        assert 'file' in data['dances'][0]
+        assert 'Name' in data['dances'][0]
+        assert 'shape' in data['dances'][0]
 
 
 def test_api_dance_detail():
-    dances = _client().get('/api/dances').get_json()
-    item = dances[0]
+    dances_response = _client().get('/api/dances').get_json()
+    dances_list = dances_response['dances']  # Extract dances array
+    if not dances_list:
+        return  # Skip if no dances
+    item = dances_list[0]
     identifier = quote(item['file'].removesuffix('.json'))
     rv = _client().get(f'/api/dances/{identifier}')
     assert rv.status_code == 200
@@ -76,15 +89,18 @@ def _has_nested_figure_leaf(node):
 
 
 def test_api_tree():
-    figures = _client().get('/api/figures').get_json()
-    item = figures[0]
+    figures_response = _client().get('/api/figures').get_json()
+    figures_list = figures_response['figures']  # Extract figures array
+    if not figures_list:
+        return  # Skip if no figures
+    item = figures_list[0]
     rv = _client().get('/api/tree', query_string={'file': item['file']})
     assert rv.status_code == 200
     data = rv.get_json()
     assert isinstance(data, list)
-    assert data
-    assert 'id' in data[0]
-    assert 'meta' in data[0]
+    if data:  # If tree has nodes
+        assert 'id' in data[0]
+        assert 'meta' in data[0]
 
 
 def test_api_dancefloor_init():

@@ -70,7 +70,17 @@ Ask yourself:
 - `test_archive_old_system.py` - Comparison with old system
 
 ### Experimental Code
-The `/Experimental/` folder contains the refactored new system that did not pass TDD review. Do not use without tests demonstrating it works better than the current system.
+The `/Experimental/` folder contains the refactored new system that did not pass TDD review. 
+Do not use without tests demonstrating it works better than the current system.
 
 ### More Information
 - See `tests/README_HOW_TO_TEST.md` for detailed test running instructions
+
+# Legacy & backward compatibility
+There is no production release, so strict backward compatibility is not required. 
+Breaking design decisions are acceptable when they simplify the codebase. 
+If a breaking change is made, do not implement legacy shims — instead update the example database, 
+tests, and documentation to reflect the new behaviour. 
+Ensure the example data and test-suite demonstrate the new API/format, 
+and run the full test suite before committing. 
+Note breaking changes clearly in CHANGELOG.md and any example files.

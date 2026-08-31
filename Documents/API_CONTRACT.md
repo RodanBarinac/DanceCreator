@@ -14,12 +14,12 @@ Do not infer contract requirements from `static/app.js` unless they are also sup
 ## File Schemas
 
 ### Figure files
-- Schema: `Documents/Schema/figure.schema.json`
+- Schema: `schema/figure.schema.json`
 - Scope: `/Figures/*.json`
 - Purpose: describe a single figure or complex figure definition
 
 ### Dance files
-- Schema: `Documents/Schema/dance.schema.json`
+- Schema: `schema/dance.schema.json`
 - Scope: `/Dances/*.json`
 - Purpose: describe a dance built from figures\n- The schema supports both inline composition and modular bar references for the same dance
 - Required fields:
@@ -31,12 +31,12 @@ Do not infer contract requirements from `static/app.js` unless they are also sup
 - `shape` format: `couples_dancing/couples_in_set`, for example `2/4` or `3/3`
 
 ### jsTree nodes
-- Schema: `Documents/Schema/jstree_node.schema.json`
+- Schema: `schema/jstree_node.schema.json`
 - Scope: `/tree` and tree-like backend responses
 - Purpose: feed the GUI tree widget
 
 ### Dance floor state
-- Schema: `Documents/Schema/dancefloor.schema.json`
+- Schema: `schema/dancefloor.schema.json`
 - Scope: backend floor state and execution responses
 - Purpose: describe dancer positions on the floor
 
@@ -69,7 +69,7 @@ The `/api/` namespace mirrors the current backend contract and is the preferred 
 The list endpoints should return summary objects, not raw filenames or raw figure payloads.
 
 ### `GET /figures`
-Use `Documents/Schema/api_figures_response.schema.json`.
+Use `schema/api_figures_response.schema.json`.
 
 Each item should include:
 - `file`
@@ -81,7 +81,7 @@ Each item should include:
 - `Version` when available
 
 ### `GET /dances`
-Use `Documents/Schema/api_dances_response.schema.json`.
+Use `schema/api_dances_response.schema.json`.
 
 Each item should include:
 - `file`
@@ -91,10 +91,10 @@ Each item should include:
 - `Version` when available
 
 ### `GET /tree?file=<name>`
-Use `Documents/Schema/api_tree_response.schema.json`.
+Use `schema/api_tree_response.schema.json`.
 
 ### `GET /get_nodes/<node_Name>`
-Use `Documents/Schema/jstree_node.schema.json` for the intended GUI shape.
+Use `schema/jstree_node.schema.json` for the intended GUI shape.
 
 ## Notes
 

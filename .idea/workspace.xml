@@ -4,13 +4,44 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="BackgroundAgentGlobalSettings">
-    <option name="selectedModelId" value="auto" />
+    <option name="selectedModelId" value="claude-sonnet-4.5" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7aaaf50a-c70e-40e5-a0da-48518b5e3409" name="Changes" comment="Tree is working">
+      <change beforePath="$PROJECT_DIR$/.github/copilot-instructions.md" beforeDir="false" afterPath="$PROJECT_DIR$/.github/copilot-instructions.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/DanceCreator@1.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/DanceCreator@1.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DANCEFLOOR_CONTRACT.md" beforeDir="false" afterPath="$PROJECT_DIR$/DANCEFLOOR_CONTRACT.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/API_CONTRACT.md" beforeDir="false" afterPath="$PROJECT_DIR$/Documents/API_CONTRACT.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/DANCEFLOOR_CONTRACT_README.md" beforeDir="false" afterPath="$PROJECT_DIR$/Documents/DANCEFLOOR_CONTRACT_README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/Schema/api_dance_detail.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/Schema/api_dancefloor_execute.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/Schema/api_dances_list.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/Schema/api_dances_response.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/Schema/api_error.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/Schema/api_figures_list.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/Schema/api_figures_response.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/Schema/api_tree_response.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/Schema/dance.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/Schema/dancefloor.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/Schema/figure.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Documents/Schema/jstree_node.schema.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/GUI_DanceCreator_App.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI_DanceCreator_App.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dancefloor.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/api/api_dance_detail.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/api/api_dancefloor_execute.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/api/api_dances_list.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/api/api_dances_response.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/api/api_error.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/api/api_figures_list.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/api/api_figures_response.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/api/api_tree_response.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/contract/dancefloor_contract.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/data/dance.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/data/dancefloor.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/data/figure.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/data/jstree_node.schema.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/engine/validators/DancefloorContractValidator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/engine/validators/DancefloorContractValidator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/DancefloorContractValidator.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/DancefloorContractValidator.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -130,7 +161,7 @@
       <recent name="E:\Git\DanceCreator\Figures" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.GUI_DanceCreator_App">
     <configuration name="GUI_DanceCreator_App" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="DanceCreator" />
       <option name="ENV_FILES" value="" />

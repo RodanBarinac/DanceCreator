@@ -977,16 +977,27 @@ def api_dance_tree(identifier):
 
 @app.route('/api/dancefloor/init', methods=['POST'])
 def api_dancefloor_init():
+    """Initialize dancefloor with given couples."""
     body = request.get_json(silent=True) or {}
     couples = int(body.get('couples', 1))
     name = body.get('name') or 'init'
-    from DanceFloor import DanceFloor
+    from src.engine.models.DanceFloor import DanceFloor
     floor = DanceFloor(name, couples)
-    return jsonify(_serialize_floor(floor))
+    serialized = _serialize_floor(floor)
+    
+    # Validate response
+    try:
+        validator = get_validator()
+        validator.validate_dancefloor_response(serialized)
+    except Exception as validation_error:
+        print(f"Warning: Dancefloor init response validation failed: {validation_error}")
+    
+    return jsonify(serialized)
 
 
 @app.route('/api/dancefloor/execute', methods=['POST'])
 def api_dancefloor_execute():
+    """Execute a figure on the dancefloor."""
     body = request.get_json(silent=True) or {}
     figure_name = body.get('figure')
     if not figure_name:
@@ -997,7 +1008,7 @@ def api_dancefloor_execute():
     addons = body.get('addons') or []
     floor_name = body.get('dance_name') or 'execute'
 
-    from DanceFloor import DanceFloor
+    from src.engine.models.DanceFloor import DanceFloor
     floor = DanceFloor(floor_name, couples)
     figure = getFigure(figure_name, anchor, addons)
 
@@ -1011,9 +1022,18 @@ def api_dancefloor_execute():
             'message': str(exc)
         }), 500
 
+    serialized_floor = _serialize_floor(new_floor)
+    
+    # Validate floor response
+    try:
+        validator = get_validator()
+        validator.validate_dancefloor_response(serialized_floor)
+    except Exception as validation_error:
+        print(f"Warning: Dancefloor execute response validation failed: {validation_error}")
+    
     return jsonify({
         'status': 'ok',
-        'floor': _serialize_floor(new_floor),
+        'floor': serialized_floor,
         'crips': crips
     })
 
