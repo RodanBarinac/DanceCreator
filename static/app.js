@@ -4,7 +4,7 @@ let currentFigureSummary = null;
 let currentDanceName = null;
 let currentDanceCouples = 3;
 
-export async function api(path, opts) {
+async function api(path, opts) {
   const res = await fetch(path, opts);
   const contentType = res.headers.get('content-type') || '';
   let body = null;
@@ -13,7 +13,7 @@ export async function api(path, opts) {
   return { status: res.status, body };
 }
 
-export function escapeHtml(value) {
+function escapeHtml(value) {
   const text = String(value == null ? '' : value);
   return text.replace(/[&<>"']/g, ch => ({
     '&': '&amp;',
@@ -24,7 +24,7 @@ export function escapeHtml(value) {
   }[ch]));
 }
 
-export function formatPos(value) {
+function formatPos(value) {
   if (!Array.isArray(value) || value.length < 2) return '';
   return `(${value[0]}, ${value[1]})`;
 }
@@ -38,7 +38,7 @@ function normalizeAnchor(anchor) {
   return [row, col];
 }
 
-export function getCanvasOptions(anchorOverride, addonsOverride) {
+function getCanvasOptions(anchorOverride, addonsOverride) {
  var rowInput = document.getElementById('anchor-row');
  var colInput = document.getElementById('anchor-col');
  var parsedRow = rowInput ? parseInt(rowInput.value || '1', 10) : 1;
@@ -142,7 +142,7 @@ async function renderFigureOnCanvas(figureName, options) {
  return null;
 }
 
-export function renderSteps(data) {
+function renderSteps(data) {
   const rows = [];
   const starts = Array.isArray(data.StartPos) ? data.StartPos : [];
   const ends = Array.isArray(data.EndPos) ? data.EndPos : [];
@@ -170,7 +170,7 @@ export function renderSteps(data) {
    : '<p class="empty-note">No step data available.</p>';
 }
 
-export function renderCrips(data) {
+function renderCrips(data) {
   const crips = Array.isArray(data.CriptDesc) ? data.CriptDesc : [];
   if (!crips.length) return '<p class="empty-note">No crips available.</p>';
   return `<ol class="figure-crips">${crips.map(crip => `<li>${escapeHtml(crip)}</li>`).join('')}</ol>`;
@@ -207,14 +207,18 @@ function renderFigureDetail(data) {
 }
 
 async function loadFigures() {
+ console.log('[loadFigures] Starting...');
  const r = await api('/api/figures');
+ console.log('[loadFigures] API response:', r);
  if (r.status !== 200) { console.error('Failed to load figures'); return; }
  const list = document.getElementById('fig-list');
+ console.log('[loadFigures] List element:', list);
  list.innerHTML = '';
  currentFigureSummary = null;
  
  // Handle both old array format and new envelope format
  const figures = Array.isArray(r.body) ? r.body : (r.body.figures || []);
+ console.log('[loadFigures] Extracted figures:', figures.length, 'items');
  
  figures.forEach(f => {
    if (!f.file || f.file.endsWith('figure.schema.json')) return;
@@ -227,6 +231,7 @@ async function loadFigures() {
    list.appendChild(li);
    if (!currentFigureSummary) currentFigureSummary = f;
  });
+ console.log('[loadFigures] Added', list.children.length, 'items to list');
 
  if (currentFigureSummary) {
    await showFigure(currentFigureSummary.key || currentFigureSummary.file.replace('.json', ''), list.querySelector('li'));
@@ -234,13 +239,17 @@ async function loadFigures() {
 }
 
 async function loadDances() {
+ console.log('[loadDances] Starting...');
  const r = await api('/api/dances');
+ console.log('[loadDances] API response:', r);
  if (r.status !== 200) { console.error('Failed to load dances'); return; }
  const sel = document.getElementById('dance-select');
+ console.log('[loadDances] Select element:', sel);
  sel.innerHTML = '<option value="">-- Select a dance --</option>';
  
  // Handle both old array format and new envelope format
  const dances = Array.isArray(r.body) ? r.body : (r.body.dances || []);
+ console.log('[loadDances] Extracted dances:', dances.length, 'items');
  
  dances.forEach(d => {
    const opt = document.createElement('option');
@@ -248,6 +257,7 @@ async function loadDances() {
    opt.textContent = d.Name || d.file;
    sel.appendChild(opt);
  });
+ console.log('[loadDances] Added', sel.options.length - 1, 'dances to select');
   
  // Remove old listener if any
  const newSel = sel.cloneNode(true);

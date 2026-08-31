@@ -249,9 +249,11 @@
       try {
         const r = await fetch('/api/figures');
         if (r.status !== 200) return;
-        const figures = await r.json();
+        const response = await r.json();
+        // Extract figures array from envelope format
+        const figuresArray = response.figures || [];
         const formations = new Set();
-        figures.forEach(fig => {
+        figuresArray.forEach(fig => {
           const formation = fig.Formation || fig.formation || fig.Type || fig.type || 'Other';
           formations.add(formation);
         });
