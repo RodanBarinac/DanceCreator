@@ -212,7 +212,11 @@ async function loadFigures() {
  const list = document.getElementById('fig-list');
  list.innerHTML = '';
  currentFigureSummary = null;
- r.body.forEach(f => {
+ 
+ // Handle both old array format and new envelope format
+ const figures = Array.isArray(r.body) ? r.body : (r.body.figures || []);
+ 
+ figures.forEach(f => {
    if (!f.file || f.file.endsWith('figure.schema.json')) return;
    const li = document.createElement('li');
    li.textContent = `${f.Name || f.file} (${f.Bars || '?'} bars)`;
@@ -234,7 +238,11 @@ async function loadDances() {
  if (r.status !== 200) { console.error('Failed to load dances'); return; }
  const sel = document.getElementById('dance-select');
  sel.innerHTML = '<option value="">-- Select a dance --</option>';
- r.body.forEach(d => {
+ 
+ // Handle both old array format and new envelope format
+ const dances = Array.isArray(r.body) ? r.body : (r.body.dances || []);
+ 
+ dances.forEach(d => {
    const opt = document.createElement('option');
    opt.value = d.file.replace('.json','');
    opt.textContent = d.Name || d.file;
@@ -252,9 +260,9 @@ async function loadDances() {
  });
   
  // Load first dance if available
- if (r.body.length) {
-   currentSel.value = r.body[0].file.replace('.json','');
-   initJsTree(r.body[0].file.replace('.json',''));
+ if (dances.length) {
+   currentSel.value = dances[0].file.replace('.json','');
+   initJsTree(dances[0].file.replace('.json',''));
  }
 }
 
