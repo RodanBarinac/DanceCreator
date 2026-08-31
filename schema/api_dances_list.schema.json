@@ -1,0 +1,100 @@
+﻿{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GET /api/dances List Response",
+  "description": "Response from Dance List API containing available dances with metadata",
+  "type": "object",
+  "required": ["status", "version", "timestamp", "count", "total", "offset", "limit", "dances"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["ok"],
+      "description": "Response status"
+    },
+    "version": {
+      "type": "string",
+      "description": "API contract version"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of response generation"
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of dances in this response"
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of dances matching filters"
+    },
+    "offset": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Pagination offset"
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "description": "Maximum items per page"
+    },
+    "filters_applied": {
+      "type": "object",
+      "description": "Echo back of filters that were applied",
+      "additionalProperties": true
+    },
+    "dances": {
+      "type": "array",
+      "description": "Array of dance summaries",
+      "items": { "$ref": "#/definitions/DanceSummary" }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "DanceSummary": {
+      "type": "object",
+      "required": ["file", "Name", "shape", "Version"],
+      "properties": {
+        "file": {
+          "type": "string",
+          "description": "Filename where dance is stored"
+        },
+        "Name": {
+          "type": "string",
+          "description": "Display name"
+        },
+        "Desc": {
+          "type": "string",
+          "description": "Human-readable description"
+        },
+        "shape": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*/[1-9][0-9]*$",
+          "description": "Dance shape (e.g., '3/32', '4/40')"
+        },
+        "Version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Schema version of the dance definition"
+        },
+        "EstimatedBars": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total bars in the dance (calculated)"
+        },
+        "Couples": {
+          "type": ["integer", "string"],
+          "description": "Number of couples (from shape)"
+        },
+        "Formation": {
+          "type": "string",
+          "enum": ["square", "circle", "line", "other"],
+          "description": "Formation type"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

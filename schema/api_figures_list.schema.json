@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GET /api/figures List Response",
+  "description": "Response from Figure List API containing available figures with metadata",
+  "type": "object",
+  "required": ["status", "version", "timestamp", "count", "total", "offset", "limit", "figures"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["ok"],
+      "description": "Response status"
+    },
+    "version": {
+      "type": "string",
+      "description": "API contract version"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of response generation"
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of figures in this response"
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of figures matching filters"
+    },
+    "offset": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Pagination offset"
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "description": "Maximum items per page"
+    },
+    "filters_applied": {
+      "type": "object",
+      "description": "Echo back of filters that were applied",
+      "additionalProperties": true
+    },
+    "figures": {
+      "type": "array",
+      "description": "Array of figure summaries",
+      "items": { "$ref": "#/definitions/FigureSummary" }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "FigureSummary": {
+      "type": "object",
+      "required": ["key", "file", "Name", "Version"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Unique identifier for this figure"
+        },
+        "file": {
+          "type": "string",
+          "description": "Filename where this figure is stored"
+        },
+        "Name": {
+          "type": "string",
+          "description": "Display name"
+        },
+        "Desc": {
+          "type": "string",
+          "description": "Human-readable description"
+        },
+        "Formation": {
+          "type": "string",
+          "enum": ["turn", "reel", "hey", "circle", "line", "other"],
+          "description": "Type of formation"
+        },
+        "Bars": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "array", "items": { "type": "integer" } }
+          ],
+          "description": "Number of bars (integer or array if variable)"
+        },
+        "Version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Schema version of the figure definition"
+        },
+        "StartPos": {
+          "type": "array",
+          "description": "Starting positions for UI preview",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": [
+              { "type": ["number", "integer"] },
+              { "type": ["number", "integer"] }
+            ]
+          }
+        },
+        "EndPos": {
+          "type": "array",
+          "description": "Ending positions for UI preview",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": [
+              { "type": ["number", "integer"] },
+              { "type": ["number", "integer"] }
+            ]
+          }
+        },
+        "HasFacing": {
+          "type": "boolean",
+          "description": "Boolean indicating if figure includes facing information"
+        },
+        "Addons": {
+          "type": "array",
+          "description": "Array of available addon names",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

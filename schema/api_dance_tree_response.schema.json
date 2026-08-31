@@ -1,0 +1,168 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GET /api/dances/<id>/tree Response",
+  "description": "Response from Dance Tree API containing dance structure as jsTree",
+  "type": "object",
+  "required": ["status", "version", "timestamp", "format", "dance", "tree"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["ok"],
+      "description": "Response status"
+    },
+    "version": {
+      "type": "string",
+      "description": "API contract version"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of response generation"
+    },
+    "format": {
+      "type": "string",
+      "enum": ["jstree"],
+      "description": "Tree format (currently 'jstree')"
+    },
+    "dance": {
+      "type": "object",
+      "required": ["file", "Name", "shape", "Version"],
+      "description": "Dance metadata",
+      "properties": {
+        "file": {
+          "type": "string",
+          "description": "Filename where dance is stored"
+        },
+        "Name": {
+          "type": "string",
+          "description": "Dance name"
+        },
+        "Desc": {
+          "type": "string",
+          "description": "Dance description"
+        },
+        "shape": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*/[1-9][0-9]*$",
+          "description": "Dance shape"
+        },
+        "Version": {
+          "type": "integer",
+          "description": "Schema version"
+        }
+      },
+      "additionalProperties": true
+    },
+    "tree": {
+      "description": "jsTree-compatible tree structure",
+      "$ref": "#/definitions/TreeNode"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "TreeNode": {
+      "type": "object",
+      "required": ["id", "text"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique node identifier"
+        },
+        "text": {
+          "type": "string",
+          "description": "Display text"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["root", "group", "figure"],
+          "description": "Node type"
+        },
+        "children": {
+          "type": "array",
+          "description": "Child nodes",
+          "items": { "$ref": "#/definitions/TreeNode" }
+        },
+        "data": {
+          "type": "object",
+          "description": "Node data payload",
+          "properties": {
+            "figureName": {
+              "type": "string",
+              "description": "Figure name"
+            },
+            "version": {
+              "type": "integer",
+              "description": "Figure version"
+            },
+            "bars": {
+              "oneOf": [
+                { "type": "integer" },
+                { "type": "array", "items": { "type": "integer" } }
+              ],
+              "description": "Number of bars"
+            },
+            "anchor": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": [
+                { "type": "integer" },
+                { "type": "integer" }
+              ],
+              "description": "Anchor position [row, col]"
+            },
+            "addons": {
+              "type": "array",
+              "description": "Applied addons",
+              "items": { "type": "string" }
+            },
+            "startPos": {
+              "type": "array",
+              "description": "Starting positions",
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": [
+                  { "type": ["number", "integer"] },
+                  { "type": ["number", "integer"] }
+                ]
+              }
+            },
+            "endPos": {
+              "type": "array",
+              "description": "Ending positions",
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": [
+                  { "type": ["number", "integer"] },
+                  { "type": ["number", "integer"] }
+                ]
+              }
+            },
+            "groupType": {
+              "type": "string",
+              "enum": ["s", "p"],
+              "description": "Series (s) or parallel (p) group"
+            },
+            "groupIndex": {
+              "type": "integer",
+              "description": "Index of group"
+            },
+            "expanded": {
+              "type": "boolean",
+              "description": "Whether group is expanded"
+            },
+            "original": {
+              "description": "Original data structure from dance JSON"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
