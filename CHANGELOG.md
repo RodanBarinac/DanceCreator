@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Schema validation for API contracts (`/schema/*.json`)
   - Recursion protection in tree building (max depth: 50 levels)
   - API Quick Reference documentation (`Documents/API_QUICK_REFERENCE.md`)
+- **Dance Write API Documentation** (2026-09-27)
+  - Documented dance write endpoints: `POST /api/dances`, `PUT /api/dances/<id>`, `PUT /api/dances/<id>/tree`, and `DELETE /api/dances/<id>`
+  - Documented schema validation, automatic `.bak` backups, jsTree-to-`FigureList` conversion, and soft delete behavior in `Dances\.deleted\`
+  - Read-only APIs unchanged and fully backward compatible
 - TDD (Test-Driven Development) workflow established
 - Test suite with 6 passing core tests
 - Comprehensive documentation in `/Documents/`
