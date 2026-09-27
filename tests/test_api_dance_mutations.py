@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
 
@@ -66,6 +67,19 @@ def write_json(path: Path, data):
 
 def read_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def assert_iso8601_timestamp(value):
+    assert isinstance(value, str)
+    normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
+    assert datetime.fromisoformat(normalized)
+
+
+def assert_success_envelope(body, expected_keys):
+    assert set(body.keys()) == set(expected_keys)
+    assert body["status"] == "ok"
+    assert body["version"] == "1"
+    assert_iso8601_timestamp(body["timestamp"])
 
 
 @pytest.fixture
@@ -444,3 +458,314 @@ class TestDeleteDanceEndpoint:
         deleted_files = list(deleted_dir.glob("Delete Me*.json"))
         assert len(deleted_files) == 2
         assert any(path.name != "Delete Me.json" for path in deleted_files)
+
+
+class TestWriteResponseEnvelopes:
+    def test_put_dance_success_response_matches_envelope_schema(self, client_and_dances_dir):
+        client, dances_dir = client_and_dances_dir
+        write_json(dances_dir / "Existing Dance.json", make_dance_payload())
+
+        response = client.put(
+            f"/api/dances/{quote('Existing Dance.json', safe='')}",
+            json=make_dance_payload("Envelope Dance"),
+        )
+
+        assert response.status_code == 200
+        body = response.get_json()
+        assert_success_envelope(body, {"status", "version", "timestamp", "message", "file", "dance"})
+        assert body["message"] == "Dance updated"
+        assert body["file"] == "Existing Dance.json"
+        assert body["dance"] == {"Name": "Envelope Dance", "Version": 3, "shape": "3/32"}
+
+    def test_post_dance_success_response_matches_envelope_schema(self, client_and_dances_dir):
+        client, _ = client_and_dances_dir
+
+        response = client.post("/api/dances", json=make_dance_payload("Envelope Created Dance"))
+
+        assert response.status_code == 201
+        body = response.get_json()
+        assert_success_envelope(body, {"status", "version", "timestamp", "message", "file", "dance"})
+        assert body["message"] == "Dance created"
+        assert body["file"] == "Envelope Created Dance.json"
+        assert body["dance"] == {"Name": "Envelope Created Dance", "Version": 3, "shape": "3/32"}
+
+    def test_put_dance_tree_success_response_matches_envelope_schema(self, client_and_dances_dir):
+        client, dances_dir = client_and_dances_dir
+        write_json(dances_dir / "Existing Dance.json", make_dance_payload())
+
+        response = client.put(
+            f"/api/dances/{quote('Existing Dance.json', safe='')}/tree",
+            json=make_tree_payload("1cRT"),
+        )
+
+        assert response.status_code == 200
+        body = response.get_json()
+        assert_success_envelope(body, {"status", "version", "timestamp", "message", "file"})
+        assert body["message"] == "Dance tree updated"
+        assert body["file"] == "Existing Dance.json"
+
+    def test_delete_dance_success_response_matches_envelope_schema(self, client_and_dances_dir):
+        client, dances_dir = client_and_dances_dir
+        write_json(dances_dir / "Delete Me.json", make_dance_payload("Delete Me"))
+
+        response = client.delete(f"/api/dances/{quote('Delete Me.json', safe='')}")
+
+        assert response.status_code == 200
+        body = response.get_json()
+        assert_success_envelope(body, {"status", "version", "timestamp", "message", "file"})
+        assert body["message"] == "Dance deleted"
+        assert body["file"] == "Delete Me.json"
+
+
+class TestWriteFailureRecovery:
+    def test_file_manager_rollback_restores_original_file_after_failed_write(self, tmp_path):
+        dance_path = tmp_path / "Rollback Dance.json"
+        original = make_dance_payload("Rollback Dance")
+        updated = make_dance_payload("Broken Dance")
+        write_json(dance_path, original)
+
+        backup_path = FileManager.backup_file(str(dance_path))
+        write_json(dance_path, updated)
+
+        assert read_json(dance_path)["Name"] == "Broken Dance"
+
+        FileManager.rollback(str(dance_path), backup_path)
+
+        assert read_json(dance_path) == original
+        assert FileManager.compute_file_hash(str(dance_path)) == FileManager.compute_file_hash(backup_path)
+
+
+class TestPutDanceTreeRoundTrip:
+    def test_put_dance_tree_round_trips_nested_groups_and_addons(self, client_and_dances_dir):
+        client, dances_dir = client_and_dances_dir
+        dance_path = dances_dir / "Existing Dance.json"
+        write_json(dance_path, make_dance_payload())
+
+        payload = {
+            "tree": {
+                "id": "root",
+                "text": "Existing Dance",
+                "type": "root",
+                "data": {},
+                "children": [
+                    {
+                        "id": "group-outer",
+                        "text": "Parallel",
+                        "type": "group",
+                        "data": {"groupType": "p"},
+                        "children": [
+                            {
+                                "id": "figure-1",
+                                "text": "H1DR",
+                                "type": "figure",
+                                "data": {
+                                    "figureName": "H1DR",
+                                    "anchor": [1, 1],
+                                    "addons": [],
+                                },
+                                "children": [],
+                            },
+                            {
+                                "id": "group-inner",
+                                "text": "Series",
+                                "type": "group",
+                                "data": {"groupType": "s"},
+                                "children": [
+                                    {
+                                        "id": "figure-2",
+                                        "text": "1cRT",
+                                        "type": "figure",
+                                        "data": {
+                                            "figureName": "1cRT",
+                                            "anchor": [2, 1],
+                                            "addons": ["first-corners", "flow"],
+                                        },
+                                        "children": [],
+                                    },
+                                    {
+                                        "id": "figure-3",
+                                        "text": "1cWait",
+                                        "type": "figure",
+                                        "data": {
+                                            "figureName": "1cWait",
+                                            "anchor": [3, 2],
+                                            "addons": [],
+                                        },
+                                        "children": [],
+                                    },
+                                ],
+                            },
+                        ],
+                    }
+                ],
+            }
+        }
+
+        response = client.put(
+            f"/api/dances/{quote('Existing Dance.json', safe='')}/tree",
+            json=payload,
+        )
+
+        assert response.status_code == 200
+        saved = read_json(dance_path)
+        assert saved["FigureList"] == [
+            "s",
+            [
+                [
+                    "p",
+                    [
+                        [[1, 1], "H1DR"],
+                        [
+                            "s",
+                            [
+                                [[2, 1], ["1cRT", ["first-corners", "flow"]]],
+                                [[3, 2], "1cWait"],
+                            ],
+                        ],
+                    ],
+                ]
+            ],
+        ]
+
+
+class TestWriteConflictScenarios:
+    def test_put_dance_rejects_second_save_with_same_stale_expected_hash(self, client_and_dances_dir):
+        client, dances_dir = client_and_dances_dir
+        dance_path = dances_dir / "Existing Dance.json"
+        write_json(dance_path, make_dance_payload())
+        stale_hash = FileManager.compute_file_hash(str(dance_path))
+
+        first_payload = make_dance_payload("First Save")
+        first_payload["_expected_hash"] = stale_hash
+        first_response = client.put(
+            f"/api/dances/{quote('Existing Dance.json', safe='')}",
+            json=first_payload,
+        )
+
+        assert first_response.status_code == 200
+        assert read_json(dance_path)["Name"] == "First Save"
+
+        second_payload = make_dance_payload("Second Save")
+        second_payload["_expected_hash"] = stale_hash
+        second_response = client.put(
+            f"/api/dances/{quote('Existing Dance.json', safe='')}",
+            json=second_payload,
+        )
+
+        assert second_response.status_code == 409
+        body = second_response.get_json()
+        assert body["status"] == "error"
+        assert body["error"] == "conflict"
+        assert read_json(dance_path)["Name"] == "First Save"
+
+    def test_post_dance_can_recreate_name_after_delete(self, client_and_dances_dir):
+        client, dances_dir = client_and_dances_dir
+        dance_path = dances_dir / "Recreated Dance.json"
+        write_json(dance_path, make_dance_payload("Recreated Dance"))
+
+        delete_response = client.delete(f"/api/dances/{quote('Recreated Dance.json', safe='')}")
+        assert delete_response.status_code == 200
+        assert not dance_path.exists()
+
+        create_response = client.post("/api/dances", json=make_dance_payload("Recreated Dance"))
+
+        assert create_response.status_code == 201
+        assert dance_path.exists()
+        assert read_json(dance_path)["Name"] == "Recreated Dance"
+
+
+class TestAdditionalDanceMutationEdgeCases:
+    def test_put_dance_returns_400_for_empty_object_body(self, client_and_dances_dir):
+        client, dances_dir = client_and_dances_dir
+        write_json(dances_dir / "Existing Dance.json", make_dance_payload())
+
+        response = client.put(f"/api/dances/{quote('Existing Dance.json', safe='')}", json={})
+
+        assert response.status_code == 400
+        body = response.get_json()
+        assert body["status"] == "error"
+        assert body["error"] == "validation_error"
+        assert body["field"] == "Name"
+
+    def test_put_dance_returns_400_for_non_json_content_type_even_with_json_text(self, client_and_dances_dir):
+        client, dances_dir = client_and_dances_dir
+        write_json(dances_dir / "Existing Dance.json", make_dance_payload())
+
+        response = client.put(
+            f"/api/dances/{quote('Existing Dance.json', safe='')}",
+            data=json.dumps(make_dance_payload("Wrong Header")),
+            content_type="text/plain",
+        )
+
+        assert response.status_code == 400
+        body = response.get_json()
+        assert body["status"] == "error"
+        assert body["error"] == "validation_error"
+        assert body["field"] == "body"
+
+    @pytest.mark.parametrize("version", [0, -1])
+    def test_put_dance_returns_400_for_invalid_version_values(self, client_and_dances_dir, version):
+        client, dances_dir = client_and_dances_dir
+        write_json(dances_dir / "Existing Dance.json", make_dance_payload())
+        payload = make_dance_payload()
+        payload["Version"] = version
+
+        response = client.put(f"/api/dances/{quote('Existing Dance.json', safe='')}", json=payload)
+
+        assert response.status_code == 400
+        body = response.get_json()
+        assert body["status"] == "error"
+        assert body["error"] == "validation_error"
+        assert body["field"] == "Version"
+
+    def test_put_dance_returns_400_for_non_list_figure_group_children(self, client_and_dances_dir):
+        client, dances_dir = client_and_dances_dir
+        write_json(dances_dir / "Existing Dance.json", make_dance_payload())
+        payload = make_dance_payload()
+        payload["FigureList"] = ["s", "not-a-list"]
+
+        response = client.put(f"/api/dances/{quote('Existing Dance.json', safe='')}", json=payload)
+
+        assert response.status_code == 400
+        body = response.get_json()
+        assert body["status"] == "error"
+        assert body["error"] == "validation_error"
+        assert body["field"] == "FigureList"
+
+    def test_put_dance_tree_returns_400_for_non_object_tree_value(self, client_and_dances_dir):
+        client, dances_dir = client_and_dances_dir
+        write_json(dances_dir / "Existing Dance.json", make_dance_payload())
+
+        response = client.put(
+            f"/api/dances/{quote('Existing Dance.json', safe='')}/tree",
+            json={"tree": "not-an-object"},
+        )
+
+        assert response.status_code == 400
+        body = response.get_json()
+        assert body["status"] == "error"
+        assert body["error"] == "validation_error"
+        assert body["field"] == "tree"
+
+    def test_put_dance_tree_returns_400_for_non_object_child_node(self, client_and_dances_dir):
+        client, dances_dir = client_and_dances_dir
+        write_json(dances_dir / "Existing Dance.json", make_dance_payload())
+        payload = {
+            "tree": {
+                "id": "root",
+                "text": "Existing Dance",
+                "type": "root",
+                "children": ["not-a-node"],
+            }
+        }
+
+        response = client.put(
+            f"/api/dances/{quote('Existing Dance.json', safe='')}/tree",
+            json=payload,
+        )
+
+        assert response.status_code == 400
+        body = response.get_json()
+        assert body["status"] == "error"
+        assert body["error"] == "validation_error"
+        assert body["field"] == "tree.children[0]"
