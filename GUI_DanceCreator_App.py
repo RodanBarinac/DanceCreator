@@ -37,12 +37,16 @@ Hinweis:
 from flask import Flask, jsonify, request, render_template
 import json
 import os
+import re
+import shutil
 import uuid
 import sys
 from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from engine.figures.SimpleFigure import SimpleFigure
+from src.engine.converters.TreeConverter import TreeConverter, TreeConversionError
+from src.engine.persistence.FileManager import FileManager, FileManagerError
 from engine.validators.ApiRequestValidator import ApiRequestValidator, ApiValidationError
 from engine.validators.ApiResponseValidator import get_validator
 
@@ -188,25 +192,36 @@ def _find_json_file(identifier, roots, skip_rel_prefixes=None):
     wanted = _identifier_variants(identifier)
 
     for root in roots:
-        root_dir = os.path.join(os.getcwd(), root)
-        if not os.path.isdir(root_dir):
-            continue
-        for fpath in iter_json_files(root_dir):
-            rel = os.path.relpath(fpath, root_dir)
-            if any(rel.startswith(prefix) for prefix in skip_rel_prefixes):
+        candidate_dirs = []
+        if root == 'Figures':
+            candidate_dirs.append(FIGURES_DIR)
+        elif root == 'Dances':
+            candidate_dirs.append(DANCES_DIR)
+        candidate_dirs.append(os.path.join(os.getcwd(), root))
+
+        seen_dirs = set()
+        for root_dir in candidate_dirs:
+            root_dir = os.path.abspath(root_dir)
+            if root_dir in seen_dirs or not os.path.isdir(root_dir):
                 continue
-            basename = os.path.basename(fpath).lower()
-            stem = os.path.splitext(basename)[0]
-            if basename in wanted or stem in wanted:
-                return fpath
-            try:
-                data = _load_json_file(fpath)
-            except Exception:
-                continue
-            for key in ('Name', 'name', 'key'):
-                value = data.get(key)
-                if isinstance(value, str) and value.strip().lower() in wanted:
+            seen_dirs.add(root_dir)
+
+            for fpath in iter_json_files(root_dir):
+                rel = os.path.relpath(fpath, root_dir)
+                if any(rel.startswith(prefix) for prefix in skip_rel_prefixes):
+                    continue
+                basename = os.path.basename(fpath).lower()
+                stem = os.path.splitext(basename)[0]
+                if basename in wanted or stem in wanted:
                     return fpath
+                try:
+                    data = _load_json_file(fpath)
+                except Exception:
+                    continue
+                for key in ('Name', 'name', 'key'):
+                    value = data.get(key)
+                    if isinstance(value, str) and value.strip().lower() in wanted:
+                        return fpath
     return None
 
 
@@ -216,6 +231,33 @@ def _figure_detail_path(identifier):
 
 def _dance_detail_path(identifier):
     return _find_json_file(identifier, ['Dances'])
+
+
+def _dance_write_summary(data):
+    summary = {
+        "Name": data.get("Name"),
+        "Version": data.get("Version"),
+    }
+
+    shape = data.get("shape")
+    if shape is None and "Shape" in data:
+        shape = data.get("Shape")
+    if shape is not None:
+        summary["shape"] = shape
+
+    return summary
+
+
+def _sanitize_dance_filename(name):
+    safe_name = str(name).strip().replace('/', ' ').replace('\\', ' ')
+    safe_name = safe_name.replace('..', ' ')
+    safe_name = re.sub(r'[<>:"/\\|?*\x00-\x1f]+', ' ', safe_name)
+    safe_name = re.sub(r'\s+', ' ', safe_name).strip().strip('.')
+    if not safe_name:
+        safe_name = 'dance'
+    if not safe_name.lower().endswith('.json'):
+        safe_name = safe_name + '.json'
+    return safe_name
 
 
 def _is_group_entry(entry):
@@ -890,6 +932,57 @@ def api_dances():
     return jsonify(response)
 
 
+@app.route('/api/dances', methods=['POST'])
+def api_dance_create():
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return jsonify({
+            "status": "error",
+            "error": "validation_error",
+            "field": "body",
+            "message": "Request body must be a JSON object"
+        }), 400
+
+    try:
+        validated_data = ApiRequestValidator.validate_dance_create_request(body)
+    except ApiValidationError as e:
+        return jsonify({
+            "status": "error",
+            "error": "validation_error",
+            "field": e.field,
+            "message": e.message
+        }), 400
+
+    filename = _sanitize_dance_filename(validated_data.get("Name", "dance"))
+    dance_path = os.path.join(DANCES_DIR, filename)
+    if os.path.exists(dance_path):
+        return jsonify({
+            "status": "error",
+            "error": "conflict",
+            "message": "A dance with this name already exists"
+        }), 409
+
+    try:
+        FileManager.write_json_safe(dance_path, validated_data, create_backup=False)
+    except FileManagerError as e:
+        return jsonify({
+            "status": "error",
+            "error": "write_failed",
+            "message": str(e)
+        }), 500
+
+    response = {
+        "status": "ok",
+        "version": "1",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "message": "Dance created",
+        "file": os.path.relpath(dance_path, DANCES_DIR),
+        "dance": _dance_write_summary(validated_data)
+    }
+
+    return jsonify(response), 201
+
+
 def _get_couple_count(couples):
     """Extract numeric couple count from Couples field (handles int or string)."""
     if isinstance(couples, int):
@@ -910,6 +1003,128 @@ def api_dance_detail(identifier):
         'dance': dance_data,
         'tree': build_dance_tree(dance_data, dance_data.get('Name') or os.path.splitext(os.path.basename(dance_path))[0])
     })
+
+
+@app.route('/api/dances/<path:identifier>', methods=['PUT'])
+def api_dance_update(identifier):
+    try:
+        identifier = ApiRequestValidator.validate_dance_tree_identifier(identifier)
+    except ApiValidationError as e:
+        return jsonify({
+            "status": "error",
+            "error": "validation_error",
+            "field": e.field,
+            "message": e.message
+        }), 400
+
+    dance_path = _dance_detail_path(identifier)
+    if dance_path is None:
+        return jsonify({
+            "status": "error",
+            "error": "not_found",
+            "message": f"Dance not found: {identifier}"
+        }), 404
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return jsonify({
+            "status": "error",
+            "error": "validation_error",
+            "field": "body",
+            "message": "Request body must be a JSON object"
+        }), 400
+
+    try:
+        validated_data = ApiRequestValidator.validate_dance_update_request(body)
+    except ApiValidationError as e:
+        return jsonify({
+            "status": "error",
+            "error": "validation_error",
+            "field": e.field,
+            "message": e.message
+        }), 400
+
+    expected_hash = body.get("_expected_hash")
+    if "_expected_hash" in body and FileManager.detect_conflict(dance_path, expected_hash):
+        return jsonify({
+            "status": "error",
+            "error": "conflict",
+            "message": "File was modified since last read"
+        }), 409
+
+    write_data = dict(validated_data)
+    write_data.pop("_expected_hash", None)
+
+    try:
+        FileManager.write_json_safe(dance_path, write_data, create_backup=True)
+    except FileManagerError as e:
+        return jsonify({
+            "status": "error",
+            "error": "write_failed",
+            "message": str(e)
+        }), 500
+
+    response = {
+        "status": "ok",
+        "version": "1",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "message": "Dance updated",
+        "file": os.path.relpath(dance_path, DANCES_DIR),
+        "dance": _dance_write_summary(write_data)
+    }
+
+    return jsonify(response)
+
+
+@app.route('/api/dances/<path:identifier>', methods=['DELETE'])
+def api_dance_delete(identifier):
+    try:
+        identifier = ApiRequestValidator.validate_dance_tree_identifier(identifier)
+    except ApiValidationError as e:
+        return jsonify({
+            "status": "error",
+            "error": "validation_error",
+            "field": e.field,
+            "message": e.message
+        }), 400
+
+    dance_path = _dance_detail_path(identifier)
+    if dance_path is None:
+        return jsonify({
+            "status": "error",
+            "error": "not_found",
+            "message": f"Dance not found: {identifier}"
+        }), 404
+
+    try:
+        FileManager.backup_file(dance_path)
+        deleted_dir = os.path.join(DANCES_DIR, ".deleted")
+        os.makedirs(deleted_dir, exist_ok=True)
+
+        original_name = os.path.basename(dance_path)
+        deleted_path = os.path.join(deleted_dir, original_name)
+        if os.path.exists(deleted_path):
+            stem, ext = os.path.splitext(original_name)
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")
+            deleted_path = os.path.join(deleted_dir, f"{stem}-{timestamp}{ext}")
+
+        shutil.move(dance_path, deleted_path)
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": "delete_failed",
+            "message": str(e)
+        }), 500
+
+    response = {
+        "status": "ok",
+        "version": "1",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "message": "Dance deleted",
+        "file": os.path.relpath(dance_path, DANCES_DIR)
+    }
+
+    return jsonify(response)
 
 
 @app.route('/api/dances/<path:identifier>/tree')
@@ -980,6 +1195,87 @@ def api_dance_tree(identifier):
         # Log validation error but don't fail the request in production
         print(f"Warning: Dance tree response validation failed: {validation_error}")
     
+    return jsonify(response)
+
+
+@app.route('/api/dances/<path:identifier>/tree', methods=['PUT'])
+def api_dance_tree_update(identifier):
+    try:
+        identifier = ApiRequestValidator.validate_dance_tree_identifier(identifier)
+    except ApiValidationError as e:
+        return jsonify({
+            "status": "error",
+            "error": "validation_error",
+            "field": e.field,
+            "message": e.message
+        }), 400
+
+    dance_path = _dance_detail_path(identifier)
+    if dance_path is None:
+        return jsonify({
+            "status": "error",
+            "error": "not_found",
+            "message": f"Dance not found: {identifier}"
+        }), 404
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return jsonify({
+            "status": "error",
+            "error": "validation_error",
+            "field": "body",
+            "message": "Request body must be a JSON object"
+        }), 400
+
+    try:
+        validated_data = ApiRequestValidator.validate_tree_update_request(body)
+    except ApiValidationError as e:
+        return jsonify({
+            "status": "error",
+            "error": "validation_error",
+            "field": e.field,
+            "message": e.message
+        }), 400
+
+    try:
+        dance_data = _load_json_file(dance_path)
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": "load_error",
+            "message": f"Failed to load dance: {str(e)}"
+        }), 500
+
+    try:
+        converted_figure_list = TreeConverter.jstree_to_figure_list(validated_data["tree"])
+    except TreeConversionError as e:
+        return jsonify({
+            "status": "error",
+            "error": "conversion_error",
+            "message": str(e),
+            "node_id": getattr(e, "node_id", None)
+        }), 400
+
+    updated_dance = dict(dance_data)
+    updated_dance["FigureList"] = converted_figure_list
+
+    try:
+        FileManager.write_json_safe(dance_path, updated_dance, create_backup=True)
+    except FileManagerError as e:
+        return jsonify({
+            "status": "error",
+            "error": "write_failed",
+            "message": str(e)
+        }), 500
+
+    response = {
+        "status": "ok",
+        "version": "1",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "message": "Dance tree updated",
+        "file": os.path.relpath(dance_path, DANCES_DIR)
+    }
+
     return jsonify(response)
 
 
