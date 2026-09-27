@@ -230,6 +230,232 @@ class ApiRequestValidator:
         
         return identifier
     
+    @classmethod
+    def validate_dance_update_request(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate request body for PUT /api/dances/<id>.
+        
+        Args:
+            data: Request body as dictionary
+            
+        Returns:
+            Validated data dictionary
+            
+        Raises:
+            ApiValidationError: If validation fails
+        """
+        if not isinstance(data, dict):
+            raise ApiValidationError('body', 'Request body must be a JSON object')
+        
+        # Validate required fields
+        required_fields = ['Name', 'Desc', 'FigureList', 'Version']
+        for field in required_fields:
+            if field not in data:
+                raise ApiValidationError(field, f'Missing required field: {field}')
+        
+        # Validate Name
+        name = data['Name']
+        if not isinstance(name, str) or not name.strip():
+            raise ApiValidationError('Name', 'Name must be a non-empty string')
+        if len(name) > 255:
+            raise ApiValidationError('Name', 'Name too long (max 255 chars)')
+        
+        # Validate Desc
+        desc = data['Desc']
+        if not isinstance(desc, str) or not desc.strip():
+            raise ApiValidationError('Desc', 'Description must be a non-empty string')
+        if len(desc) > 5000:
+            raise ApiValidationError('Desc', 'Description too long (max 5000 chars)')
+        
+        # Validate Version
+        version = data['Version']
+        if version != 3:
+            raise ApiValidationError('Version', 'Version must be 3 for current schema')
+        
+        # Validate shape if present
+        if 'shape' in data:
+            shape = data['shape']
+            if not isinstance(shape, str):
+                raise ApiValidationError('shape', 'Shape must be a string')
+            if not re.match(r'^[1-9][0-9]*/[1-9][0-9]*$', shape):
+                raise ApiValidationError('shape', 'Shape must be in format N/M (e.g., "3/32")')
+        
+        # Validate FigureList structure
+        cls._validate_dance_group(data['FigureList'], 'FigureList')
+        
+        return data
+    
+    @classmethod
+    def validate_dance_create_request(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate request body for POST /api/dances.
+        Same validation as update, plus uniqueness check (done at endpoint level).
+        
+        Args:
+            data: Request body as dictionary
+            
+        Returns:
+            Validated data dictionary
+            
+        Raises:
+            ApiValidationError: If validation fails
+        """
+        # Use same validation as update
+        return cls.validate_dance_update_request(data)
+    
+    @classmethod
+    def validate_tree_update_request(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate request body for PUT /api/dances/<id>/tree.
+        
+        Args:
+            data: Request body containing jsTree structure
+            
+        Returns:
+            Validated data dictionary
+            
+        Raises:
+            ApiValidationError: If validation fails
+        """
+        if not isinstance(data, dict):
+            raise ApiValidationError('body', 'Request body must be a JSON object')
+        
+        # Validate required 'tree' key
+        if 'tree' not in data:
+            raise ApiValidationError('tree', 'Missing required field: tree')
+        
+        tree = data['tree']
+        if not isinstance(tree, dict):
+            raise ApiValidationError('tree', 'Tree must be a JSON object')
+        
+        # Validate tree node structure
+        cls._validate_tree_node(tree, 'tree')
+        
+        return data
+    
+    @classmethod
+    def _validate_tree_node(cls, node: Dict[str, Any], path: str):
+        """
+        Recursively validate jsTree node structure.
+        
+        Args:
+            node: Tree node to validate
+            path: Current path in tree (for error messages)
+            
+        Raises:
+            ApiValidationError: If node structure is invalid
+        """
+        # Validate required node fields
+        required_fields = ['id', 'text', 'type']
+        for field in required_fields:
+            if field not in node:
+                raise ApiValidationError(f'{path}.{field}', f'Missing required field: {field}')
+        
+        # Validate node type
+        node_type = node['type']
+        if node_type not in ['figure', 'group', 'root']:
+            raise ApiValidationError(f'{path}.type', f'Invalid node type: {node_type}')
+        
+        # Validate text is non-empty
+        if not isinstance(node['text'], str) or not node['text'].strip():
+            raise ApiValidationError(f'{path}.text', 'Node text must be a non-empty string')
+        
+        # Validate children if present
+        if 'children' in node:
+            children = node['children']
+            if not isinstance(children, list):
+                raise ApiValidationError(f'{path}.children', 'Children must be an array')
+            
+            for i, child in enumerate(children):
+                if not isinstance(child, dict):
+                    raise ApiValidationError(f'{path}.children[{i}]', 'Child must be an object')
+                cls._validate_tree_node(child, f'{path}.children[{i}]')
+    
+    @classmethod
+    def validate_figure_update_request(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate request body for PUT /api/figures/<id>.
+        
+        Args:
+            data: Request body as dictionary
+            
+        Returns:
+            Validated data dictionary
+            
+        Raises:
+            ApiValidationError: If validation fails
+        """
+        if not isinstance(data, dict):
+            raise ApiValidationError('body', 'Request body must be a JSON object')
+        
+        # Validate required fields
+        required_fields = ['Name', 'Desc', 'Formation', 'Version']
+        for field in required_fields:
+            if field not in data:
+                raise ApiValidationError(field, f'Missing required field: {field}')
+        
+        # Validate Name
+        name = data['Name']
+        if not isinstance(name, str) or not name.strip():
+            raise ApiValidationError('Name', 'Name must be a non-empty string')
+        if len(name) > 255:
+            raise ApiValidationError('Name', 'Name too long (max 255 chars)')
+        
+        # Validate Desc
+        desc = data['Desc']
+        if not isinstance(desc, str) or not desc.strip():
+            raise ApiValidationError('Desc', 'Description must be a non-empty string')
+        if len(desc) > 5000:
+            raise ApiValidationError('Desc', 'Description too long (max 5000 chars)')
+        
+        # Validate Formation
+        formation = data['Formation']
+        if not isinstance(formation, str) or not formation.strip():
+            raise ApiValidationError('Formation', 'Formation must be a non-empty string')
+        if len(formation) > 100:
+            raise ApiValidationError('Formation', 'Formation too long (max 100 chars)')
+        
+        # Validate Version
+        version = data['Version']
+        if not isinstance(version, (int, float)) or version < 1:
+            raise ApiValidationError('Version', 'Version must be a positive number')
+        
+        # Check if atomic or complex figure
+        atomic_fields = ['Addons', 'Bars', 'StartPos', 'EndPos', 'CriptDesc']
+        is_atomic = any(field in data for field in atomic_fields)
+        is_complex = 'FigureList' in data
+        
+        if is_atomic and is_complex:
+            raise ApiValidationError(
+                'FigureList',
+                'Figure cannot have both atomic fields (Bars, StartPos, EndPos) and FigureList'
+            )
+        
+        if not is_atomic and not is_complex:
+            raise ApiValidationError(
+                'Bars',
+                'Figure must have either atomic fields (Bars, StartPos, EndPos) or FigureList'
+            )
+        
+        # Validate atomic figure fields
+        if is_atomic:
+            for field in atomic_fields:
+                if field not in data:
+                    raise ApiValidationError(field, f'Atomic figure must have {field} field')
+
+            bars = data['Bars']
+            if not isinstance(bars, (int, float)) or bars < 1:
+                raise ApiValidationError('Bars', 'Bars must be a positive number')
+
+        if is_complex:
+            figure_list = data['FigureList']
+            if not isinstance(figure_list, list):
+                raise ApiValidationError('FigureList', 'FigureList must be an array')
+            if len(figure_list) == 0:
+                raise ApiValidationError('FigureList', 'FigureList must not be empty')
+        
+        return data
+    
     # Helper methods
     
     @classmethod
@@ -297,3 +523,64 @@ class ApiRequestValidator:
             )
         
         return term
+
+    @classmethod
+    def _validate_dance_group(cls, group: Any, path: str):
+        """Validate a Dance.FigureList-style group recursively."""
+        if not isinstance(group, list):
+            raise ApiValidationError(path, 'FigureList must be an array')
+        if len(group) != 2:
+            raise ApiValidationError(path, 'FigureList must be [groupType, elements]')
+
+        group_type = group[0]
+        if group_type not in ['s', 'p']:
+            raise ApiValidationError(path, 'Group type must be "s" (series) or "p" (parallel)')
+
+        elements = group[1]
+        if not isinstance(elements, list):
+            raise ApiValidationError(path, 'FigureList elements must be an array')
+        if len(elements) == 0:
+            raise ApiValidationError(path, 'FigureList elements must not be empty')
+
+        for i, element in enumerate(elements):
+            cls._validate_dance_element(element, f'{path}[1][{i}]')
+
+    @classmethod
+    def _validate_dance_element(cls, element: Any, path: str):
+        """Validate either a figure call or nested dance group."""
+        if not isinstance(element, list):
+            raise ApiValidationError(path, 'Dance element must be an array')
+        if len(element) != 2:
+            raise ApiValidationError(path, 'Dance element must have exactly two items')
+
+        first_item = element[0]
+        second_item = element[1]
+
+        if isinstance(first_item, str):
+            cls._validate_dance_group(element, path)
+            return
+
+        cls._validate_figure_call(element, path)
+
+    @classmethod
+    def _validate_figure_call(cls, figure_call: List[Any], path: str):
+        """Validate a single figure call entry."""
+        position = figure_call[0]
+        target = figure_call[1]
+
+        if not isinstance(position, list) or len(position) != 2:
+            raise ApiValidationError(path, 'Figure call position must be [x, y]')
+        if not all(isinstance(coord, (int, float)) for coord in position):
+            raise ApiValidationError(path, 'Figure call position values must be numbers')
+
+        if isinstance(target, str):
+            if not target.strip():
+                raise ApiValidationError(path, 'Figure call target must be a non-empty string')
+            return
+
+        if not isinstance(target, list) or len(target) != 2:
+            raise ApiValidationError(path, 'Figure call target must be a string or [name, addons]')
+        if not isinstance(target[0], str) or not target[0].strip():
+            raise ApiValidationError(path, 'Figure call target name must be a non-empty string')
+        if not isinstance(target[1], list):
+            raise ApiValidationError(path, 'Figure call target addons must be an array')
