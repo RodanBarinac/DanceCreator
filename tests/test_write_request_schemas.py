@@ -20,13 +20,13 @@ class TestDanceUpdateRequestSchema:
             "Desc": "A test dance for validation",
             "shape": "3/32",
             "FigureList": ["s", [
-                [[1, 1], "H1DR"],
-                [[2, 1], "H2DR"]
+                [[1, 0], "H1DR"],
+                [[2, 0], "H2DR"]
             ]],
             "Version": 3
         }
         
-        errors = validator.get_validation_errors('api_dance_update_request.schema.json', valid_payload)
+        errors = validator.get_validation_errors(valid_payload, validator.load_schema('api_dance_update_request.schema.json'))
         assert len(errors) == 0, f"Valid payload should pass: {errors}"
     
     def test_missing_required_field_fails(self):
@@ -40,7 +40,7 @@ class TestDanceUpdateRequestSchema:
             # Missing FigureList
         }
         
-        errors = validator.get_validation_errors('api_dance_update_request.schema.json', invalid_payload)
+        errors = validator.get_validation_errors(invalid_payload, validator.load_schema('api_dance_update_request.schema.json'))
         assert len(errors) > 0
         assert any("FigureList" in str(e) for e in errors)
     
@@ -56,7 +56,7 @@ class TestDanceUpdateRequestSchema:
             "Version": 2  # Should be 3
         }
         
-        errors = validator.get_validation_errors('api_dance_update_request.schema.json', invalid_payload)
+        errors = validator.get_validation_errors(invalid_payload, validator.load_schema('api_dance_update_request.schema.json'))
         assert len(errors) > 0
         assert any("Version" in str(e) or "const" in str(e) for e in errors)
     
@@ -72,7 +72,7 @@ class TestDanceUpdateRequestSchema:
             "Version": 3
         }
         
-        errors = validator.get_validation_errors('api_dance_update_request.schema.json', invalid_payload)
+        errors = validator.get_validation_errors(invalid_payload, validator.load_schema('api_dance_update_request.schema.json'))
         assert len(errors) > 0
 
 
@@ -88,13 +88,13 @@ class TestDanceCreateRequestSchema:
             "Desc": "A newly created dance",
             "shape": "4/48",
             "FigureList": ["p", [
-                [[1, 1], "1cCast1p"],
-                [[2, 1], "1cLT"]
+                [[1, 0], "1cCast1p"],
+                [[2, 0], "1cLT"]
             ]],
             "Version": 3
         }
         
-        errors = validator.get_validation_errors('api_dance_create_request.schema.json', valid_payload)
+        errors = validator.get_validation_errors(valid_payload, validator.load_schema('api_dance_create_request.schema.json'))
         assert len(errors) == 0, f"Valid create payload should pass: {errors}"
 
 
@@ -118,7 +118,7 @@ class TestDanceTreeUpdateRequestSchema:
                         "type": "figure",
                         "data": {
                             "figureName": "H1DR",
-                            "anchor": [1, 1],
+                            "anchor": [1, 0],
                             "addons": []
                         }
                     }
@@ -126,7 +126,7 @@ class TestDanceTreeUpdateRequestSchema:
             }
         }
         
-        errors = validator.get_validation_errors('api_dance_tree_update_request.schema.json', valid_payload)
+        errors = validator.get_validation_errors(valid_payload, validator.load_schema('api_dance_tree_update_request.schema.json'))
         assert len(errors) == 0, f"Valid tree payload should pass: {errors}"
     
     def test_missing_tree_key_fails(self):
@@ -137,7 +137,7 @@ class TestDanceTreeUpdateRequestSchema:
             "data": {"some": "data"}  # Missing 'tree' key
         }
         
-        errors = validator.get_validation_errors('api_dance_tree_update_request.schema.json', invalid_payload)
+        errors = validator.get_validation_errors(invalid_payload, validator.load_schema('api_dance_tree_update_request.schema.json'))
         assert len(errors) > 0
     
     def test_invalid_node_type_fails(self):
@@ -153,7 +153,7 @@ class TestDanceTreeUpdateRequestSchema:
             }
         }
         
-        errors = validator.get_validation_errors('api_dance_tree_update_request.schema.json', invalid_payload)
+        errors = validator.get_validation_errors(invalid_payload, validator.load_schema('api_dance_tree_update_request.schema.json'))
         assert len(errors) > 0
 
 
@@ -171,12 +171,12 @@ class TestFigureUpdateRequestSchema:
             "Version": 2,
             "Addons": {},
             "Bars": 4,
-            "StartPos": [[0, 0], [0, 2]],
-            "EndPos": [[1, 0], [1, 2]],
+            "StartPos": [[0, -1], [0, 1]],
+            "EndPos": [[1, -1], [1, 1]],
             "CriptDesc": ["Dancer 1 turns", "Dancer 2 turns"]
         }
         
-        errors = validator.get_validation_errors('api_figure_update_request.schema.json', valid_payload)
+        errors = validator.get_validation_errors(valid_payload, validator.load_schema('api_figure_update_request.schema.json'))
         assert len(errors) == 0, f"Valid atomic figure should pass: {errors}"
     
     def test_valid_complex_figure_update(self):
@@ -194,7 +194,7 @@ class TestFigureUpdateRequestSchema:
             ]
         }
         
-        errors = validator.get_validation_errors('api_figure_update_request.schema.json', valid_payload)
+        errors = validator.get_validation_errors(valid_payload, validator.load_schema('api_figure_update_request.schema.json'))
         assert len(errors) == 0, f"Valid complex figure should pass: {errors}"
     
     def test_atomic_with_figurelist_fails(self):
@@ -214,9 +214,48 @@ class TestFigureUpdateRequestSchema:
             "FigureList": ["subfig"]  # Can't have both!
         }
         
-        errors = validator.get_validation_errors('api_figure_update_request.schema.json', invalid_payload)
+        errors = validator.get_validation_errors(invalid_payload, validator.load_schema('api_figure_update_request.schema.json'))
         assert len(errors) > 0
 
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
+
+
+@pytest.mark.parametrize("schema_name,version", [
+    ("figure.schema.json", 2),
+    ("api_figure_update_request.schema.json", 2),
+])
+class TestLegacyFaceingSchemaRejection:
+    @staticmethod
+    def _figure(version, **extra):
+        figure = {
+            "Name": "F", "Desc": "d", "Formation": "turn", "Version": version,
+            "Addons": {"A": {"Name": "A", "Desc": "a", "Version": 1}},
+            "Bars": 4, "StartPos": [[0, 0]], "EndPos": [[1, 0]], "CriptDesc": ["x"],
+        }
+        figure.update(extra)
+        return figure
+
+    def test_top_level_endfacing_is_declared_and_valid(self, schema_name, version):
+        with open(f"schema/{schema_name}", encoding="utf-8") as schema_file:
+            schema = json.load(schema_file)
+        end_facing = schema["properties"]["EndFacing"]
+        assert end_facing["type"] == "array"
+        assert "dancer" in end_facing["description"].lower()
+
+        validator = ApiResponseValidator()
+        figure = self._figure(version, EndFacing=[[1, 0]], Custom=1)
+        figure["Addons"]["A"]["EndFacing"] = [[1, 0]]
+        figure["Addons"]["A"]["Other"] = True
+        assert validator.is_valid(figure, schema_name)
+
+    def test_figure_level_faceing_rejected(self, schema_name, version):
+        validator = ApiResponseValidator()
+        assert not validator.is_valid(self._figure(version, Faceing=[[1, 0]]), schema_name)
+
+    def test_addon_level_faceing_rejected(self, schema_name, version):
+        validator = ApiResponseValidator()
+        figure = self._figure(version)
+        figure["Addons"]["A"]["Faceing"] = [[1, 0]]
+        assert not validator.is_valid(figure, schema_name)

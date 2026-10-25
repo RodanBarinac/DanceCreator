@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import glob
 import hashlib
+import re
 import json
 import os
 import shutil
 import tempfile
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -25,7 +24,7 @@ class FileManager:
     @classmethod
     def backup_file(cls, path: str) -> str:
         """
-        Create a timestamped backup copy of an existing file.
+        Create a numbered backup copy of an existing file.
 
         Args:
             path: Path to the source file.
@@ -40,14 +39,16 @@ class FileManager:
         if not source_path.is_file():
             raise FileManagerError(f"Cannot back up missing file: {path}")
 
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
-        backup_path = source_path.with_name(f"{source_path.name}.{timestamp}.bak")
-        collision_index = 1
+        existing_backups = cls._numbered_backup_paths(source_path)
+        next_counter = max((counter for _, counter in existing_backups), default=0) + 1
+        backup_path = source_path.with_name(
+            f"{source_path.name}.{next_counter:08d}.bak"
+        )
         while backup_path.exists():
+            next_counter += 1
             backup_path = source_path.with_name(
-                f"{source_path.name}.{timestamp}.{collision_index}.bak"
+                f"{source_path.name}.{next_counter:08d}.bak"
             )
-            collision_index += 1
         shutil.copy2(source_path, backup_path)
         cls._prune_backups(source_path)
         return str(backup_path)
@@ -184,12 +185,26 @@ class FileManager:
             return True
 
     @classmethod
+    def _numbered_backup_paths(cls, source_path: Path) -> list[tuple[Path, int]]:
+        """Return this file's numbered backups and their numeric counters."""
+        pattern = re.compile(rf"{re.escape(source_path.name)}\.([0-9]+)\.bak\Z")
+        backups = []
+        for candidate in source_path.parent.iterdir():
+            match = pattern.fullmatch(candidate.name)
+            if match and candidate.is_file():
+                counter = match.group(1)
+                # Legacy timestamp backups use a 20-digit ``%Y%m%d%H%M%S%f`` suffix.
+                if len(counter) == 20:
+                    continue
+                backups.append((candidate, int(counter)))
+        return backups
+
+    @classmethod
     def _prune_backups(cls, source_path: Path) -> None:
-        """Delete older backups so only the newest MAX_BACKUPS remain."""
-        pattern = str(source_path.with_name(f"{source_path.name}.*.bak"))
-        backup_paths = [Path(match) for match in glob.glob(pattern)]
-        backup_paths.sort(key=lambda candidate: candidate.name)
+        """Delete older numbered backups so only the newest MAX_BACKUPS remain."""
+        backup_paths = cls._numbered_backup_paths(source_path)
+        backup_paths.sort(key=lambda item: item[1])
 
         while len(backup_paths) > cls.MAX_BACKUPS:
-            oldest_backup = backup_paths.pop(0)
+            oldest_backup, _ = backup_paths.pop(0)
             oldest_backup.unlink(missing_ok=True)

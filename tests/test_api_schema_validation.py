@@ -284,13 +284,13 @@ class TestDancefloorResponseValidation:
             "positions": {
                 "1m": {
                     "dancer": {"name": "John", "gender": "M"},
-                    "coord": [1, 1],
-                    "facing": [1, 2]  # Facing coordinates, not direction string
+                    "coord": [1, -1],
+                    "facing": [1, 1]  # Facing coordinates, not direction string
                 },
                 "1w": {
                     "dancer": {"name": "Jane", "gender": "F"},
-                    "coord": [1, 2],
-                    "facing": [1, 1]  # Facing coordinates, not direction string
+                    "coord": [1, 1],
+                    "facing": [1, -1]  # Facing coordinates, not direction string
                 }
             }
         }

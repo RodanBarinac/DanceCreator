@@ -1,23 +1,82 @@
-{"CriptDesc": ["{Dancer} dances half a left shoulder reel across to {EndPos}",
-              "{Dancer} dances half a left shoulder reel across to {EndPos}",
-              "{Dancer} dances half a left shoulder reel across to {EndPos}"],
-  "StartPos": [[0, 0], [0, 1], [0, 2]],
-  "EndPos": [[0, 2], [0, 1], [0, 0]],
-  "Name": "HReelAU",
+{
+  "CriptDesc": [
+    "{Dancer} dances half a left shoulder reel across to {EndPos}",
+    "{Dancer} dances half a left shoulder reel across to {EndPos}",
+    "{Dancer} dances half a left shoulder reel across to {EndPos}"
+  ],
+  "StartPos": [
+    [
+      0,
+      -1
+    ],
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      1
+    ]
+  ],
+  "EndPos": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      -1
+    ]
+  ],
+  "Name": "HLReelAU",
   "Desc": "Half left shoulder reel of three acros up",
   "Formation": "reel",
   "Bars": 4,
   "Version": 2,
-  "Addons":{
+  "Addons": {
     "EDown": {
-      "EndPos": [[0, 2], [1, 0], [0, 0]],
+      "EndPos": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
       "Name": "EDown",
       "Desc": "End in side lines below",
-      "Version": 1},
+      "Version": 1
+    },
     "SDown": {
-      "StartPos": [[0, 0], [1, 2], [0, 2]],
+      "StartPos": [
+        [
+          0,
+          -1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
       "Name": "SDown",
       "Desc": "Start in side lines below",
-      "Version": 1}
-  }
+      "Version": 1
+    }
+  },
+  "StartDancers": ["2m", "1w", "2w"],
+  "StartFacing": [[0, 1], [0, -1], [0, -1]]
 }

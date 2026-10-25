@@ -6,6 +6,9 @@ This document defines the contract between the Python dance engine and the JavaS
 
 ## Overview
 
+**Centered dance-floor grid (breaking change):** rows are 1-based couple positions. Columns are `-1` (men), `0` (centre), and `+1` (ladies). Floor and facing columns may be negative; default facing targets the same row on the opposite side of the centre line (`[row, column]` faces `[row, -column]`, e.g. `[2,-1]` to `[2,1]`). Facing is a target position, not a direction vector.
+
+
 The contract is governed by a formal JSON Schema (`dancefloor_contract.schema.json`) that validates all dancefloor state data. This ensures compatibility and prevents miscommunication between the Python backend and JavaScript frontend.
 
 ## Core Principles
@@ -101,11 +104,11 @@ Each position in the `positions` map is an object:
 - **Description**: The current position of the dancer on the dancefloor
 - **Format**: `[row, column]`
 - **Type**: Numbers (integer or float)
-- **Range**: Typically 1-16 for each dimension
+- **Range**: Rows are 1-based; columns may be negative or fractional
 - **Semantics**:
   - Row direction: typically vertical (1 = top, increasing downward)
-  - Column direction: typically horizontal (1 = left, increasing rightward)
-- **Example**: `[2, 3]` = Row 2, Column 3
+  - Columns are centered: -1 = men, 0 = centre, +1 = ladies
+- **Example**: `[2, 1]` = Row 2 on the ladies' line
 - **Uniqueness**: Each position should have at most one dancer
 
 #### `facing` (required, array of 2 numbers)
@@ -120,9 +123,9 @@ Each position in the `positions` map is an object:
   direction_vector = [facingColumn - currentColumn, facingRow - currentRow]
   ```
 - **Example**: 
-  - Dancer at `[1, 1]` facing `[1, 3]` means facing right (vector: [2, 0])
-  - Dancer at `[1, 1]` facing `[3, 1]` means facing down (vector: [0, 2])
-  - Dancer at `[1, 1]` facing `[3, 3]` means facing diagonally down-right (vector: [2, 2])
+  - Dancer at `[1, -1]` facing `[1, 1]` means facing across to the opposite side (vector: [2, 0])
+  - Dancer at `[1, -1]` facing `[3, -1]` means facing down the set (vector: [0, 2])
+  - Dancer at `[1, -1]` facing `[3, 1]` means facing diagonally toward the ladies' line (vector: [2, 2])
 
 ## Validation
 
@@ -166,23 +169,23 @@ validateDancefloor(floorData);  // Throws if invalid
   "positions": {
     "1m": {
       "dancer": {"name": "1m", "gender": "M"},
-      "coord": [1, 1],
-      "facing": [1, 3]
+      "coord": [1, -1],
+      "facing": [1, 1]
     },
     "1w": {
       "dancer": {"name": "1w", "gender": "F"},
-      "coord": [1, 3],
-      "facing": [1, 1]
+      "coord": [1, 1],
+      "facing": [1, -1]
     },
     "2m": {
       "dancer": {"name": "2m", "gender": "M"},
-      "coord": [2, 1],
-      "facing": [2, 3]
+      "coord": [2, -1],
+      "facing": [2, 1]
     },
     "2w": {
       "dancer": {"name": "2w", "gender": "F"},
-      "coord": [2, 3],
-      "facing": [2, 1]
+      "coord": [2, 1],
+      "facing": [2, -1]
     }
   }
 }
@@ -198,33 +201,33 @@ validateDancefloor(floorData);  // Throws if invalid
   "positions": {
     "1m": {
       "dancer": {"name": "1m", "gender": "M"},
-      "coord": [3, 1],
-      "facing": [3, 3]
+      "coord": [3, -1],
+      "facing": [3, 1]
     },
     "1w": {
       "dancer": {"name": "1w", "gender": "F"},
-      "coord": [3, 3],
-      "facing": [3, 1]
+      "coord": [3, 1],
+      "facing": [3, -1]
     },
     "2m": {
       "dancer": {"name": "2m", "gender": "M"},
-      "coord": [2, 1],
-      "facing": [2, 3]
+      "coord": [2, -1],
+      "facing": [2, 1]
     },
     "2w": {
       "dancer": {"name": "2w", "gender": "F"},
-      "coord": [2, 3],
-      "facing": [2, 1]
+      "coord": [2, 1],
+      "facing": [2, -1]
     },
     "3m": {
       "dancer": {"name": "3m", "gender": "M"},
-      "coord": [1, 1],
-      "facing": [1, 3]
+      "coord": [1, -1],
+      "facing": [1, 1]
     },
     "3w": {
       "dancer": {"name": "3w", "gender": "F"},
-      "coord": [1, 3],
-      "facing": [1, 1]
+      "coord": [1, 1],
+      "facing": [1, -1]
     }
   }
 }

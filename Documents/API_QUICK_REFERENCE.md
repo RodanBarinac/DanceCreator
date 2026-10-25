@@ -71,6 +71,45 @@ Get complete figure definition.
 curl "http://localhost:5000/api/figures/H1DR"
 ```
 
+Simple figure definitions may declare `StartDancers` and `StartFacing`, each parallel to `StartPos`. They control only isolated catalog preview: dancer IDs (such as `2m`, `1w`) supply preview name/gender and couple color identity; target-coordinate `StartFacing` values set incoming facing. Empty or omitted entries use automatic dancer allocation or the default same-row opposite-line facing, respectively. Inside a dance, declarations are ignored; floor dancers keep their actual identity and incoming facing. See `FIGURE_LIST_API_CONTRACT.md` and `figure.schema.json`.
+
+#### Figure Preview and Crips
+
+**POST /api/figures/<identifier>/preview** accepts `anchor` and selected `addons`, and returns
+`incomingFloor`, `outgoingFloor`, and a `crips` list generated from that incoming floor. The
+response uses `schema/api_figure_preview_response.schema.json`; serialized floor maps use
+`schema/api_floor_snapshot.schema.json`.
+
+The same structured line format is returned in `crips` by dance detail/tree/trace responses,
+where each figure node uses its trace `incomingFloor` (not the caller's floor):
+
+```json
+{
+  "figureRef": "1cLT",
+  "dancer": "1m",
+  "barRange": [1, 4],
+  "text": "turns left hand with 1w and ends facing 2w's position."
+}
+```
+
+`barRange` is inclusive; it uses effective `B<n>` duration, serial groups advance the range,
+and parallel children share a range. `text` is the figure/addon `getCrips` text without its legacy
+bar prefix or repeated leading dancer name; position labels use possessives (for example, `2w's position`). The legacy `getCrips` method retains its prefixed text for CLI callers. See `schema/api_crip_line.schema.json`.
+
+**POST /api/dances/<dance-id>/nodes/<node-id>/preview** previews proposed edits to a simple
+figure node using its execution-trace incoming floor. The request body is `{"anchor": [1, 0],
+"addons": ["B4", "E1c"]}`; `node-id` is the canonical node ID in the dance tree. The success
+response contains `danceId`, `nodeId`, `figureRef`, `incomingFloor`, `outgoingFloor`, and `crips`.
+It does not mutate the dance, history, revision, proposal registry, or file. The separate
+`POST /api/dances/<dance-id>/proposals` route creates a pending in-memory token but does not
+commit; `/apply` updates in-memory document/history state only after validation succeeds, and `/save`
+persists the document. Schemas:
+`schema/api_dance_node_preview_request.schema.json` and
+`schema/api_dance_node_preview_response.schema.json`.
+
+Preview errors follow `schema/api_error.schema.json`; `error` contains `code` and `message`, and
+when affected dancers are known it also contains `dancers` (names or labels such as `start position 1`).
+
 ### 3. Dance List API
 
 **GET /api/dances**
@@ -166,7 +205,7 @@ Replace an existing dance JSON file with a complete dance definition.
 **Notes:**
 - This is a full replacement API, not a partial patch API.
 - The implementation also accepts an optional `_expected_hash` field for optimistic conflict detection. If provided and it does not match the current file hash, the endpoint returns `409 conflict`.
-- Existing files are backed up automatically before overwrite as `filename.<timestamp>.bak`; only the newest 5 backups are kept.
+- Existing files are backed up automatically before overwrite as `filename.<counter-padded-to-at-least-8-digits>.bak`; only the newest 5 numbered backups are kept.
 
 **Example:**
 ```bash
@@ -179,8 +218,8 @@ curl -X PUT "http://localhost:5000/api/dances/Existing%20Dance.json" \
     "FigureList": [
       "s",
       [
-        [[1, 1], ["H1DR", []]],
-        [[2, 1], ["1cWait", []]]
+        [[1, 0], ["H1DR", []]],
+        [[2, 0], ["1cWait", []]]
       ]
     ],
     "Version": 3
@@ -229,7 +268,7 @@ Create a brand-new dance JSON file from a complete dance definition.
 | `Version` | integer | Yes | Must be exactly `3`. |
 
 **Notes:**
-- The server sanitizes `Name` into a safe filename, appends `.json` if needed, and writes the file into `Dances\`.
+- The server sanitizes `Name` into a safe filename, appends `.json` if needed, and writes the file into `data\Dances\`.
 - New files are written without creating a `.bak` backup first.
 
 **Example:**
@@ -243,8 +282,8 @@ curl -X POST "http://localhost:5000/api/dances" \
     "FigureList": [
       "s",
       [
-        [[1, 1], ["H1DR", []]],
-        [[2, 1], ["1cWait", []]]
+        [[1, 0], ["H1DR", []]],
+        [[2, 0], ["1cWait", []]]
       ]
     ],
     "Version": 3
@@ -291,14 +330,14 @@ Replace only the `FigureList` of an existing dance using a jsTree-compatible pay
 | `tree.type` | string | Yes | Node type: `root`, `group`, or `figure`. |
 | `tree.data.figureName` | string | Figure nodes | Figure name for `type=figure`. |
 | `tree.data.groupType` | string | Group nodes | Group type for `type=group`: `s` or `p`. |
-| `tree.data.anchor` | array[number, number] | No | Figure anchor position. Defaults to `[1, 1]` during conversion if missing or invalid. |
+| `tree.data.anchor` | array[number, number] | No | Figure anchor position. Defaults to `[1, 0]` during conversion if missing or invalid. |
 | `tree.data.addons` | array[string] | No | Figure addon names. |
 | `tree.children` | array | No | Child jsTree nodes. Required by the converter for root/group processing. |
 
 **Notes:**
 - The request is validated structurally first, then converted into internal `Dance.FigureList` format by `TreeConverter`.
 - Only `FigureList` is replaced; existing dance metadata such as `Name`, `Desc`, `shape`, and `Version` is preserved.
-- Successful writes create a timestamped `.bak` backup before overwriting the dance file.
+- Successful writes create a numbered `.bak` backup before overwriting the dance file.
 - Empty group children arrays are allowed and convert to empty internal groups such as `["p", []]`.
 
 **Example:**
@@ -324,7 +363,7 @@ curl -X PUT "http://localhost:5000/api/dances/Existing%20Dance.json/tree" \
               "type": "figure",
               "data": {
                 "figureName": "1cRT",
-                "anchor": [1, 1],
+                "anchor": [1, 0],
                 "addons": []
               },
               "children": []
@@ -361,14 +400,14 @@ curl -X PUT "http://localhost:5000/api/dances/Existing%20Dance.json/tree" \
 
 **DELETE /api/dances/<identifier>**
 
-Soft-delete a dance by moving its JSON file into `Dances\.deleted\`.
+Soft-delete a dance by moving its JSON file into `data\Dances\.deleted\`.
 
 **Request Body:** None.
 
 **Notes:**
-- The server creates a timestamped `.bak` backup before moving the file.
-- If `Dances\.deleted\filename.json` already exists, the moved file gets a timestamp suffix (for example `Delete Me-20260927190000000000.json`) to avoid collisions.
-- The original `file` value in the response still refers to the source dance path relative to `Dances\`.
+- The server creates a numbered `.bak` backup before moving the file.
+- If `data\Dances\.deleted\filename.json` already exists, the moved file gets a timestamp suffix (for example `Delete Me-20260927190000000000.json`) to avoid collisions.
+- The original `file` value in the response still refers to the source dance path relative to `data\Dances\`.
 
 **Example:**
 ```bash
@@ -417,7 +456,7 @@ Execute a figure on the dancefloor.
 {
   "figure": "H1DR",
   "couples": 3,
-  "anchor": [1, 1],
+  "anchor": [1, 0],
   "addons": []
 }
 ```
@@ -427,7 +466,9 @@ Execute a figure on the dancefloor.
 {
   "status": "ok",
   "floor": {...},
-  "crips": [...]
+  "crips": [
+    {"figureRef": "1cLT", "dancer": "1m", "barRange": [1, 4], "text": "..."}
+  ]
 }
 ```
 
@@ -470,3 +511,8 @@ For detailed API specifications, see:
 - Tests: `tests/test_api_*.py`
 - Recursion protection: Tree building limited to 50 levels depth
 - Backward compatibility: Breaking changes update example data instead of adding legacy shims
+
+
+## Centered grid and addon timing
+
+Dance-floor rows remain 1-based couple positions. Columns are centered (`-1` men's line, `0` centre, `+1` ladies' line); default facing points across to the opposite line. A missing tree anchor defaults to `[1, 0]`. Engine-reserved addons named `B<n>` set any simple figure to a positive-integer bar count, with no per-figure definition, and may shorten or lengthen it. `B<n>` changes bars only; its resolved value feeds execution ranges and parallel duration validation. Multiple duration addons or addons that change the same field for the same dancer are errors. For `1cLT`, `B4` changes bars only and `E1c` changes end positions, end facing, and ending text only. Two half reels with `B3` each form a six-bar reel; no separate 6- or 8-bar reel figures exist.

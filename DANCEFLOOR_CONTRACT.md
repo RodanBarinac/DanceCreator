@@ -68,8 +68,8 @@ await validator.validate(floorData);
 
 ```json
 {
-  "coord": [1, 1],        // Dancer's current position
-  "facing": [1, 3]        // Position they're facing toward (not [2, 0])
+  "coord": [1, -1],       // Row 1, men's line
+  "facing": [1, 1]        // Target on the ladies' line (not a direction vector)
 }
 ```
 
@@ -91,3 +91,8 @@ See the integration guide for:
 **Version**: 1.0.0  
 **Status**: Production Ready  
 **Last Updated**: 2026-08-29
+
+
+## Centered dance-floor grid (breaking coordinate change)
+
+Rows remain 1-based couple positions. Columns are centered: men's line `-1`, centre line `0`, and ladies' line `+1`. Floor and facing coordinates use `[row, column]`; figure offsets shift their column by `-1`, while top-level dance anchors shift by `-1`, so every absolute floor column is the previous value minus `2`. Default facing targets the same row on the opposite side of the centre line: `[row, column]` faces `[row, -column]` (for example `[2,-1]` faces `[2,1]`). This is a target position, not a direction vector.

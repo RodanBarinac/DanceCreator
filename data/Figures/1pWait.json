@@ -1,9 +1,23 @@
-{"Name": "1pWait",
+{
+  "Name": "1pWait",
   "Desc": "One person waits.",
   "Formation": "wait",
   "Addons": {},
-  "CriptDesc": [""],
-  "StartPos": [[0, 0]],
-  "EndPos": [[0, 0]],
+  "CriptDesc": [
+    ""
+  ],
+  "StartPos": [
+    [
+      0,
+      -1
+    ]
+  ],
+  "EndPos": [
+    [
+      0,
+      -1
+    ]
+  ],
   "Bars": 2,
-  "Version": 2}
+  "Version": 2
+}

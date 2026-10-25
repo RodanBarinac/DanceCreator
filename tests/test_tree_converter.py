@@ -63,20 +63,20 @@ class TestTreeConverterSuccess:
             [
                 figure_node("A"),
                 figure_node("B"),
-                figure_node("C", anchor=[2, 3]),
+                figure_node("C", anchor=[2, 1]),
             ]
         )
 
         result = TreeConverter.jstree_to_figure_list(tree)
 
-        assert result == ["s", [[[1, 1], "A"], [[1, 1], "B"], [[2, 3], "C"]]]
+        assert result == ["s", [[[1, 0], "A"], [[1, 0], "B"], [[2, 1], "C"]]]
 
     def test_root_group_type_overrides_default(self):
         tree = root_node([figure_node("A"), figure_node("B")], group_type="p")
 
         result = TreeConverter.jstree_to_figure_list(tree)
 
-        assert result == ["p", [[[1, 1], "A"], [[1, 1], "B"]]]
+        assert result == ["p", [[[1, 0], "A"], [[1, 0], "B"]]]
 
     def test_root_without_group_type_defaults_to_series(self):
         tree = root_node([figure_node("Only")])
@@ -90,7 +90,7 @@ class TestTreeConverterSuccess:
             [
                 group_node(
                     [
-                        figure_node("Lead", anchor=[1, 2]),
+                        figure_node("Lead", anchor=[1, 0]),
                         group_node(
                             [figure_node("Mirror"), figure_node("Support", addons=["Hands"])],
                             group_type="p",
@@ -110,8 +110,8 @@ class TestTreeConverterSuccess:
             [[
                 "s",
                 [
-                    [[1, 2], "Lead"],
-                    ["p", [[[1, 1], "Mirror"], [[1, 1], ["Support", ["Hands"]]]]],
+                    [[1, 0], "Lead"],
+                    ["p", [[[1, 0], "Mirror"], [[1, 0], ["Support", ["Hands"]]]]],
                 ],
             ]],
         ]
@@ -124,67 +124,67 @@ class TestTreeConverterSuccess:
         assert result == ["s", [["p", []]]]
 
     def test_figure_anchor_is_preserved(self):
-        tree = root_node([figure_node("AnchorFigure", anchor=[4, 2])])
+        tree = root_node([figure_node("AnchorFigure", anchor=[4, 0])])
 
         result = TreeConverter.jstree_to_figure_list(tree)
 
-        assert result == ["s", [[[4, 2], "AnchorFigure"]]]
+        assert result == ["s", [[[4, 0], "AnchorFigure"]]]
 
     def test_missing_anchor_defaults_to_one_based_origin(self):
         tree = root_node([figure_node("DefaultAnchor")])
 
         result = TreeConverter.jstree_to_figure_list(tree)
 
-        assert result == ["s", [[[1, 1], "DefaultAnchor"]]]
+        assert result == ["s", [[[1, 0], "DefaultAnchor"]]]
 
     def test_invalid_anchor_values_are_normalized_like_frontend(self):
         tree = root_node([figure_node("Normalized", anchor=[0, -9])])
 
         result = TreeConverter.jstree_to_figure_list(tree)
 
-        assert result == ["s", [[[1, 1], "Normalized"]]]
+        assert result == ["s", [[[1, -9], "Normalized"]]]
 
     def test_float_anchor_values_are_coerced_to_integers(self):
-        tree = root_node([figure_node("FloatAnchor", anchor=[3.9, 2.1])])
+        tree = root_node([figure_node("FloatAnchor", anchor=[3.9, 1.1])])
 
         result = TreeConverter.jstree_to_figure_list(tree)
 
-        assert result == ["s", [[[3, 2], "FloatAnchor"]]]
+        assert result == ["s", [[[3, 1], "FloatAnchor"]]]
 
     def test_non_array_anchor_falls_back_to_default(self):
         tree = root_node([figure_node("BadAnchor", anchor="not-an-array")])
 
         result = TreeConverter.jstree_to_figure_list(tree)
 
-        assert result == ["s", [[[1, 1], "BadAnchor"]]]
+        assert result == ["s", [[[1, 0], "BadAnchor"]]]
 
     def test_figure_with_addons_emits_name_and_addon_pair(self):
         tree = root_node([figure_node("Decorated", addons=["Hands", "Turn"])])
 
         result = TreeConverter.jstree_to_figure_list(tree)
 
-        assert result == ["s", [[[1, 1], ["Decorated", ["Hands", "Turn"]]]]]
+        assert result == ["s", [[[1, 0], ["Decorated", ["Hands", "Turn"]]]]]
 
     def test_figure_with_empty_addons_emits_plain_string_target(self):
         tree = root_node([figure_node("Plain", addons=[])])
 
         result = TreeConverter.jstree_to_figure_list(tree)
 
-        assert result == ["s", [[[1, 1], "Plain"]]]
+        assert result == ["s", [[[1, 0], "Plain"]]]
 
     def test_existing_get_tree_addons_shape_is_flattened(self):
         tree = root_node([figure_node("Flattened", addons=[["Wave"]])])
 
         result = TreeConverter.jstree_to_figure_list(tree)
 
-        assert result == ["s", [[[1, 1], ["Flattened", ["Wave"]]]]]
+        assert result == ["s", [[[1, 0], ["Flattened", ["Wave"]]]]]
 
     def test_existing_get_tree_root_without_type_round_trips_single_group(self):
         dance = {
             "Name": "Round Trip",
             "Desc": "Test dance",
             "shape": "3/32",
-            "FigureList": ["s", [[[1, 1], ["Decorated", ["Hands"]]], ["p", [[[2, 1], ["Side", ["Turn"]]]]]]],
+            "FigureList": ["s", [[[1, 0], ["Decorated", ["Hands"]]], ["p", [[[2, 0], ["Side", ["Turn"]]]]]]],
             "Version": 3,
         }
 
@@ -201,8 +201,8 @@ class TestTreeConverterSuccess:
             "FigureList": [
                 "p",
                 [
-                    [[1, 1], "Lead"],
-                    ["s", [[[2, 1], ["Trail", ["Cross"]]], [[3, 1], "Finish"]]],
+                    [[1, -1], "Lead"],
+                    ["s", [[[2, -1], ["Trail", ["Cross"]]], [[3, -1], "Finish"]]],
                 ],
             ],
             "Version": 3,
@@ -215,7 +215,7 @@ class TestTreeConverterSuccess:
             "Name": "Empty Addons",
             "Desc": "Schema-compatible empty addons",
             "shape": "3/32",
-            "FigureList": ["s", [[[1, 1], ["Simple", []]]]],
+            "FigureList": ["s", [[[1, -1], ["Simple", []]]]],
             "Version": 3,
         }
 

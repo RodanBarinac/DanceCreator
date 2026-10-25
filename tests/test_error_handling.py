@@ -61,7 +61,7 @@ class TestErrorConditions:
         
         # Try to access empty position
         with pytest.raises(Exception):
-            floor.DancerbyPos((1, 1))
+            floor.DancerbyPos((1, 0))
 
 
 class TestDanceFloorStateConsistency:

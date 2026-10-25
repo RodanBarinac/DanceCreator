@@ -1,0 +1,613 @@
+{
+  "captured_at": "2026-10-25T14:03:18.168816+00:00",
+  "python": "3.12.0 (tags/v3.12.0:0fb18b0, Oct  2 2023, 13:03:39) [MSC v.1935 64 bit (AMD64)]",
+  "method": "Before any grid, figure or dance-data edits. Legacy loader/executor from this worktree; each visible JSON under Dances/ was loaded and run against a fresh legacy DanceFloor for 1, 2 and 3 couples. Captured recursive getCrips text and final DanceMove floor. bar_count is actual end AktBar minus initial AktBar. Existing Bars property errors are retained; SHA-256 fingerprints compare each root Dances file with its data/Dances counterpart.",
+  "file_hashes": {
+    "Marries Wedding.json": {
+      "Dances": "425284c65e932bbe25455b164c0ecce8c4e4ce54923d431edf55e031485e7854",
+      "data/Dances": "425284c65e932bbe25455b164c0ecce8c4e4ce54923d431edf55e031485e7854"
+    },
+    "Marries Wedding_all.json": {
+      "Dances": "d7b5b5e4e96937aeac3086b04f90b5598964bb81335acfd0d90c14259cd5da1c",
+      "data/Dances": "d7b5b5e4e96937aeac3086b04f90b5598964bb81335acfd0d90c14259cd5da1c"
+    },
+    "subDances/Marries Wedding_Bar 1-8.json": {
+      "Dances": "fb34faedbb03564cfc1eb2934c3d3986417133c24142310efc22702b765679d3",
+      "data/Dances": "fb34faedbb03564cfc1eb2934c3d3986417133c24142310efc22702b765679d3"
+    },
+    "subDances/Marries Wedding_Bar 13-16.json": {
+      "Dances": "e40d7d8ea18d7dd0d93ebd4b123816b98069edfe57a71258dcb2449f992a1977",
+      "data/Dances": "e40d7d8ea18d7dd0d93ebd4b123816b98069edfe57a71258dcb2449f992a1977"
+    },
+    "subDances/Marries Wedding_Bar 21-24.json": {
+      "Dances": "37e9fb138ff67804d8b622ff832052aee0b5f3e152b544e894c2073029eb07e6",
+      "data/Dances": "37e9fb138ff67804d8b622ff832052aee0b5f3e152b544e894c2073029eb07e6"
+    },
+    "subDances/Marries Wedding_Bar 25-32.json": {
+      "Dances": "77d2ffafefe9f745e2615407cbe237064bfe8ecd7396645d30ac142626204c74",
+      "data/Dances": "77d2ffafefe9f745e2615407cbe237064bfe8ecd7396645d30ac142626204c74"
+    },
+    "subDances/Marries Wedding_Bar 9-12.json": {
+      "Dances": "8c32fc21cc1f449d60949c71ef10e240902b16da18b819f2e47f054b3d3efddc",
+      "data/Dances": "8c32fc21cc1f449d60949c71ef10e240902b16da18b819f2e47f054b3d3efddc"
+    }
+  },
+  "executions": [
+    {
+      "dance": "Marries Wedding.json",
+      "couples": 1,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (2, 1)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (2, 1)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n"
+    },
+    {
+      "dance": "Marries Wedding.json",
+      "couples": 2,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (3, 1)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n      2 |   \u25cb2m   |         |   \u25a12w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (3, 1)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n      2 |   \\u25cb2m   |         |   \\u25a12w  \n"
+    },
+    {
+      "dance": "Marries Wedding.json",
+      "couples": 3,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions": [
+        [
+          [
+            [
+              [
+                "1 - 2: 1m turns right hand with 1w and ends in own place.",
+                "1 - 2: 1w turns right hand with 1m and ends in own place."
+              ],
+              [
+                "3 - 4: 1m casts down one place.",
+                "3 - 4: 1w casts down one place."
+              ]
+            ],
+            [
+              [],
+              [
+                "3 - 4: 2m steps one place up.",
+                "3 - 4: 2w steps one place up."
+              ]
+            ],
+            [
+              [],
+              []
+            ]
+          ],
+          [
+            [
+              "5 - 8: 1m turns left hand with 1w and ends facing 3w's position.",
+              "5 - 8: 1w turns left hand with 1m and ends facing 1m's position."
+            ],
+            [
+              [],
+              []
+            ],
+            [
+              [],
+              []
+            ]
+          ]
+        ],
+        [
+          [
+            "9 - 12: 2m dances half a diagonal reel to end in 3w's position",
+            "9 - 12: 1w dances half a diagonal reel to face 3w's position",
+            "9 - 12: 1m dances half a diagonal reel to face 1m's position",
+            "9 - 12: 3w dances half a diagonal reel to end in 1m's position"
+          ],
+          [
+            [],
+            []
+          ],
+          [
+            [],
+            []
+          ]
+        ],
+        [
+          [
+            "13 - 16: 3m dances half a diagonal reel to end in 1w's position",
+            "13 - 16: 1w dances half a diagonal reel to face 3m's position",
+            "13 - 16: 1m dances half a diagonal reel to face 1w's position",
+            "13 - 16: 2w dances half a diagonal reel to end in 3m's position"
+          ],
+          [
+            [],
+            []
+          ],
+          [
+            [],
+            []
+          ]
+        ],
+        [
+          [
+            "17 - 20: 3w dances half a diagonal reel to end in 3w's position",
+            "17 - 20: 1m dances half a diagonal reel to face 3w's position",
+            "17 - 20: 1w dances half a diagonal reel to face 1m's position",
+            "17 - 20: 2m dances half a diagonal reel to end in 1m's position"
+          ],
+          [
+            [],
+            []
+          ],
+          [
+            [],
+            []
+          ]
+        ],
+        [
+          [
+            "21 - 24: 2w dances half a diagonal reel to end in 1w's position",
+            "21 - 24: 1m dances half a diagonal reel to face 3m's position",
+            "21 - 24: 1w dances half a diagonal reel to face 1w's position",
+            "21 - 24: 3m dances half a diagonal reel to end in 3m's position"
+          ],
+          [
+            [],
+            []
+          ],
+          [
+            [],
+            []
+          ]
+        ],
+        [
+          [
+            [
+              "25 - 28: 2m dances half a left shoulder reel across to 1w's position",
+              "25 - 28: 1w dances half a left shoulder reel across to between 1c's position",
+              "25 - 28: 2w dances half a left shoulder reel across to 1m's position"
+            ],
+            [
+              "25 - 28: 3m dances half a left shoulder reel across to 3w's position",
+              "25 - 28: 1m dances half a left shoulder reel across to between 3c's position",
+              "25 - 28: 3w dances half a left shoulder reel across to 3m's position"
+            ]
+          ],
+          [
+            [
+              "29 - 32: 2w dances half a right shoulder reel across to 1w's position",
+              "29 - 32: 1w dances half a right shoulder reel across to 2w's position",
+              "29 - 32: 2m dances half a right shoulder reel across to 1m's position"
+            ],
+            [
+              "29 - 32: 3w dances half a right shoulder reel across to 3w's position",
+              "29 - 32: 1m dances half a right shoulder reel across to 2m's position",
+              "29 - 32: 3m dances half a right shoulder reel across to 3m's position"
+            ]
+          ]
+        ],
+        [
+          "33 - 40: 2m dances with the others a circle to the left and back.",
+          "33 - 40: 2w dances with the others a circle to the left and back.",
+          "33 - 40: 1m dances with the others a circle to the left and back.",
+          "33 - 40: 1w dances with the others a circle to the left and back.",
+          "33 - 40: 3m dances with the others a circle to the left and back.",
+          "33 - 40: 3w dances with the others a circle to the left and back."
+        ]
+      ],
+      "bar_count": 40,
+      "final_bar": 40,
+      "floor": [
+        {
+          "position": [
+            1,
+            1
+          ],
+          "dancer": "2m",
+          "gender": "male",
+          "facing": []
+        },
+        {
+          "position": [
+            1,
+            3
+          ],
+          "dancer": "2w",
+          "gender": "female",
+          "facing": []
+        },
+        {
+          "position": [
+            2,
+            1
+          ],
+          "dancer": "1m",
+          "gender": "male",
+          "facing": []
+        },
+        {
+          "position": [
+            2,
+            3
+          ],
+          "dancer": "1w",
+          "gender": "female",
+          "facing": []
+        },
+        {
+          "position": [
+            3,
+            1
+          ],
+          "dancer": "3m",
+          "gender": "male",
+          "facing": []
+        },
+        {
+          "position": [
+            3,
+            3
+          ],
+          "dancer": "3w",
+          "gender": "female",
+          "facing": []
+        }
+      ]
+    },
+    {
+      "dance": "Marries Wedding_all.json",
+      "couples": 1,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (2, 1)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (2, 1)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n"
+    },
+    {
+      "dance": "Marries Wedding_all.json",
+      "couples": 2,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (3, 1)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n      2 |   \u25cb2m   |         |   \u25a12w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (3, 1)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n      2 |   \\u25cb2m   |         |   \\u25a12w  \n"
+    },
+    {
+      "dance": "Marries Wedding_all.json",
+      "couples": 3,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions": [
+        [
+          [
+            [
+              "1 - 2: 1m turns right hand with 1w and ends in own place.",
+              "1 - 2: 1w turns right hand with 1m and ends in own place."
+            ],
+            [
+              "3 - 4: 1m casts down one place.",
+              "3 - 4: 1w casts down one place."
+            ]
+          ],
+          [
+            [],
+            [
+              "3 - 4: 2m steps one place up.",
+              "3 - 4: 2w steps one place up."
+            ]
+          ],
+          [
+            [],
+            []
+          ]
+        ],
+        [
+          [
+            "5 - 8: 1m turns left hand with 1w and ends facing 3w's position.",
+            "5 - 8: 1w turns left hand with 1m and ends facing 1m's position."
+          ],
+          [
+            [],
+            []
+          ],
+          [
+            [],
+            []
+          ]
+        ],
+        [
+          [
+            "9 - 12: 2m dances half a diagonal reel to end in 3w's position",
+            "9 - 12: 1w dances half a diagonal reel to face 3w's position",
+            "9 - 12: 1m dances half a diagonal reel to face 1m's position",
+            "9 - 12: 3w dances half a diagonal reel to end in 1m's position"
+          ],
+          [
+            [],
+            []
+          ],
+          [
+            [],
+            []
+          ]
+        ],
+        [
+          [
+            "13 - 16: 3m dances half a diagonal reel to end in 1w's position",
+            "13 - 16: 1w dances half a diagonal reel to face 3m's position",
+            "13 - 16: 1m dances half a diagonal reel to face 1w's position",
+            "13 - 16: 2w dances half a diagonal reel to end in 3m's position"
+          ],
+          [
+            [],
+            []
+          ],
+          [
+            [],
+            []
+          ]
+        ],
+        [
+          [
+            "17 - 20: 3w dances half a diagonal reel to end in 3w's position",
+            "17 - 20: 1m dances half a diagonal reel to face 3w's position",
+            "17 - 20: 1w dances half a diagonal reel to face 1m's position",
+            "17 - 20: 2m dances half a diagonal reel to end in 1m's position"
+          ],
+          [
+            [],
+            []
+          ],
+          [
+            [],
+            []
+          ]
+        ],
+        [
+          [
+            "21 - 24: 2w dances half a diagonal reel to end in 1w's position",
+            "21 - 24: 1m dances half a diagonal reel to face 3m's position",
+            "21 - 24: 1w dances half a diagonal reel to face 1w's position",
+            "21 - 24: 3m dances half a diagonal reel to end in 3m's position"
+          ],
+          [
+            [],
+            []
+          ],
+          [
+            [],
+            []
+          ]
+        ],
+        [
+          [
+            "25 - 28: 2m dances half a left shoulder reel across to 1w's position",
+            "25 - 28: 1w dances half a left shoulder reel across to between 1c's position",
+            "25 - 28: 2w dances half a left shoulder reel across to 1m's position"
+          ],
+          [
+            "25 - 28: 3m dances half a left shoulder reel across to 3w's position",
+            "25 - 28: 1m dances half a left shoulder reel across to between 3c's position",
+            "25 - 28: 3w dances half a left shoulder reel across to 3m's position"
+          ]
+        ],
+        [
+          [
+            "29 - 32: 2w dances half a right shoulder reel across to 1w's position",
+            "29 - 32: 1w dances half a right shoulder reel across to 2w's position",
+            "29 - 32: 2m dances half a right shoulder reel across to 1m's position"
+          ],
+          [
+            "29 - 32: 3w dances half a right shoulder reel across to 3w's position",
+            "29 - 32: 1m dances half a right shoulder reel across to 2m's position",
+            "29 - 32: 3m dances half a right shoulder reel across to 3m's position"
+          ]
+        ],
+        [
+          "33 - 40: 2m dances with the others a circle to the left and back.",
+          "33 - 40: 2w dances with the others a circle to the left and back.",
+          "33 - 40: 1m dances with the others a circle to the left and back.",
+          "33 - 40: 1w dances with the others a circle to the left and back.",
+          "33 - 40: 3m dances with the others a circle to the left and back.",
+          "33 - 40: 3w dances with the others a circle to the left and back."
+        ]
+      ],
+      "bar_count": 40,
+      "final_bar": 40,
+      "floor": [
+        {
+          "position": [
+            1,
+            1
+          ],
+          "dancer": "2m",
+          "gender": "male",
+          "facing": []
+        },
+        {
+          "position": [
+            1,
+            3
+          ],
+          "dancer": "2w",
+          "gender": "female",
+          "facing": []
+        },
+        {
+          "position": [
+            2,
+            1
+          ],
+          "dancer": "1m",
+          "gender": "male",
+          "facing": []
+        },
+        {
+          "position": [
+            2,
+            3
+          ],
+          "dancer": "1w",
+          "gender": "female",
+          "facing": []
+        },
+        {
+          "position": [
+            3,
+            1
+          ],
+          "dancer": "3m",
+          "gender": "male",
+          "facing": []
+        },
+        {
+          "position": [
+            3,
+            3
+          ],
+          "dancer": "3w",
+          "gender": "female",
+          "facing": []
+        }
+      ]
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 1-8.json",
+      "couples": 1,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 1-8.json",
+      "couples": 2,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n      2 |   \u25cb2m   |         |   \u25a12w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n      2 |   \\u25cb2m   |         |   \\u25a12w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 1-8.json",
+      "couples": 3,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n      2 |   \u25cb2m   |         |   \u25a12w  \n      3 |   \u25cb3m   |         |   \u25a13w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n      2 |   \\u25cb2m   |         |   \\u25a12w  \n      3 |   \\u25cb3m   |         |   \\u25a13w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 13-16.json",
+      "couples": 1,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (2, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (2, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 13-16.json",
+      "couples": 2,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (2, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n      2 |   \u25cb2m   |         |   \u25a12w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (2, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n      2 |   \\u25cb2m   |         |   \\u25a12w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 13-16.json",
+      "couples": 3,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (2, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n      2 |   \u25cb2m   |         |   \u25a12w  \n      3 |   \u25cb3m   |         |   \u25a13w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (2, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n      2 |   \\u25cb2m   |         |   \\u25a12w  \n      3 |   \\u25cb3m   |         |   \\u25a13w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 21-24.json",
+      "couples": 1,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (2, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (2, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 21-24.json",
+      "couples": 2,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (2, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n      2 |   \u25cb2m   |         |   \u25a12w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (2, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n      2 |   \\u25cb2m   |         |   \\u25a12w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 21-24.json",
+      "couples": 3,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (2, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n      2 |   \u25cb2m   |         |   \u25a12w  \n      3 |   \u25cb3m   |         |   \u25a13w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (2, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n      2 |   \\u25cb2m   |         |   \\u25a12w  \n      3 |   \\u25cb3m   |         |   \\u25a13w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 25-32.json",
+      "couples": 1,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 25-32.json",
+      "couples": 2,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n      2 |   \u25cb2m   |         |   \u25a12w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n      2 |   \\u25cb2m   |         |   \\u25a12w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 25-32.json",
+      "couples": 3,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n      2 |   \u25cb2m   |         |   \u25a12w  \n      3 |   \u25cb3m   |         |   \u25a13w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n      2 |   \\u25cb2m   |         |   \\u25a12w  \n      3 |   \\u25cb3m   |         |   \\u25a13w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 9-12.json",
+      "couples": 1,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 9-12.json",
+      "couples": 2,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n      2 |   \u25cb2m   |         |   \u25a12w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n      2 |   \\u25cb2m   |         |   \\u25a12w  \n"
+    },
+    {
+      "dance": "subDances/Marries Wedding_Bar 9-12.json",
+      "couples": 3,
+      "model_bars_error": "RecursionError: maximum recursion depth exceeded",
+      "instructions_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \u25cb1m   |         |   \u25a11w  \n      2 |   \u25cb2m   |         |   \u25a12w  \n      3 |   \u25cb3m   |         |   \u25a13w  \n",
+      "execution_error": "Exception: Sorry, no dancer here! (0, 0)\n\nEnd of Bar: 0\n    Row |   Men   | Between |   Lady  \n   ------+---------+---------+---------\n      1 |   \\u25cb1m   |         |   \\u25a11w  \n      2 |   \\u25cb2m   |         |   \\u25a12w  \n      3 |   \\u25cb3m   |         |   \\u25a13w  \n"
+    }
+  ],
+  "figure_baselines": [
+    {
+      "figure": "1cLT1c",
+      "couples": 3,
+      "anchor": [
+        2,
+        1
+      ],
+      "bars": 4,
+      "instructions": [
+        "1 - 4: 2m turns left hand with 2w and ends facing 3w's position.",
+        "1 - 4: 2w turns left hand with 2m and ends facing 1m's position."
+      ],
+      "floor": [
+        {
+          "position": [
+            1.5,
+            1.5
+          ],
+          "dancer": "2w",
+          "gender": "female",
+          "facing": [
+            1,
+            1
+          ]
+        },
+        {
+          "position": [
+            2.5,
+            2.5
+          ],
+          "dancer": "2m",
+          "gender": "male",
+          "facing": [
+            3,
+            3
+          ]
+        }
+      ],
+      "end_bar": 4
+    }
+  ],
+  "figure_source_sha256": "780357d643f42b69db72aae4f8a0fd6800a2ebb4e460072f5bc9deeba02e8821"
+}

@@ -48,8 +48,13 @@ Dancefloor (root object)
 
 ## Key Principles
 
+**Centered grid (breaking change):** rows are 1-based couple positions; columns are `-1` (men), `0` (centre), and `+1` (ladies). Default facing targets the same row on the opposite side of the centre line (`[row, column]` faces `[row, -column]`, e.g. `[2,-1]` to `[2,1]`). It is a target coordinate, not a direction vector.
+
+
+
+
 1. **Facing is a Position, Not a Vector**
-   - `facing: [2, 3]` means "facing toward row 2, column 3"
+   - `facing: [2, 1]` means "facing toward row 2, column +1 (ladies' line)"
    - The renderer converts this to direction vector: `[col - currentCol, row - currentRow]`
    - This is more intuitive for the dance engine
 
@@ -120,33 +125,33 @@ try {
   "positions": {
     "1m": {
       "dancer": {"name": "1m", "gender": "M"},
-      "coord": [1, 1],
-      "facing": [1, 3]
+      "coord": [1, -1],
+      "facing": [1, 1]
     },
     "1w": {
       "dancer": {"name": "1w", "gender": "F"},
-      "coord": [1, 3],
-      "facing": [1, 1]
+      "coord": [1, 1],
+      "facing": [1, -1]
     },
     "2m": {
       "dancer": {"name": "2m", "gender": "M"},
-      "coord": [2, 1],
-      "facing": [2, 3]
+      "coord": [2, -1],
+      "facing": [2, 1]
     },
     "2w": {
       "dancer": {"name": "2w", "gender": "F"},
-      "coord": [2, 3],
-      "facing": [2, 1]
+      "coord": [2, 1],
+      "facing": [2, -1]
     },
     "3m": {
       "dancer": {"name": "3m", "gender": "M"},
-      "coord": [3, 1],
-      "facing": [3, 3]
+      "coord": [3, -1],
+      "facing": [3, 1]
     },
     "3w": {
       "dancer": {"name": "3w", "gender": "F"},
-      "coord": [3, 3],
-      "facing": [3, 1]
+      "coord": [3, 1],
+      "facing": [3, -1]
     }
   }
 }

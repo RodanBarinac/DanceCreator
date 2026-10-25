@@ -4,7 +4,7 @@ DanceTreeApp - ein kleines Flask-Backend f?r die HTML5-GUI.
 Beschreibung:
  - Liefert die HTML-Seite (templates/index.html)
  - Stellt statische Dateien unter /static bereit (style_old.css, app.js)
- - Bietet einen einfachen API-Endpunkt /tree, der eine JSON-Datei (aus ./Figures)
+ - Bietet einen einfachen API-Endpunkt /tree, der eine JSON-Datei (aus ./data/Figures)
    einliest und als flache Liste von Knoten mit id/parent_id zur?ckgibt.
 
 Anleitung:
@@ -16,7 +16,7 @@ Anleitung:
     ??? static/
     ?   ??? style_old.css
     ?   ??? app.js
-    ??? Figures/         <-- JSON-Dateien hier ablegen (z. B. HLReelAD.json)
+    ??? data/Figures/    <-- JSON-Dateien hier ablegen (z. B. HLReelAD.json)
 
 2. Abh?ngigkeiten installieren:
     pip install flask
@@ -192,38 +192,33 @@ def _find_json_file(identifier, roots, skip_rel_prefixes=None):
     wanted = _identifier_variants(identifier)
 
     for root in roots:
-        candidate_dirs = []
         if root == 'Figures':
-            candidate_dirs.append(FIGURES_DIR)
+            root_dir = FIGURES_DIR
         elif root == 'Dances':
-            candidate_dirs.append(DANCES_DIR)
-        candidate_dirs.append(os.path.join(os.getcwd(), root))
+            root_dir = DANCES_DIR
+        else:
+            continue
+        root_dir = os.path.abspath(root_dir)
+        if not os.path.isdir(root_dir):
+            continue
 
-        seen_dirs = set()
-        for root_dir in candidate_dirs:
-            root_dir = os.path.abspath(root_dir)
-            if root_dir in seen_dirs or not os.path.isdir(root_dir):
+        for fpath in iter_json_files(root_dir):
+            rel = os.path.relpath(fpath, root_dir)
+            if any(rel.startswith(prefix) for prefix in skip_rel_prefixes):
                 continue
-            seen_dirs.add(root_dir)
-
-            for fpath in iter_json_files(root_dir):
-                rel = os.path.relpath(fpath, root_dir)
-                if any(rel.startswith(prefix) for prefix in skip_rel_prefixes):
-                    continue
-                basename = os.path.basename(fpath).lower()
-                stem = os.path.splitext(basename)[0]
-                if basename in wanted or stem in wanted:
+            basename = os.path.basename(fpath).lower()
+            stem = os.path.splitext(basename)[0]
+            if basename in wanted or stem in wanted:
+                return fpath
+            try:
+                data = _load_json_file(fpath)
+            except Exception:
+                continue
+            for key in ('Name', 'name', 'key'):
+                value = data.get(key)
+                if isinstance(value, str) and value.strip().lower() in wanted:
                     return fpath
-                try:
-                    data = _load_json_file(fpath)
-                except Exception:
-                    continue
-                for key in ('Name', 'name', 'key'):
-                    value = data.get(key)
-                    if isinstance(value, str) and value.strip().lower() in wanted:
-                        return fpath
     return None
-
 
 def _figure_detail_path(identifier):
     return _find_json_file(identifier, ['Figures', 'Dances'])
@@ -407,14 +402,9 @@ def _serialize_floor(floor):
     positions = {}
     dance_map = getattr(floor, 'DanceFloorMap', {})
     for pos, (dancer, facing) in dance_map.items():
-        row = int(pos[0])
-        col = int(pos[1])
-        if col == 1:
-            key = f'{row}m'
-        elif col == 3:
-            key = f'{row}w'
-        else:
-            key = f'{row}:{col}'
+        row = pos[0]
+        col = pos[1]
+        key = _dance_position_key((row, col))
         positions[key] = {
             'dancer': _serialize_dancer(dancer),
             'coord': [row, col],
@@ -426,6 +416,27 @@ def _serialize_floor(floor):
         'tick': int(getattr(floor, 'AktBar', 0) or 0),
         'positions': positions
     }
+
+
+def _format_floor_coordinate(value):
+    try:
+        integer = int(value)
+        if value == integer:
+            return str(integer)
+    except (TypeError, ValueError, OverflowError):
+        pass
+    return str(value)
+
+
+def _dance_position_key(position):
+    row, col = position[0], position[1]
+    row_text = _format_floor_coordinate(row)
+    col_text = _format_floor_coordinate(col)
+    if col_text == '-1':
+        return f'{row_text}m'
+    if col_text == '1':
+        return f'{row_text}w'
+    return f'{row_text}:{col_text}'
 
 
 def _api_error(message, code=404, error='not_found'):
@@ -444,11 +455,21 @@ def _resolve_json_path(filename, roots):
     basename = os.path.basename(filename)
     candidates = []
     for root in roots:
-        candidates.append(os.path.join(os.getcwd(), root, filename))
-        candidates.append(os.path.join(os.getcwd(), root, basename))
+        if root == 'Figures':
+            root_dir = FIGURES_DIR
+        elif root == 'Dances':
+            root_dir = DANCES_DIR
+        else:
+            continue
+        candidates.extend((os.path.join(root_dir, filename), os.path.join(root_dir, basename)))
 
     for root in roots:
-        root_dir = os.path.join(os.getcwd(), root)
+        if root == 'Figures':
+            root_dir = FIGURES_DIR
+        elif root == 'Dances':
+            root_dir = DANCES_DIR
+        else:
+            continue
         if not os.path.isdir(root_dir):
             continue
         for base, _, files in os.walk(root_dir):
@@ -462,13 +483,12 @@ def _resolve_json_path(filename, roots):
 
     raise FileNotFoundError(filename)
 
-
 def _resolve_dance_path(filename):
     return _resolve_json_path(filename, ['Dances'])
 
 
 def getDance(Filename):
-    from ComplexFigure import ComplexFigure  # Lazy Import, um zirkul?ren Import zu vermeiden
+    from engine.figures.ComplexFigure import ComplexFigure
 
     myDance = ComplexFigure(_resolve_dance_path(Filename), [0,0])
     myDance.loadFigure()
@@ -477,7 +497,7 @@ def getDance(Filename):
 
 
 def getFigure(Filename, Anchor = [0,0], Addons = []):
-    from ComplexFigure import ComplexFigure  # Lazy Import, um zirkul?ren Import zu vermeiden
+    from engine.figures.ComplexFigure import ComplexFigure
 
     figure_path = _resolve_json_path(Filename, ['Figures', 'Dances'])
     FigData = _load_json_file(figure_path)
@@ -491,23 +511,10 @@ def getFigure(Filename, Anchor = [0,0], Addons = []):
     return myFig
 
 
-def printCrip(myCrips):
-    if type(myCrips) != type([]):
-        print(myCrips)
-    else:
-        if len(myCrips) == 0:
-            pass
-        elif type(myCrips[0]) != type([]):
-            print(myCrips[0])
-            if len(myCrips) > 1:
-                printCrip(myCrips[1:])
-        else:
-            for myCrip in myCrips:
-                printCrip(myCrip)
-
-
 def showCrips(myFig, myDF):
-    printCrip(myFig.getCrips(myDF))
+    """Return structured crips data without printing to the console."""
+    from engine.models.Dance import getCripsData
+    return getCripsData(myFig, myDF)
 
 
 load_Figuers()
@@ -650,7 +657,6 @@ def tree():
     return jsonify(nodes)
 
 
-@app.route('/api/tree')
 def api_tree():
     return tree()
 
@@ -664,7 +670,6 @@ def figures():
     return jsonify(result)
 
 
-@app.route('/api/figures')
 def api_figures():
     """
     GET /api/figures - List figures with filtering, pagination, and sorting.
@@ -781,7 +786,6 @@ def _get_bar_count(bars):
     return 0
 
 
-@app.route('/api/figures/<path:identifier>')
 def api_figure_detail(identifier):
     figure_path = _figure_detail_path(identifier)
     if figure_path is None:
@@ -808,7 +812,7 @@ def list_dances():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/dances')
+
 def api_dances():
     """
     GET /api/dances - List dances with filtering, pagination, and sorting.
@@ -932,7 +936,6 @@ def api_dances():
     return jsonify(response)
 
 
-@app.route('/api/dances', methods=['POST'])
 def api_dance_create():
     body = request.get_json(silent=True)
     if not isinstance(body, dict):
@@ -992,7 +995,6 @@ def _get_couple_count(couples):
     return 1  # Default
 
 
-@app.route('/api/dances/<path:identifier>')
 def api_dance_detail(identifier):
     dance_path = _dance_detail_path(identifier)
     if dance_path is None:
@@ -1005,7 +1007,6 @@ def api_dance_detail(identifier):
     })
 
 
-@app.route('/api/dances/<path:identifier>', methods=['PUT'])
 def api_dance_update(identifier):
     try:
         identifier = ApiRequestValidator.validate_dance_tree_identifier(identifier)
@@ -1076,7 +1077,6 @@ def api_dance_update(identifier):
     return jsonify(response)
 
 
-@app.route('/api/dances/<path:identifier>', methods=['DELETE'])
 def api_dance_delete(identifier):
     try:
         identifier = ApiRequestValidator.validate_dance_tree_identifier(identifier)
@@ -1127,7 +1127,6 @@ def api_dance_delete(identifier):
     return jsonify(response)
 
 
-@app.route('/api/dances/<path:identifier>/tree')
 def api_dance_tree(identifier):
     """
     GET /api/dances/<identifier>/tree - Get dance tree structure.
@@ -1198,7 +1197,6 @@ def api_dance_tree(identifier):
     return jsonify(response)
 
 
-@app.route('/api/dances/<path:identifier>/tree', methods=['PUT'])
 def api_dance_tree_update(identifier):
     try:
         identifier = ApiRequestValidator.validate_dance_tree_identifier(identifier)
@@ -1285,7 +1283,7 @@ def api_dancefloor_init():
     body = request.get_json(silent=True) or {}
     couples = int(body.get('couples', 1))
     name = body.get('name') or 'init'
-    from src.engine.models.DanceFloor import DanceFloor
+    from engine.models.DanceFloor import DanceFloor
     floor = DanceFloor(name, couples)
     serialized = _serialize_floor(floor)
     
@@ -1312,13 +1310,13 @@ def api_dancefloor_execute():
     addons = body.get('addons') or []
     floor_name = body.get('dance_name') or 'execute'
 
-    from src.engine.models.DanceFloor import DanceFloor
+    from engine.models.DanceFloor import DanceFloor
     floor = DanceFloor(floor_name, couples)
     figure = getFigure(figure_name, anchor, addons)
 
     try:
         new_floor = figure.DanceMove(floor)
-        crips = figure.getCrips(floor)
+        crips = showCrips(figure, floor)
     except Exception as exc:
         return jsonify({
             'status': 'error',
@@ -1368,8 +1366,14 @@ def serve_schema(filename):
     return send_from_directory(schema_dir, filename, mimetype='application/json')
 
 
+# Replace legacy dance/figure/jsTree API rules with canonical contracts.
+from src.api.canonical import register_canonical_api
+
+register_canonical_api(app, sys.modules[__name__])
+
+
 if __name__ == "__main__":
     os.makedirs(FIGURES_DIR, exist_ok=True)
     load_Figuers()
-    print("\nStarte DanceTreeApp (Flask). Lege JSON-Dateien in das Verzeichnis 'Figures'.")
+    print("\nStarte DanceTreeApp (Flask). Lege JSON-Dateien in das Verzeichnis 'data/Figures'.")
     app.run(debug=True)

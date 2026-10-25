@@ -3,43 +3,167 @@
   "title": "Dance Figure",
   "type": "object",
   "properties": {
-    "Name": { "type": "string" },
-    "Desc": { "type": "string" },
-    "Anker": { "type": "array", "items": { "type": "number" } },
+    "Name": {
+      "type": "string"
+    },
+    "Desc": {
+      "type": "string"
+    },
+    "Anker": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
     "Addons": {
       "type": "object",
-      "additionalProperties": { "$ref": "#/definitions/Addon" },
+      "additionalProperties": {
+        "$ref": "#/definitions/Addon"
+      },
       "default": {}
     },
     "FigureList": {
       "type": "array",
-      "items": { "type": ["object", "array", "string", "number"] }
+      "items": {
+        "type": [
+          "object",
+          "array",
+          "string",
+          "number"
+        ]
+      }
     },
-    "Bars": { "type": "number" },
-    "Version": { "type": ["number", "integer"] },
-    "StartPos": { "type": "array" },
-    "EndPos": { "type": "array" },
-    "CriptDesc": { "type": "array", "items": { "type": "string" } }
+    "Bars": {
+      "type": "number"
+    },
+    "Version": {
+      "type": [
+        "number",
+        "integer"
+      ]
+    },
+    "StartPos": {
+      "type": "array"
+    },
+    "EndPos": {
+      "type": "array"
+    },
+    "EndFacing": {
+      "type": "array",
+      "description": "Ending facing directions for each dancer"
+    },
+    "CriptDesc": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "StartDancers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?:[1-9][0-9]*[mw])?$",
+        "description": "Dancer ID (couple number plus m/w); an empty string uses automatic preview allocation."
+      },
+      "description": "Preview dancer identifiers parallel to StartPos; runtime validates matching length and uniqueness after automatic allocation."
+    },
+    "StartFacing": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "array",
+            "maxItems": 0
+          },
+          {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "additionalItems": false
+          }
+        ]
+      },
+      "description": "Preview starting-facing targets parallel to StartPos; empty arrays use the default same-row opposite-line target. Runtime validates matching length."
+    }
+  },
+  "not": {
+    "required": [
+      "Faceing"
+    ]
   },
   "oneOf": [
     {
-      "required": ["Name", "Desc", "Formation", "Version", "Addons", "Bars", "StartPos", "EndPos", "CriptDesc"],
-      "not": { "required": ["FigureList"] }
+      "required": [
+        "Name",
+        "Desc",
+        "Formation",
+        "Version",
+        "Addons",
+        "Bars",
+        "StartPos",
+        "EndPos",
+        "CriptDesc"
+      ],
+      "not": {
+        "required": [
+          "FigureList"
+        ]
+      }
     },
     {
-      "required": ["Name", "Desc", "Formation", "Version", "FigureList"],
-      "not": { "required": ["Addons", "Bars", "StartPos", "EndPos", "CriptDesc"] }
+      "required": [
+        "Name",
+        "Desc",
+        "Formation",
+        "Version",
+        "FigureList"
+      ],
+      "not": {
+        "required": [
+          "Addons",
+          "Bars",
+          "StartPos",
+          "EndPos",
+          "CriptDesc"
+        ]
+      }
     }
   ],
   "definitions": {
     "Addon": {
       "type": "object",
       "properties": {
-        "Name": { "type": "string" },
-        "Desc": { "type": "string" },
-        "Version": { "type": ["number", "integer"] }
+        "Name": {
+          "type": "string"
+        },
+        "Desc": {
+          "type": "string"
+        },
+        "Version": {
+          "type": [
+            "number",
+            "integer"
+          ]
+        }
       },
-      "required": ["Name", "Desc", "Version"],
+      "required": [
+        "Name",
+        "Desc",
+        "Version"
+      ],
+      "not": {
+        "required": [
+          "Faceing"
+        ]
+      },
       "additionalProperties": true
     }
   },

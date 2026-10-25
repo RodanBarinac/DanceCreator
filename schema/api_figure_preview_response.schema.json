@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "API Figure Preview Response",
+  "type": "object",
+  "required": [
+    "figureRef",
+    "couples",
+    "incomingFloor",
+    "outgoingFloor",
+    "crips"
+  ],
+  "properties": {
+    "figureRef": {
+      "type": "string"
+    },
+    "couples": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "incomingFloor": {
+      "$ref": "./api_floor_snapshot.schema.json"
+    },
+    "outgoingFloor": {
+      "$ref": "./api_floor_snapshot.schema.json"
+    },
+    "crips": {
+      "$ref": "./api_crips.schema.json"
+    }
+  },
+  "additionalProperties": true
+}

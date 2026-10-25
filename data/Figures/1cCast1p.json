@@ -1,12 +1,42 @@
-{"Partner": [[0,2],[0,0]],
-  "CriptDesc": ["{Dancer} casts down one place.",
-    "{Dancer} casts down one place."],
-  "StartPos": [[0, 0], [0, 2]],
-  "EndPos": [[1, 0], [1, 2]],
+{
+  "Partner": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      -1
+    ]
+  ],
+  "CriptDesc": [
+    "{Dancer} casts down one place.",
+    "{Dancer} casts down one place."
+  ],
+  "StartPos": [
+    [
+      0,
+      -1
+    ],
+    [
+      0,
+      1
+    ]
+  ],
+  "EndPos": [
+    [
+      1,
+      -1
+    ],
+    [
+      1,
+      1
+    ]
+  ],
   "Name": "1cCast1p",
   "Desc": "One couple cast down for one place.",
   "Formation": "cast",
   "Bars": 2,
   "Version": 2,
-  "Addons": {}}
-
+  "Addons": {}
+}

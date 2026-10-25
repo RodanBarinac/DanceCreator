@@ -1,7 +1,0 @@
-{
-  "Name": "1DR",
-  "Desc": "Diagonal Reel on the first diagonal",
-  "Formation": "reel",
-  "FigureList": ["s", [[0,0], "H1DR"], [[0,0], "H1DR"]],
-  "Version": 3
-}

@@ -2,11 +2,24 @@
 
 > **Valid from version:** 0.1.0  
 > **End of validity:** (current)  
-> **Last updated:** 2026-08-23
+> **Last updated:** 2026-09-29
 
 Welcome to the DanceCreator documentation. All project documentation is organized here.
 
 ## Core Documentation
+
+### 🧭 [DANCE_ENGINE_FUTURE_FEATURES.md](DANCE_ENGINE_FUTURE_FEATURES.md)
+**Planned capabilities for execution-state visualization and dance-tree interchange**
+- Before/after dancefloor snapshots for each figure occurrence
+- Floor-state display synchronized with nodes in the dance tree
+- Import/export of dance trees
+
+### 💃 [DANCE_ENGINE_FLOW.md](DANCE_ENGINE_FLOW.md)
+**Conclusive description of the dance engine's data flow (current implementation)**
+- What a Dance, Figure, ComplexFigure, DanceFloor, and Dancer are
+- How figures combine (series/parallel) and how DanceMove executes them
+- How Cripts (bar-numbered instructions) are generated
+- Dedicated chapter on GUI hooks for figures, dances, and the dancefloor
 
 ### 🚀 [COPILOT_INSTRUCTIONS.md](COPILOT_INSTRUCTIONS.md)
 **Critical guidelines for Copilot agents working on this project**

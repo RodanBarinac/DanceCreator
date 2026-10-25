@@ -7,7 +7,10 @@ class Figure(ABC):
     _Bars = 0
     _StartPos = []
     _EndPos = []
-    _Facing = []
+    _EndFacing = []
+    _StartFacing = []
+    _StartDancers = []
+    _Partner = []
     _Anchor = (0, 0)
 
     def clear(self):
@@ -15,7 +18,10 @@ class Figure(ABC):
         self._Bars = 0
         self._StartPos = []
         self._EndPos = []
-        self._Facing = []
+        self._EndFacing = []
+        self._StartFacing = []
+        self._StartDancers = []
+        self._Partner = []
         self._Anchor = (0, 0)
 
     @property
@@ -43,11 +49,29 @@ class Figure(ABC):
     def EndPos(self, newEndPos):
         self._EndPos = newEndPos
     @property
-    def Facing(self):
-        return self._Facing
-    @Facing.setter
-    def Facing(self, newFacing):
-        self._Facing = newFacing
+    def EndFacing(self):
+        return self._EndFacing
+    @EndFacing.setter
+    def EndFacing(self, newFacing):
+        self._EndFacing = newFacing
+    @property
+    def StartFacing(self):
+        return self._StartFacing
+    @StartFacing.setter
+    def StartFacing(self, newFacing):
+        self._StartFacing = newFacing
+    @property
+    def StartDancers(self):
+        return self._StartDancers
+    @StartDancers.setter
+    def StartDancers(self, newDancers):
+        self._StartDancers = newDancers
+    @property
+    def Partner(self):
+        return self._Partner
+    @Partner.setter
+    def Partner(self, newPartner):
+        self._Partner = newPartner
     @property
     def Anchor(self):
         return self._Anchor
@@ -68,84 +92,72 @@ class Figure(ABC):
         return (myPos[0] + self.Anchor[0], myPos[1] + self.Anchor[1])
 
 
-class FigureAddon():
-    _ParentFigureName = ''
-    _newStartPos = []
-    _newEndPos = []
-    _newFacing = []
-    _newPartner = []
-    _newCrips = []
-    _replaceCrips = []
+class FigureAddon:
+    """A selected, data-defined addon applied to one simple figure."""
 
-    def __init__(self, parFig, FigData):
+    def __init__(self, parFig, fig_data):
         self._ParentFigureName = parFig.name
-        self.loadAddon(FigData)
+        self._newBars = None
+        self._newStartPos = []
+        self._newEndPos = []
+        self._newEndFacing = []
+        self._newPartner = []
+        self._newCrips = []
+        self._replaceCrips = []
+        self.Name = ""
+        self.loadAddon(fig_data)
 
     def Desc(self, oldData):
         return oldData
 
+    @staticmethod
+    def _replace_entries(old_data, replacements):
+        result = list(old_data)
+        for index, replacement in enumerate(replacements):
+            if replacement:
+                while len(result) <= index:
+                    result.append([])
+                result[index] = replacement
+        return result
+
+    def Bars(self, oldData):
+        return oldData if self._newBars is None else self._newBars
+
     def StartPos(self, oldData):
-        for i in range(len(self._newStartPos)):
-            if len(self._newStartPos[i]):
-                oldData[i] = self._newStartPos[i]
-        return oldData
+        return self._replace_entries(oldData, self._newStartPos)
 
     def EndPos(self, oldData):
-        for i in range(len(self._newEndPos)):
-            if len(self._newEndPos[i]):
-                oldData[i] = self._newEndPos[i]
-        return oldData
+        return self._replace_entries(oldData, self._newEndPos)
 
-    def Facing(self, oldData):
-        for i in range(len(self._newFacing)):
-            if len(self._newFacing[i]):
-                oldData[i] = self._newFacing[i]
-        return oldData
+    def EndFacing(self, oldData):
+        return self._replace_entries(oldData, self._newEndFacing)
 
     def Partner(self, oldData):
-        for i in range(len(self._newPartner)):
-            if len(self._newPartner[i]):
-                oldData[i] = self._newPartner[i]
-        return oldData
+        return self._replace_entries(oldData, self._newPartner)
 
     def getCrips(self, oldData):
-        for i in range(len(self._newCrips)):
-            if len(self._newCrips[i]):
-                oldData[i].replace(self._replaceCrips[i], self._newCrips[i])
-        return oldData
+        result = list(oldData)
+        for i in range(min(len(self._newCrips), len(result), len(self._replaceCrips))):
+            replacement = self._newCrips[i]
+            target = self._replaceCrips[i]
+            if replacement and target:
+                result[i] = result[i].replace(target, replacement)
+        return result
 
-    def loadAddon(self, FigData):
-        #with open(os.getcwd()+'/Figures/' + Filename + '.json', 'r') as f:
-        #    FigData = json.load(f)
-        myKeys = FigData.keys()
+    def loadAddon(self, fig_data):
+        from src.engine.figures.addon_utils import duration_addon_bars
 
-        if 'Version' in myKeys:
-            if FigData['Version'] != 1:
-                raise Exception("Sorry, not the right file version!")
-        else:
-            raise Exception("Sorry, no file version!")
-
-        if 'Name' in myKeys:
-            self.Name = FigData['Name']
-
-        if 'Desc' in myKeys:
-            self.Desc = FigData['Desc']
-
-        if 'StartPos' in myKeys:
-            self._newStartPos = FigData['StartPos']
-
-        if 'EndPos' in myKeys:
-            self._newEndPos = FigData['EndPos']
-
-        if 'CriptDesc' in myKeys:
-            self._newCrips = FigData['CriptDesc']
-
-        if 'CriptReplace' in myKeys:
-            self._replaceCrips = FigData['CriptReplace']
-
-        if 'Faceing' in myKeys:
-            self._newFacing = FigData['Faceing']
-
-        if 'Partner' in myKeys:
-            self._newPartner = FigData['Partner']
-
+        keys = fig_data.keys()
+        if 'Faceing' in keys:
+            raise ValueError("Unsupported legacy addon key 'Faceing'; use 'EndFacing'.")
+        self.Name = fig_data.get('Name', self.Name)
+        if 'Bars' in keys:
+            self._newBars = fig_data['Bars']
+        elif duration_addon_bars(self.Name) is not None:
+            self._newBars = duration_addon_bars(self.Name)
+        self._newStartPos = fig_data.get('StartPos', [])
+        self._newEndPos = fig_data.get('EndPos', [])
+        self._newEndFacing = fig_data.get('EndFacing', [])
+        self._newPartner = fig_data.get('Partner', [])
+        self._newCrips = fig_data.get('CriptDesc', [])
+        self._replaceCrips = fig_data.get('CriptReplace', [])

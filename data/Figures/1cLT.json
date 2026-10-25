@@ -1,14 +1,76 @@
-{"Partner": [[0,1],[0,0]],
-  "CriptDesc": ["{Dancer} turns left hand with {Partner} and ends in own place.",
-    "{Dancer} turns left hand with {Partner} and ends in own place."],
-  "StartPos": [[0, 0], [0, 1]],
-  "EndPos": [[0, 0], [0, 1]],
+{
+  "Partner": [
+    [
+      0,
+      -1
+    ],
+    [
+      0,
+      1
+    ]
+  ],
+  "CriptDesc": [
+    "{Dancer} turns left hand with {Partner} and ends in own place.",
+    "{Dancer} turns left hand with {Partner} and ends in own place."
+  ],
+  "StartPos": [
+    [
+      0,
+      -1
+    ],
+    [
+      0,
+      1
+    ]
+  ],
+  "EndPos": [
+    [
+      0,
+      -1
+    ],
+    [
+      0,
+      1
+    ]
+  ],
   "Name": "1cLT",
   "Desc": "Two bar left hand turn for one couple",
   "Formation": "turn",
   "Bars": 2,
-  "Anchor": [0,0],
-  "Addons": {},
-  "Version": 2}
-
-
+  "Addons": {
+    "E1c": {
+      "Name": "E1c",
+      "Desc": "End facing the first corner.",
+      "EndPos": [
+        [
+          0.5,
+          0.5
+        ],
+        [
+          -0.5,
+          -0.5
+        ]
+      ],
+      "EndFacing": [
+        [
+          1,
+          1
+        ],
+        [
+          -1,
+          -1
+        ]
+      ],
+      "CriptDesc": [
+        "ends facing {Face}",
+        "ends facing {Face}"
+      ],
+      "CriptReplace": [
+        "ends in own place",
+        "ends in own place"
+      ],
+      "Version": 1
+    }
+  },
+  "Version": 2
+}

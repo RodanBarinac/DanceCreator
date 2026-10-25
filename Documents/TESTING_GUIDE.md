@@ -2,7 +2,7 @@
 
 > **Valid from version:** 0.1.0  
 > **End of validity:** (current)  
-> **Last updated:** 2026-08-23
+> **Last updated:** 2026-10-25
 
 ## Overview
 The `/tests` directory contains **pytest-based tests** for the DanceCreator project.
@@ -16,9 +16,16 @@ The `/tests` directory contains **pytest-based tests** for the DanceCreator proj
 | `test_frontend.py` | Tests GUI/frontend functionality |
 | `test_combine_conflict.py` | Tests DanceFloor conflict resolution |
 | `test_new_system_only.py` | Simple demo: shows Crips and DanceFloor for one dance |
-| `Test_Comparison.py` | Compares new system vs Archive (old system) |
 
 ---
+
+## Frontend interaction tests
+
+The Jest unit suite covers structured crips rendering (with the dancer name shown once), catalog-preview and dance-occurrence instruction selection, and two-way highlighting between instruction lines and dancers on the incoming floor. It also verifies that failed dance-node and catalog previews preserve and dim the last valid outgoing floor, display the backend error above it, mark affected dancers and instruction lines by name/start-position index, disable Apply until a matching node preview succeeds, and clear the error markers after recovery. Run the unit suite with:
+
+```cmd
+npm.cmd run test:unit
+```
 
 ## Running Tests
 
@@ -69,14 +76,6 @@ Shows:
 - Initial DanceFloor
 - ShowCrips output
 - Final DanceFloor after dance moves
-
-### Compare Old vs New System
-```bash
-.\.venv\Scripts\python.exe tests/Test_Comparison.py
-```
-Compares outputs from:
-- New system (from project root)
-- Old system (from /Archive)
 
 ---
 
@@ -188,4 +187,22 @@ Then run it:
 Example:
 ```bash
 .\.venv\Scripts\python.exe -m pytest tests/ -v -k "dance" --tb=short
+```
+
+
+## JavaScript and browser integration tests
+
+Run both JavaScript suites from the repository root with:
+
+```bash
+npm test
+```
+
+`npm test` runs Jest unit tests and then a Playwright integration test of the current `templates/index.html` UI. The browser test starts the real Flask application with `\.venv\Scripts\python.exe` (on Windows), selects the H1DR catalog figure, and checks that the incoming-floor SVG contains a circle and a rotated woman shape whose transform matches its facing arrow. The browser is restricted to requests to the local Flask origin; no external network services or APIs are used.
+
+The integration runner always closes the browser and terminates the Flask process in a `finally` block, including when startup or an assertion fails. Chromium must be available to Playwright. To run only the JavaScript tests:
+
+```bash
+npm run test:unit
+npm run test:integration
 ```

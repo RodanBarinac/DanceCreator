@@ -82,8 +82,8 @@ Accept: application/json
       "Formation": "reel",
       "Bars": 4,
       "Version": 2,
-      "StartPos": [[0, 0], [0.5, 0.5], [1.5, 1.5], [2, 2]],
-      "EndPos": [[2, 2], [1.5, 1.5], [0.5, 0.5], [0, 0]],
+      "StartPos": [[0, -1], [0.5, -0.5], [1.5, 0.5], [2, 1]],
+      "EndPos": [[2, 1], [1.5, 0.5], [0.5, -0.5], [0, -1]],
       "HasFacing": true,
       "Addons": ["E2c", "ELA"]
     },
@@ -95,8 +95,8 @@ Accept: application/json
       "Formation": "reel",
       "Bars": 4,
       "Version": 2,
-      "StartPos": [[0, 2], [0.5, 1.5], [1.5, 0.5], [2, 0]],
-      "EndPos": [[2, 0], [1.5, 0.5], [0.5, 1.5], [0, 2]],
+      "StartPos": [[0, 1], [0.5, 0.5], [1.5, -0.5], [2, -1]],
+      "EndPos": [[2, -1], [1.5, -0.5], [0.5, 0.5], [0, 1]],
       "HasFacing": true,
       "Addons": ["E2c", "ELA"]
     }
@@ -194,15 +194,17 @@ Accept: application/json
 {
   "status": "ok",
   "figure": {
-    "Faceing": [[], [2,2], [0,0], []],
+    "EndFacing": [[], [2,1], [0,-1], []],
     "CriptDesc": [
       "{Dancer} dances half a diagonal reel to end in {EndPos}",
       "{Dancer} dances half a diagonal reel to face {Face}",
       "{Dancer} dances half a diagonal reel to face {Face}",
       "{Dancer} dances half a diagonal reel to end in {EndPos}"
     ],
-    "StartPos": [[0, 0], [0.5, 0.5], [1.5, 1.5], [2, 2]],
-    "EndPos": [[2, 2], [1.5, 1.5], [0.5, 0.5], [0, 0]],
+    "StartPos": [[0, -1], [0.5, -0.5], [1.5, 0.5], [2, 1]],
+    "EndPos": [[2, 1], [1.5, 0.5], [0.5, -0.5], [0, -1]],
+    "StartDancers": ["2m", "1w", "1m", "3w"],
+    "StartFacing": [[0.5, -0.5], [0, -1], [2, 1], [1.5, 0.5]],
     "Name": "Half Diagonal Reel",
     "Desc": "Half Diagonal Reel on the first diagonal",
     "Formation": "reel",
@@ -210,15 +212,15 @@ Accept: application/json
     "Version": 2,
     "Addons": {
       "E2c": {
-        "Faceing": [[], [2,0], [0,2], []],
-        "EndPos": [[2, 2], [1.5, 0.5], [0.5, 1.5], [0, 0]],
+        "EndFacing": [[], [2,-1], [0,1], []],
+        "EndPos": [[2, 1], [1.5, -0.5], [0.5, 0.5], [0, -1]],
         "Name": "E2c",
         "Desc": "End facing 2 corner",
         "Version": 1
       },
       "ELA": {
-        "Faceing": [[], [], [], []],
-        "EndPos": [[2, 2], [2, 1], [0, 1], [0, 0]],
+        "EndFacing": [[], [], [], []],
+        "EndPos": [[2, 1], [2, 0], [0, 0], [0, -1]],
         "Name": "ELA",
         "CriptDesc": ["", "end {EndPos}", "end {EndPos}", ""],
         "CriptReplace": ["", "face {Face}", "face {Face}", ""],
@@ -231,6 +233,12 @@ Accept: application/json
 ```
 
 **Response Schema**: Validated by `figure.schema.json`
+
+Simple figure definitions may include optional `StartDancers` and `StartFacing` arrays parallel to `StartPos`. `StartDancers` IDs have the form `2m` or `1w`; automatic entries are allocated by start order and all resolved IDs must be unique. `StartFacing` entries are empty arrays or `[row, column]` target coordinates, not direction vectors. These values define an isolated catalog preview only; when a figure runs in a dance, floor dancers retain their existing identity and incoming facing.
+
+#### Isolated Figure Preview
+
+`POST /api/figures/<identifier>/preview` renders one simple figure on its own. Preview dancer names/genders come from `StartDancers` (or the automatic allocation), and incoming facing comes from `StartFacing` (or the same-row opposite-line default). Couple color continues to follow the numeric couple part of each dancer ID. `StartFacing` and `StartDancers` do not override the actual dancers or facing inside a dance.
 
 #### Error Responses
 
@@ -282,6 +290,8 @@ Used in the `/api/figures` list response.
   "Version": "integer",
   "StartPos": "array of [row, col] pairs",
   "EndPos": "array of [row, col] pairs",
+  "StartDancers": "optional array of dancer IDs parallel to StartPos",
+  "StartFacing": "optional array of target-coordinate pairs (empty entry means default)",
   "HasFacing": "boolean",
   "Addons": "array of strings"
 }
@@ -535,3 +545,20 @@ All Figure List API responses must conform to these schemas:
 - **Error Response**: `api_error.schema.json`
 
 Use these schemas in your client and server validation code to ensure compatibility.
+
+
+## Centered-grid coordinates and composable addons
+
+Figure offsets use the centered grid: columns are `-1` (men), `0` (centre), and `+1`
+(ladies); rows remain 1-based and unchanged. Serialized end-facing data uses `EndFacing`; the
+legacy `Faceing` spelling is not accepted, and `Facing` alone is not a key or property.
+Optional `StartDancers` and `StartFacing` fields are available for isolated preview; their validation and execution semantics are described above.
+
+Engine-reserved addon names `B<n>` (capital B followed by any positive integer) set the bar count
+on any simple figure and are not defined in the figure file; they change bars only, and can
+shorten or lengthen the figure. Other addons can modify positions, end facing, and/or instruction
+text. Addons are combined, but changing the same field for the same dancer is an error; multiple
+`B<n>` duration addons are also an error. `1cLT` with `B4` and `E1c` replaces `1cLT1c`: `B4`
+sets four bars only, while `E1c` changes end positions, end facing, and ending text without
+changing bars. Two half reels each using `B3` form a six-bar reel; there are no separate 6- or
+8-bar reel figures.

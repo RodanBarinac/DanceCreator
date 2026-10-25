@@ -16,10 +16,10 @@ def make_valid_dance_payload():
         "FigureList": [
             "s",
             [
-                [[1, 1], "H1DR"],
+                [[1, 0], "H1DR"],
                 ["p", [
-                    [[2, 1], ["Turn RH", ["fast"]]],
-                    [[3, 1], "Circle"]
+                    [[2, 0], ["Turn RH", ["fast"]]],
+                    [[3, 0], "Circle"]
                 ]]
             ]
         ],
@@ -47,7 +47,7 @@ def make_valid_tree_payload():
                             "type": "figure",
                             "data": {
                                 "figureName": "H1DR",
-                                "anchor": [1, 1],
+                                "anchor": [1, 0],
                                 "addons": [],
                             },
                         }
@@ -66,8 +66,8 @@ def make_valid_atomic_figure_payload():
         "Version": 2,
         "Addons": {},
         "Bars": 4,
-        "StartPos": [[0, 0], [0, 2]],
-        "EndPos": [[1, 0], [1, 2]],
+        "StartPos": [[0, -1], [0, 1]],
+        "EndPos": [[1, -1], [1, 1]],
         "CriptDesc": ["Turn right hand"],
     }
 
@@ -180,7 +180,7 @@ class TestValidateDanceUpdateRequest:
 
     def test_figure_list_requires_valid_group_marker(self):
         payload = make_valid_dance_payload()
-        payload["FigureList"] = ["x", [[[1, 1], "H1DR"]]]
+        payload["FigureList"] = ["x", [[[1, 0], "H1DR"]]]
 
         assert_validation_error(
             lambda: ApiRequestValidator.validate_dance_update_request(payload),

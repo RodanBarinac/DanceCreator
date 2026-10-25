@@ -14,6 +14,8 @@ import os
 from typing import Dict, Any, Tuple, List
 import jsonschema
 
+from src.engine.models.DanceFloor import default_facing_target
+
 
 class DancefloorContractError(Exception):
     """Base exception for dancefloor contract violations."""
@@ -126,13 +128,13 @@ class DancefloorSerializer:
         positions = {}
 
         for (row, col), (dancer, facing) in dancer_map.items():
-            row = int(row)
-            col = int(col)
+            row = int(row) if float(row).is_integer() else row
+            col = int(col) if float(col).is_integer() else col
             
-            # Generate position key based on column (1=man, 3=woman)
-            if col == 1:
+            # Side positions retain the conventional couple labels.
+            if col == -1:
                 position_key = f"{row}m"
-            elif col == 3:
+            elif col == 1:
                 position_key = f"{row}w"
             else:
                 position_key = f"{row}:{col}"
@@ -150,14 +152,14 @@ class DancefloorSerializer:
                     dancer_gender = 'F'
                 else:
                     # Default based on position
-                    dancer_gender = 'M' if col == 1 else 'F'
+                    dancer_gender = 'M' if col < 0 else 'F'
 
             # Convert facing to list if needed
             if isinstance(facing, (list, tuple)) and len(facing) >= 2:
-                facing_coords = [int(facing[0]), int(facing[1])]
+                facing_coords = [facing[0], facing[1]]
             else:
-                # Default facing straight ahead
-                facing_coords = [row, col + 2 if col == 1 else col - 2]
+                # Facing is a same-row target on the opposite line.
+                facing_coords = default_facing_target((row, col))
 
             positions[position_key] = {
                 'dancer': {
@@ -243,23 +245,23 @@ if __name__ == '__main__':
         'positions': {
             '1m': {
                 'dancer': {'name': '1m', 'gender': 'M'},
-                'coord': [1, 1],
-                'facing': [1, 3]
+                'coord': [1, -1],
+                'facing': [1, 1]
             },
             '1w': {
                 'dancer': {'name': '1w', 'gender': 'F'},
-                'coord': [1, 3],
-                'facing': [1, 1]
+                'coord': [1, 1],
+                'facing': [1, -1]
             },
             '2m': {
                 'dancer': {'name': '2m', 'gender': 'M'},
-                'coord': [2, 1],
-                'facing': [2, 3]
+                'coord': [2, -1],
+                'facing': [2, 1]
             },
             '2w': {
                 'dancer': {'name': '2w', 'gender': 'F'},
-                'coord': [2, 3],
-                'facing': [2, 1]
+                'coord': [2, 1],
+                'facing': [2, -1]
             }
         }
     }
@@ -280,7 +282,7 @@ if __name__ == '__main__':
         'positions': {
             '1m': {
                 'dancer': {'name': '1m', 'gender': 'M'},
-                'coord': [1, 1]
+                'coord': [1, -1]
                 # Missing 'facing' - this should fail
             }
         }

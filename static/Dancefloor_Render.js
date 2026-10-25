@@ -86,19 +86,37 @@ export function computeBBox(positions, fallback = {minX:0,minY:0,maxX:5,maxY:5})
 
 // main renderer
 export function renderDanceFloor(floorJson, options = {}) {
-  // options: {width, height, paddingPx, tokenLogicalRadius, palette}
+  // options: {width, height, paddingPx, palette}
   const width = options.width || 800;
   const height = options.height || 600;
   const paddingPx = options.paddingPx != null ? options.paddingPx : 28;
   const palette = options.palette || COLOR_PALETTE;
-  const tokenLogicalRadius = options.tokenLogicalRadius != null ? options.tokenLogicalRadius : 0.5;
+  const tokenDiameter = 0.45;
 
   const svg = createSVG(width, height, `0 0 ${width} ${height}`);
+  svg.classList.add('dancefloor-svg');
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  svg.setAttribute('aria-label', options.contextLabel || 'Dance floor state');
+  if (options.selectedNodeId) {
+    svg.setAttribute('data-selected-node-id', String(options.selectedNodeId));
+  }
   makeDefs(svg);
   const svgNS = 'http://www.w3.org/2000/svg';
 
   const positions = floorJson.positions || {};
-  const bbox = computeBBox(positions, {minX:0,minY:0,maxX:options.couples||4,maxY:options.couples||4});
+  const displayCoord = coord => [Number(coord[0]), -Number(coord[1])];
+  const displayPositions = Object.fromEntries(
+    Object.entries(positions).map(([key, position]) => [
+      key,
+      { ...position, coord: Array.isArray(position.coord) ? displayCoord(position.coord) : null }
+    ])
+  );
+  const bbox = computeBBox(displayPositions, {
+    minX: 0,
+    minY: -(options.couples || 4),
+    maxX: options.couples || 4,
+    maxY: 0
+  });
   // map function closure
   const mapper = coord => mapLogicalToPixel(coord, bbox, [width, height], paddingPx);
 
@@ -109,45 +127,41 @@ export function renderDanceFloor(floorJson, options = {}) {
   header.setAttribute('fill','#ffffff');
   svg.appendChild(header);
 
-  // men/woman simple headers: compute approximate column centers using bbox
-  const colLeft = bbox[0];
-  const colRight = bbox[2];
-  // we will place "Men" above x ~ 1/3 and "Woman" above x ~ 2/3 of logical span
-  const logicalSpanX = (bbox[2] - bbox[0]) || 1;
-  const menLogicalX = bbox[0] + logicalSpanX * 0.33;
-  const womLogicalX = bbox[0] + logicalSpanX * 0.66;
-  const menPos = mapper([menLogicalX, bbox[1] - 0.8]);
-  const womPos = mapper([womLogicalX, bbox[1] - 0.8]);
+  if (options.contextLabel) {
+    const context = document.createElementNS(svgNS, 'text');
+    context.setAttribute('x', String(paddingPx));
+    context.setAttribute('y', '18');
+    context.setAttribute('font-size', '12');
+    context.setAttribute('fill', '#374151');
+    context.setAttribute('data-context', options.contextType || 'floor');
+    context.textContent = options.contextLabel;
+    svg.appendChild(context);
+  }
 
-  const menText = document.createElementNS(svgNS,'text');
-  menText.setAttribute('x', String(menPos.x));
-  menText.setAttribute('y', '30');
-  menText.setAttribute('text-anchor','middle');
-  menText.setAttribute('font-size','20');
-  menText.setAttribute('fill','#111827');
-  menText.textContent = 'Men';
-  svg.appendChild(menText);
+  const sideLabels = [
+    ['Ladies', 30],
+    ['Men', height - 8]
+  ];
+  sideLabels.forEach(([label, y]) => {
+    const text = document.createElementNS(svgNS, 'text');
+    text.setAttribute('x', String(width / 2));
+    text.setAttribute('y', String(y));
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('font-size', '16');
+    text.setAttribute('fill', '#111827');
+    text.textContent = label;
+    svg.appendChild(text);
+  });
 
-  const womText = document.createElementNS(svgNS,'text');
-  womText.setAttribute('x', String(womPos.x));
-  womText.setAttribute('y', '30');
-  womText.setAttribute('text-anchor','middle');
-  womText.setAttribute('font-size','20');
-  womText.setAttribute('fill','#111827');
-  womText.textContent = 'Woman';
-  svg.appendChild(womText);
-
-  // rows labels: use integer y positions within bbox (if floor has rows 1..N)
-  // find integer y values in range
-  const minY = Math.ceil(bbox[1]);
-  const maxY = Math.floor(bbox[3]);
-  for (let r = minY; r <= maxY; r++) {
-    const p = mapper([bbox[0]-0.8, r]);
+  const minRow = Math.ceil(bbox[0]);
+  const maxRow = Math.floor(bbox[2]);
+  for (let r = minRow; r <= maxRow; r++) {
+    const p = mapper([r, bbox[3] - 0.2]);
     const t = document.createElementNS(svgNS,'text');
     t.setAttribute('x', String(p.x));
-    t.setAttribute('y', String(p.y + 6)); // tweak for baseline
+    t.setAttribute('y', String(p.y + 6));
     t.setAttribute('text-anchor','middle');
-    t.setAttribute('font-size','18');
+    t.setAttribute('font-size','12');
     t.setAttribute('fill','#374151');
     t.setAttribute('font-weight','700');
     t.textContent = String(r);
@@ -159,30 +173,77 @@ export function renderDanceFloor(floorJson, options = {}) {
     return palette[(index - 1) % palette.length];
   }
 
+  const selectedPositions = new Set(
+    (options.selectedPositions || []).map(position =>
+      `${Number(position[0])},${Number(position[1])}`
+    )
+  );
+  const errorDancers = new Set((options.errorDancers || []).map(String));
+  const errorPositions = new Set((options.errorPositions || []).map(position =>
+    `${Number(position[0])},${Number(position[1])}`
+  ));
+
   // render tokens
+  let positionIndex = 0;
   for (const key in positions) {
+    positionIndex += 1;
     const pos = positions[key];
-    const coord = Array.isArray(pos.coord) ? pos.coord.map(Number) : null;
-    if (!coord) continue;
+    const rawCoord = Array.isArray(pos.coord) ? pos.coord.map(Number) : null;
+    if (!rawCoord || rawCoord.length < 2 || !rawCoord.every(Number.isFinite)) continue;
+    const coord = displayCoord(rawCoord);
     // compute pixel center and scale
     const {x,y,scale} = mapper(coord);
-    // decide couple index: use rounded x (row) if obvious or try reading from key (like '1m' => 1)
-    let coupleIndex = null;
-    const m = String(key).match(/^(\d+)/);
-    if (m) coupleIndex = Number(m[1]);
+    const dancer = pos.dancer || {};
+    const coupleIdentity = String(dancer.name || key);
+    const m = coupleIdentity.match(/^(\d+)[mw]$/i) || String(key).match(/^(\d+)[mw]$/i);
+    let coupleIndex = m ? Number(m[1]) : null;
     if (!coupleIndex && Number.isFinite(coord[0])) coupleIndex = Math.round(coord[0]);
     if (!coupleIndex) coupleIndex = 1;
     const color = coupleColor(coupleIndex);
+    const isErrorDancer = errorDancers.has(String(dancer.name || key)) ||
+      errorDancers.has(`start position ${positionIndex}`) ||
+      errorPositions.has(`${rawCoord[0]},${rawCoord[1]}`);
 
-    const dancer = pos.dancer || {};
-    const gender = (dancer.gender || '').toString().toLowerCase().startsWith('m') ? 'M' : 'W';
-    // compute pixel radius so tokenLogicalRadius (logical units) maps to px
-    const unitMap = mapLogicalToPixel([bbox[0]+1, bbox[1]], bbox, [width,height], paddingPx);
-    // distance in px for one logical unit: use scale returned by mapper (scale)
-    const pxPerLogical = unitMap.scale;
-    const pxRadius = Math.max(8, tokenLogicalRadius * pxPerLogical); // min size
+    const genderValue = (dancer.gender || '').toString().toLowerCase();
+    const gender = genderValue.startsWith('m') ? 'M' : genderValue.startsWith('f') ? 'W' : 'D';
+    const pxRadius = tokenDiameter * scale / 2;
     const tokenGroup = document.createElementNS(svgNS,'g');
+    let rotatableShape = null;
+    if (isErrorDancer) {
+      tokenGroup.classList.add('invalid-preview-marker');
+      const outline = document.createElementNS(svgNS, 'circle');
+      outline.setAttribute('cx', '0');
+      outline.setAttribute('cy', '0');
+      outline.setAttribute('r', String(pxRadius * 1.45));
+      outline.setAttribute('fill', 'none');
+      outline.setAttribute('stroke', '#c62828');
+      outline.setAttribute('stroke-width', '4');
+      outline.setAttribute('class', 'error-outline');
+      tokenGroup.appendChild(outline);
+    }
     tokenGroup.setAttribute('transform', `translate(${x}, ${y})`);
+    tokenGroup.setAttribute('data-position', `${rawCoord[0]},${rawCoord[1]}`);
+    tokenGroup.setAttribute('data-dancer', String(dancer.name || key));
+    tokenGroup.setAttribute(
+      'data-selected',
+      String(selectedPositions.has(`${rawCoord[0]},${rawCoord[1]}`))
+    );
+    tokenGroup.setAttribute(
+      'aria-label',
+      `${dancer.name || key}, position ${rawCoord[0]}, ${rawCoord[1]}, facing ${String(pos.facing || 0)}`
+    );
+    if (typeof options.onDancerSelect === 'function') {
+      tokenGroup.setAttribute('role', 'button');
+      tokenGroup.setAttribute('tabindex', '0');
+      const selectDancer = () => options.onDancerSelect(dancer.name || key, [...rawCoord]);
+      tokenGroup.addEventListener('click', selectDancer);
+      tokenGroup.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          selectDancer();
+        }
+      });
+    }
 
     if (gender === 'M') {
       const c = document.createElementNS(svgNS,'circle');
@@ -191,8 +252,12 @@ export function renderDanceFloor(floorJson, options = {}) {
       c.setAttribute('fill', color);
       c.setAttribute('stroke','#111827');
       c.setAttribute('stroke-width','2');
+      if (selectedPositions.has(`${rawCoord[0]},${rawCoord[1]}`)) {
+        c.setAttribute('stroke', '#d84315');
+        c.setAttribute('stroke-width', '4');
+      }
       tokenGroup.appendChild(c);
-    } else {
+    } else if (gender === 'W') {
       // square centered
       const s = document.createElementNS(svgNS,'rect');
       const side = pxRadius * 2;
@@ -204,33 +269,64 @@ export function renderDanceFloor(floorJson, options = {}) {
       s.setAttribute('fill', color);
       s.setAttribute('stroke','#111827');
       s.setAttribute('stroke-width','2');
+      if (selectedPositions.has(`${rawCoord[0]},${rawCoord[1]}`)) {
+        s.setAttribute('stroke', '#d84315');
+        s.setAttribute('stroke-width', '4');
+      }
       tokenGroup.appendChild(s);
+      rotatableShape = s;
+    } else {
+      const diamond = document.createElementNS(svgNS, 'polygon');
+      diamond.setAttribute(
+        'points',
+        `0,${-pxRadius} ${pxRadius},0 0,${pxRadius} ${-pxRadius},0`
+      );
+      diamond.setAttribute('fill', color);
+      diamond.setAttribute(
+        'stroke',
+        selectedPositions.has(`${rawCoord[0]},${rawCoord[1]}`) ? '#d84315' : '#111827'
+      );
+      diamond.setAttribute(
+        'stroke-width',
+        selectedPositions.has(`${rawCoord[0]},${rawCoord[1]}`) ? '4' : '2'
+      );
+      tokenGroup.appendChild(diamond);
+      rotatableShape = diamond;
     }
 
     // facing: compute rotation angle. If facing is vector or degrees. Default 0 (right).
     const facing = pos.facing;
-    const angle = degFromFacing(facing || 0);
+    const angle = Array.isArray(facing) && facing.length >= 2
+      ? degFromFacing([
+        Number(facing[0]) - rawCoord[0],
+        -(Number(facing[1]) - rawCoord[1])
+      ])
+      : degFromFacing(facing || 0);
+    if (rotatableShape) {
+      rotatableShape.setAttribute('transform', `rotate(${angle})`);
+    }
     // Draw arrowhead as small polygon placed at token edge and rotated with tokenGroup
     const arrow = document.createElementNS(svgNS,'polygon');
     // position arrow at (token radius + small gap) along +X axis, but the whole group will be rotated by angle
-    const arrowDist = pxRadius + Math.max(6, Math.round(pxPerLogical*0.15));
+    const arrowDist = pxRadius + scale * 0.06;
     const ax = arrowDist;
     const ay = 0;
     // small triangular arrow pointing outward (triangle with tip at (ax+6, 0))
-    const tip = ax + Math.max(6, Math.round(pxPerLogical*0.2));
-    const base1Y = -Math.max(4, Math.round(pxPerLogical*0.12));
-    const base2Y = Math.max(4, Math.round(pxPerLogical*0.12));
+    const tip = ax + scale * 0.12;
+    const base1Y = -scale * 0.04;
+    const base2Y = scale * 0.04;
     arrow.setAttribute('points', `${tip},0 ${ax},${base1Y} ${ax},${base2Y}`);
     arrow.setAttribute('fill','#111827');
     // wrap arrow in rotation group so arrow rotates around center
     const arrowWrap = document.createElementNS(svgNS,'g');
     arrowWrap.setAttribute('transform', `rotate(${angle})`);
+    arrowWrap.setAttribute('data-facing', String(angle));
     arrowWrap.appendChild(arrow);
     tokenGroup.appendChild(arrowWrap);
 
     // accessibility: role and title
     const title = document.createElementNS(svgNS,'title');
-    title.textContent = `${gender} couple ${coupleIndex}`;
+    title.textContent = `${dancer.name || key} (${gender}) at ${rawCoord[0]}, ${rawCoord[1]}, facing ${angle} degrees`;
     tokenGroup.appendChild(title);
 
     svg.appendChild(tokenGroup);
@@ -242,7 +338,7 @@ export function renderDanceFloor(floorJson, options = {}) {
 /* Example usage:
 import { renderDanceFloor } from './dancefloorRenderer.js';
 const floor = await fetch('/api/dancefloor/init', {method:'POST', body: JSON.stringify({couples:4})}).then(r=>r.json());
-const svgEl = renderDanceFloor(floor, {width:900,height:600, paddingPx:24, tokenLogicalRadius:0.5});
+const svgEl = renderDanceFloor(floor, {width:900,height:600, paddingPx:24});
 document.getElementById('middle').innerHTML=''; // panel
 document.getElementById('middle').appendChild(svgEl);
 */

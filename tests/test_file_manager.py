@@ -5,9 +5,11 @@ These tests cover atomic JSON writes, backup retention, rollback, and
 optimistic-concurrency hash checks without touching repository data files.
 """
 
+import importlib
 import json
 import os
 import sys
+from datetime import datetime as DateTime
 from pathlib import Path
 
 import pytest
@@ -20,8 +22,8 @@ from src.engine.persistence.FileManager import FileManager, FileManagerError
 class TestBackupFile:
     """Test file backup creation and retention behavior."""
 
-    def test_backup_file_creates_timestamped_backup(self, tmp_path):
-        """Test that backing up a file creates a .bak copy on disk."""
+    def test_backup_file_creates_numbered_backup(self, tmp_path):
+        """Test that backing up a file creates a numbered .bak copy on disk."""
         source = tmp_path / "dance.json"
         source.write_text('{"Name": "Original"}\n', encoding="utf-8")
 
@@ -29,7 +31,7 @@ class TestBackupFile:
 
         assert backup_path.exists()
         assert backup_path.suffix == ".bak"
-        assert backup_path.name.startswith("dance.json.")
+        assert backup_path.name == "dance.json.00000001.bak"
 
     def test_backup_file_returns_backup_path(self, tmp_path):
         """Test that backup_file returns the created backup path."""
@@ -66,6 +68,64 @@ class TestBackupFile:
 
         with pytest.raises(FileManagerError, match="missing file"):
             FileManager.backup_file(str(missing))
+
+    def test_backup_file_prunes_by_creation_order_when_timestamps_match(
+        self, tmp_path, monkeypatch
+    ):
+        """Keep the newest backups even when the clock gives every backup the same timestamp."""
+        fixed_time = DateTime(2026, 1, 2, 3, 4, 5, 678901)
+
+        class FixedDateTime:
+            @staticmethod
+            def now():
+                return fixed_time
+
+        file_manager_module = importlib.import_module("src.engine.persistence.FileManager")
+        monkeypatch.setattr(file_manager_module, "datetime", FixedDateTime, raising=False)
+
+        source = tmp_path / "dance.json"
+        created_backups = []
+        for index in range(12):
+            source.write_text(f'{{"Name": "Version {index}"}}\n', encoding="utf-8")
+            created_backups.append(Path(FileManager.backup_file(str(source))))
+
+        retained_backups = list(tmp_path.glob("dance.json.*.bak"))
+        retained_contents = {
+            json.loads(backup.read_text(encoding="utf-8"))["Name"]
+            for backup in retained_backups
+        }
+
+        assert len(retained_backups) == FileManager.MAX_BACKUPS
+        assert retained_contents == {f"Version {index}" for index in range(7, 12)}
+        assert all(backup.is_file() for backup in created_backups[-FileManager.MAX_BACKUPS :])
+
+    def test_backup_file_ignores_legacy_timestamp_backups_when_pruning(self, tmp_path):
+        """Leave legacy timestamp-named backups alone and prune numbered backups only."""
+        source = tmp_path / "dance.json"
+        legacy_backup = tmp_path / "dance.json.20260101010101000000.bak"
+        source.write_text('{"Name": "Current"}\n', encoding="utf-8")
+        legacy_backup.write_text('{"Name": "Legacy"}\n', encoding="utf-8")
+
+        for index in range(FileManager.MAX_BACKUPS + 2):
+            source.write_text(f'{{"Name": "Version {index}"}}\n', encoding="utf-8")
+            FileManager.backup_file(str(source))
+
+        numbered_backups = [
+            backup
+            for backup in tmp_path.glob("dance.json.*.bak")
+            if (
+                backup.name[len("dance.json.") : -len(".bak")].isdigit()
+                and len(backup.name[len("dance.json.") : -len(".bak")]) != 20
+            )
+        ]
+        retained_contents = {
+            json.loads(backup.read_text(encoding="utf-8"))["Name"]
+            for backup in numbered_backups
+        }
+
+        assert len(numbered_backups) == FileManager.MAX_BACKUPS
+        assert retained_contents == {f"Version {index}" for index in range(2, 7)}
+        assert json.loads(legacy_backup.read_text(encoding="utf-8"))["Name"] == "Legacy"
 
     def test_backup_file_prunes_old_backups_beyond_limit(self, tmp_path):
         """Test that only the newest MAX_BACKUPS backups are retained."""

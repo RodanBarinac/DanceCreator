@@ -25,7 +25,7 @@ class TreeConversionError(Exception):
 class TreeConverter:
     """Converts validated jsTree nodes into Dance.FigureList data."""
 
-    DEFAULT_ANCHOR = [1, 1]
+    DEFAULT_ANCHOR = [1, 0]
     MAX_DEPTH = 50
     GROUP_TYPES = {"s", "p"}
     NODE_TYPES = {"root", "group", "figure"}
@@ -195,20 +195,22 @@ class TreeConverter:
         if not isinstance(anchor, (list, tuple)) or len(anchor) < 2:
             return list(cls.DEFAULT_ANCHOR)
 
-        row = cls._coerce_anchor_value(anchor[0])
-        col = cls._coerce_anchor_value(anchor[1])
+        row = cls._coerce_anchor_value(anchor[0], default=1, minimum=1)
+        col = cls._coerce_anchor_value(anchor[1], default=0)
         return [row, col]
 
     @classmethod
-    def _coerce_anchor_value(cls, value: Any) -> int:
+    def _coerce_anchor_value(
+        cls, value: Any, *, default: int, minimum: int | None = None
+    ) -> int:
         if isinstance(value, bool):
-            return 1
+            return default
         try:
             coerced = int(value)
         except (TypeError, ValueError):
-            return 1
-        if coerced < 1:
-            return 1
+            return default
+        if minimum is not None and coerced < minimum:
+            return default
         return coerced
 
     @classmethod

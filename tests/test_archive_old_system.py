@@ -5,7 +5,7 @@ import sys
 import os
 from pathlib import Path
 
-# Set working directory to project root so Dances/ and Figures/ paths work
+# Set working directory to project root so data/Dances/ and data/Figures/ paths work
 PROJECT_ROOT = Path(__file__).parent.parent
 os.chdir(str(PROJECT_ROOT))
 

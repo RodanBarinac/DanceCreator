@@ -1,5 +1,10 @@
 from . import Dancer
 
+def default_facing_target(position):
+    """Return the opposite-line target coordinate for a centered-grid position."""
+    row, column = position
+    return [row, -column]
+
 def combineDanceFloor(oldDFs = []):
     newDF = DanceFloor('dummy')
     newBars = []
@@ -66,7 +71,7 @@ class DanceFloor:
             myPos = (myPos[0], myPos[1])
 
         if myPos in self._DanceFloorNames:
-            myName = self._DanceFloorNames[myPos] + 's position'
+            myName = self._DanceFloorNames[myPos] + "'s position"
         else:
             myName = ''
 
@@ -85,9 +90,9 @@ class DanceFloor:
     def setupDanceFloorNames(self, NofCouples):
         for myi in range(NofCouples):
             myi += 1
-            self._DanceFloorNames[(myi ,1)] = str(myi) + 'm'
-            self._DanceFloorNames[(myi ,2)] = 'between ' + str(myi) + 'c'
-            self._DanceFloorNames[(myi ,3)] = str(myi) + 'w'
+            self._DanceFloorNames[(myi, -1)] = str(myi) + 'm'
+            self._DanceFloorNames[(myi, 0)] = 'between ' + str(myi) + 'c'
+            self._DanceFloorNames[(myi, 1)] = str(myi) + 'w'
 
     def setupDancefloor(self, NofCouples):
         for myi in range(NofCouples):
@@ -95,8 +100,8 @@ class DanceFloor:
             myMan = Dancer.Dancer(str(myi) + 'm', 'male')
             myLady = Dancer.Dancer(str(myi) + 'w', 'female')
 
-            self.addDancer(myMan, (myi, 1), [myi, 3])
-            self.addDancer(myLady, (myi, 3),[myi, 1])
+            self.addDancer(myMan, (myi, -1), default_facing_target((myi, -1)))
+            self.addDancer(myLady, (myi, 1), default_facing_target((myi, 1)))
     def copy(self):
         newDF = DanceFloor('dummy')
 
@@ -139,13 +144,13 @@ class DanceFloor:
             maxRow = self.maxRow
 
         myDesc = '\nEnd of Bar: ' + str(self.AktBar - 1) + '\n'
-        myDesc = myDesc + '    Row |   Men   | Between |   Lady  \n'
-        myDesc = myDesc + '   ------+---------+---------+---------\n'
+        myDesc = myDesc + '    Row |   Men(-1) | Between(0) | Lady(+1)\n'
+        myDesc = myDesc + '   ------+-----------+------------+----------\n'
 
         for row in range(1, int(maxRow) + 1):
-            men = self._cell_label(row, 1)
-            middle = self._cell_label(row, 2)
-            lady = self._cell_label(row, 3)
-            myDesc = myDesc + '    {0:>3} | {1:^7} | {2:^7} | {3:^7}\n'.format(row, men, middle, lady)
+            men = self._cell_label(row, -1)
+            middle = self._cell_label(row, 0)
+            lady = self._cell_label(row, 1)
+            myDesc = myDesc + '    {0:>3} | {1:^9} | {2:^10} | {3:^8}\n'.format(row, men, middle, lady)
 
         return myDesc

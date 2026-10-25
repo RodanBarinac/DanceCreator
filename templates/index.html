@@ -1,320 +1,116 @@
-<!DOCTYPE html>
-<html lang="de">
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>DanceCreator</title>
-    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/themes/default/style.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
-    <style>
-      * { box-sizing: border-box; }
-      body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
-      
-      /* Header/Toolbar */
-      header { background: #333; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-      header h2 { margin: 0; font-size: 20px; }
-      #status { font-size: 11px; color: #bbb; }
-      .toolbar-buttons { display: flex; gap: 8px; }
-      
-      /* Layout */
-      #container { display: flex; height: calc(100vh - 50px); }
-      .panel { padding: 12px; overflow: auto; background: white; }
-      #left { width: 320px; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; }
-      #middle { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #e0e0e0; min-width: 200px; }
-      #right { width: 300px; display: flex; flex-direction: column; min-width: 200px; }
-      
-      /* Splitters */
-      .splitter { width: 6px; background: linear-gradient(90deg, rgba(0,0,0,0.02), rgba(0,0,0,0.04)); cursor: col-resize; user-select: none; transition: background 0.2s; }
-      .splitter:hover { background: linear-gradient(90deg, rgba(0,0,0,0.06), rgba(0,0,0,0.08)); }
-      
-      /* Left Panel - Figure List */
-      #left h3 { margin: 0 0 10px 0; font-size: 14px; }
-      #search-box { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-      #search { padding: 6px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px; }
-      #filter-formation { padding: 6px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px; }
-      
-      #fig-list { list-style: none; padding: 0; margin: 0; flex: 1; overflow-y: auto; }
-      #fig-list li { 
-        padding: 8px; 
-        cursor: pointer; 
-        border-bottom: 1px solid #f0f0f0; 
-        font-size: 12px;
-        transition: background 0.2s;
-      }
-      #fig-list li:hover { background: #f9f9f9; }
-      #fig-list li.selected { background: #e3f2fd; color: #1565c0; font-weight: 500; }
-      
-      /* Middle Panel - Details */
-      #middle h3 { margin: 0 0 10px 0; font-size: 14px; }
-      #figure-details { flex: 1; overflow-y: auto; }
-      #figure-name { display: block; font-size: 14px; font-weight: bold; margin-bottom: 8px; }
-      #figure-meta { font-size: 11px; line-height: 1.5; margin-bottom: 10px; color: #444; }
-      #figure-json { 
-        background: #fafafa; 
-        padding: 8px; 
-        border-radius: 3px; 
-        max-height: 150px; 
-        overflow: auto; 
-        font-size: 11px; 
-        font-family: monospace; 
-        white-space: pre-wrap; 
-        word-break: break-word;
-        border: 1px solid #e0e0e0;
-        margin-bottom: 10px;
-      }
-      .figure-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px; }
-      .figure-table th, .figure-table td { border: 1px solid #e0e0e0; padding: 4px 6px; text-align: left; vertical-align: top; }
-      .figure-table th { background: #f7f7f7; }
-      .figure-crips { margin: 0; padding-left: 18px; font-size: 11px; }
-      .empty-note { font-size: 11px; color: #777; font-style: italic; }
-      
-      /* Control Section */
-      .control-section { border-top: 1px solid #e0e0e0; padding-top: 10px; font-size: 12px; }
-      .control-section h4 { margin: 0 0 8px 0; font-size: 12px; }
-      .form-group { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 12px; }
-      .form-group input { width: 60px; padding: 4px; border: 1px solid #ddd; border-radius: 3px; }
-      .form-group label { flex-shrink: 0; }
-      textarea { width: 100%; height: 50px; padding: 6px; font-family: monospace; font-size: 11px; border: 1px solid #ddd; border-radius: 3px; margin-bottom: 6px; }
-      
-      .button-group { display: flex; gap: 6px; margin-top: 8px; }
-      button { padding: 6px 12px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 3px; font-size: 12px; }
-      button:hover { background: #0056b3; }
-      
-      /* Right Panel - Tree */
-      #right h3 { margin: 0 0 10px 0; font-size: 14px; }
-      #dance-select { padding: 6px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px; margin-bottom: 8px; }
-      #dance-summary {
-        font-size: 11px;
-        line-height: 1.35;
-        color: #444;
-        margin-bottom: 8px;
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 2px 8px;
-        max-height: 72px;
-        overflow: auto;
-      }
-      #floor-panel { margin-bottom: 8px; }
-      #floor-status { font-size: 10px; color: #666; margin-bottom: 6px; }
-      #dance-floor-canvas { width: 100%; min-height: 220px; border: 1px solid #ddd; border-radius: 3px; background: #fff; display: block; margin-bottom: 8px; }
-      #dance-tree { flex: 1; min-height: 180px; border: 1px solid #ddd; padding: 6px; background: #fafafa; overflow: auto; border-radius: 3px; }
-      
-      /* Modal */
-      .hidden { display: none !important; }
-      #conflict-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-      .modal-box { background: white; padding: 20px; border-radius: 6px; max-width: 500px; max-height: 80vh; overflow: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-      .modal-box h3 { margin-top: 0; }
-      #conflict-details { background: #f5f5f5; padding: 8px; border-radius: 3px; max-height: 200px; overflow: auto; font-size: 11px; font-family: monospace; white-space: pre-wrap; word-break: break-word; margin-bottom: 10px; border: 1px solid #ddd; }
-      .modal-buttons { display: flex; gap: 6px; justify-content: flex-end; margin-top: 10px; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DanceCreator</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script type="module" src="/static/app.js"></script>
 </head>
-<body>
-  <!-- Header / Toolbar -->
-  <header>
-    <div id="status">Ready</div>
-    <h2>DanceCreator</h2>
-    <div class="toolbar-buttons">
-      <button id="btn-load" title="Load Dance">Load</button>
-      <button id="btn-save" title="Save Dance">Save</button>
+<body data-dance-creator-app>
+  <header class="app-header">
+    <div>
+      <h1>DanceCreator</h1>
+      <p id="status" role="status">Ready</p>
+    </div>
+    <div class="header-actions">
+      <button id="undo-dance" type="button" disabled>Undo</button>
+      <button id="redo-dance" type="button" disabled>Redo</button>
+      <button id="save-dance" type="button" disabled>Save</button>
     </div>
   </header>
 
-  <!-- Main Container -->
-  <div id="container">
-    
-    <!-- Left Panel: Figure Catalog -->
-    <div id="left" class="panel">
-      <h3>Figuren-Katalog</h3>
-      
-      <div id="search-box">
-        <input id="search" type="text" placeholder="Suche..." />
-        <select id="filter-formation">
-          <option value="">Alle Formationen</option>
+  <main class="workspace">
+    <section class="panel catalog-panel" aria-labelledby="catalog-heading">
+      <h2 id="catalog-heading">Figure catalog</h2>
+      <label for="catalog-search">Search</label>
+      <input id="catalog-search" type="search" autocomplete="off">
+      <ul id="fig-list" aria-label="Available figures"></ul>
+    </section>
+
+    <div class="column-resizer" role="separator" aria-orientation="vertical"
+         aria-label="Resize figure catalog and inspector" aria-controls="catalog-panel editor-panel"
+         data-resizer-index="0" tabindex="0"></div>
+
+    <section class="panel editor-panel" aria-labelledby="editor-heading">
+      <div class="section-heading">
+        <div>
+          <h2 id="editor-heading">Inspector</h2>
+          <h3 id="figure-name">No selection</h3>
+        </div>
+        <div id="draft-status" aria-live="polite"></div>
+        <button id="apply-proposal" class="inspector-apply" type="button" disabled>Apply</button>
+      </div>
+      <p id="incomplete-warning" class="warning-message" hidden></p>
+      <div id="figure-meta" class="figure-meta"></div>
+      <div class="edit-controls">
+        <fieldset class="anchor-controls">
+          <legend>Anchor</legend>
+          <label for="anchor-row">Row</label>
+          <input id="anchor-row" type="number" step="any" value="1">
+          <label for="anchor-col">Column</label>
+          <input id="anchor-col" type="number" step="any" value="0">
+        </fieldset>
+        <div id="addon-controls"></div>
+      </div>
+      <p id="error-panel" class="error-message" role="alert" hidden></p>
+      <pre id="validation-panel" class="validation-panel" aria-live="polite"></pre>
+      <section class="trace-inspector" aria-labelledby="trace-heading">
+        <h3 id="trace-heading">Execution snapshot</h3>
+        <p id="trace-status"></p>
+        <p id="figure-preview-status" aria-live="polite"></p>
+        <section class="crips-inspector" aria-labelledby="figure-crips-heading">
+          <h4 id="figure-crips-heading">Instructions</h4>
+          <div id="figure-crips" aria-label="Figure instructions"></div>
+        </section>
+        <div class="floor-snapshots">
+          <div class="incoming-snapshot">
+            <h4>Incoming dancefloor</h4>
+            <div id="incoming-floor" class="preview-floor"></div>
+          </div>
+          <div class="outgoing-snapshot">
+            <h4>Outgoing dancefloor</h4>
+            <p id="outgoing-floor-error" class="preview-error-banner" role="alert" hidden></p>
+            <div id="outgoing-floor" class="preview-floor"></div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <div class="column-resizer" role="separator" aria-orientation="vertical"
+         aria-label="Resize inspector and dance editor" aria-controls="editor-panel dance-panel"
+         data-resizer-index="1" tabindex="0"></div>
+
+    <section class="panel dance-panel" aria-labelledby="dance-heading">
+      <div class="section-heading">
+        <h2 id="dance-heading">Dance</h2>
+        <select id="dance-select" aria-label="Select dance">
+          <option value="">Select a dance</option>
         </select>
       </div>
-      
-      <ul id="fig-list"></ul>
-    </div>
-
-    <!-- Splitter 1 -->
-    <div class="splitter" id="splitter-left"></div>
-
-    <!-- Middle Panel: Figure Details & Controls -->
-    <div id="middle" class="panel">
-      <h3>Details</h3>
-      
-      <div id="figure-details">
-        <span id="figure-name">Keine Figur gewählt</span>
-        <div id="figure-meta"></div>
-        <div id="figure-steps"></div>
-        <div id="figure-crips"></div>
-        <div id="figure-json"></div>
+      <h3 id="dance-title"></h3>
+      <div class="tree-actions">
+        <button id="insert-figure" type="button" disabled>Insert selected figure</button>
+        <button id="add-series" type="button" disabled>Add series</button>
+        <button id="add-parallel" type="button" disabled>Add parallel</button>
+        <button id="delete-node" type="button" disabled>Delete selected node</button>
+        <button id="move-up" type="button">Move up</button>
+        <button id="move-down" type="button">Move down</button>
       </div>
-      
-      <div class="control-section">
-        <h4>Figur ausführen (Modus B)</h4>
-        
-        <div class="form-group">
-          <label>Anchor:</label>
-          <input id="anchor-row" type="number" value="0" />
-          <span>×</span>
-          <input id="anchor-col" type="number" value="0" />
+      <div id="dance-tree" aria-label="Dance tree"></div>
+      <section id="floor-panel" aria-labelledby="floor-heading">
+        <h3 id="floor-heading">Dance floor</h3>
+        <p id="floor-status">Select a dance occurrence to inspect its floor.</p>
+        <p id="playback-warning" class="warning-message" hidden></p>
+        <div class="playback-controls">
+          <button id="playback-prev" type="button" disabled>Previous boundary</button>
+          <span id="playback-position" aria-live="polite">0 / 0</span>
+          <button id="playback-next" type="button" disabled>Next boundary</button>
         </div>
-        
-        <label style="font-size: 12px;">Addons (JSON):</label>
-        <textarea id="addons-json">{}</textarea>
-        
-        <div class="button-group">
-          <button id="preview-figure">Preview</button>
-          <button id="execute-figure">Execute</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Splitter 2 -->
-    <div class="splitter" id="splitter-right"></div>
-
-    <!-- Right Panel: Dance Tree -->
-    <div id="right" class="panel">
-      <h3>Tanz-Struktur</h3>
-      <select id="dance-select"></select>
-      <div id="dance-title" style="font-size: 13px; font-weight: bold; margin-bottom: 6px;"></div>
-      <div id="dance-summary"></div>
-      <div id="floor-panel">
-        <div id="floor-status">No floor loaded</div>
-        <svg id="dance-floor-canvas" viewBox="0 0 420 240" aria-label="Dance floor canvas"></svg>
-      </div>
-      <div id="dance-tree"></div>
-    </div>
-  </div>
-
-  <!-- Conflict Modal -->
-  <div id="conflict-modal" class="hidden">
-    <div class="modal-box">
-      <h3 style="margin-top: 0;">⚠ Konflikt erkannt</h3>
-      <p id="conflict-message">Tanzfläche Konflikt</p>
-      <div>
-        <strong>Details:</strong>
-        <div id="conflict-details"></div>
-      </div>
-      <div class="modal-buttons">
-        <button id="dismiss">Abbrechen</button>
-        <button id="inspect-tree">Tree anschauen</button>
-        <button id="edit-params">Parameter ändern</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Main Application Script (this loads app.js) -->
-  <script src="../static/app.js"></script>
-  
-  <!-- UI Component Scripts -->
-  <script>
-    // Resizable Splitters
-    function makeSplitter(splitterId, leftPanelId, rightPanelId) {
-      const splitter = document.getElementById(splitterId);
-      const leftPanel = document.getElementById(leftPanelId);
-      const rightPanel = document.getElementById(rightPanelId);
-      
-      splitter.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        const startX = e.clientX;
-        const startLeftWidth = leftPanel.offsetWidth;
-        const startRightWidth = rightPanel.offsetWidth;
-        
-        function onMouseMove(e) {
-          const deltaX = e.clientX - startX;
-          const newLeftWidth = startLeftWidth + deltaX;
-          const newRightWidth = startRightWidth - deltaX;
-          
-          if (newLeftWidth > 150 && newRightWidth > 150) {
-            leftPanel.style.width = newLeftWidth + 'px';
-            rightPanel.style.width = newRightWidth + 'px';
-          }
-        }
-        
-        function onMouseUp() {
-          document.removeEventListener('mousemove', onMouseMove);
-          document.removeEventListener('mouseup', onMouseUp);
-        }
-        
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-      });
-    }
-
-    // Formation Filter Population
-    async function populateFormations() {
-      try {
-        const r = await fetch('/api/figures');
-        if (r.status !== 200) return;
-        const response = await r.json();
-        // Extract figures array from envelope format
-        const figuresArray = response.figures || [];
-        const formations = new Set();
-        figuresArray.forEach(fig => {
-          const formation = fig.Formation || fig.formation || fig.Type || fig.type || 'Other';
-          formations.add(formation);
-        });
-        const select = document.getElementById('filter-formation');
-        Array.from(formations).sort().forEach(f => {
-          const opt = document.createElement('option');
-          opt.value = f;
-          opt.textContent = f;
-          select.appendChild(opt);
-        });
-      } catch (e) {
-        console.error('Failed to populate formations:', e);
-      }
-    }
-
-    // Apply Filters to List
-    function applyFilters() {
-      const search = document.getElementById('search').value.toLowerCase();
-      const formation = document.getElementById('filter-formation').value;
-      const items = document.querySelectorAll('#fig-list li');
-      items.forEach(li => {
-        const name = (li.textContent || '').toLowerCase();
-        const figFormation = li.dataset.formation || '';
-        const matchesSearch = !search || name.includes(search);
-        const matchesFormation = !formation || figFormation === formation;
-        li.style.display = (matchesSearch && matchesFormation) ? 'block' : 'none';
-      });
-    }
-
-    // Main init after DOM and app.js are loaded
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Setup UI handlers
-      document.getElementById('btn-load').addEventListener('click', () => {
-        const danceSelect = document.getElementById('dance-select');
-        if (danceSelect && danceSelect.value) {
-          alert('Dance geladen: ' + danceSelect.value);
-        } else {
-          alert('Bitte zuerst einen Tanz aus der Liste auswählen');
-        }
-      });
-
-      document.getElementById('btn-save').addEventListener('click', () => {
-        alert('Save-Funktion: wird später implementiert (PUT /api/dances/<name>)');
-      });
-
-      // Setup splitters
-      makeSplitter('splitter-left', 'left', 'middle');
-      makeSplitter('splitter-right', 'middle', 'right');
-
-      // Setup filters
-      document.getElementById('search').addEventListener('input', applyFilters);
-      document.getElementById('filter-formation').addEventListener('change', applyFilters);
-
-      // Populate formation filter
-      await populateFormations();
-
-      // Call app.js init functions IF they exist
-      if (typeof loadFigures !== 'undefined') await loadFigures();
-      if (typeof loadDances !== 'undefined') await loadDances();
-      if (typeof wire !== 'undefined') wire();
-    });
-  </script>
+        <div id="dance-floor-canvas" role="group" aria-label="Dance floor"></div>
+        <div id="branch-floors" aria-label="Isolated parallel branches"></div>
+      </section>
+    </section>
+  </main>
 </body>
 </html>

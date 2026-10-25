@@ -6,7 +6,12 @@
   "version": "1.0.0",
   "type": "object",
   "additionalProperties": false,
-  "required": ["name", "couples", "tick", "positions"],
+  "required": [
+    "name",
+    "couples",
+    "tick",
+    "positions"
+  ],
   "properties": {
     "name": {
       "type": "string",
@@ -31,7 +36,7 @@
       "minProperties": 2,
       "additionalProperties": false,
       "patternProperties": {
-        "^[1-9][0-9]?[mwMW]$|^[1-9][0-9]?:[1-9][0-9]?$": {
+        "^[1-9][0-9]*(?:\\.[0-9]+)?[mwMW]$|^[1-9][0-9]*(?:\\.[0-9]+)?:-?[0-9]+(?:\\.[0-9]+)?$": {
           "$ref": "#/definitions/position"
         }
       },
@@ -42,7 +47,11 @@
     "position": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["dancer", "coord", "facing"],
+      "required": [
+        "dancer",
+        "coord",
+        "facing"
+      ],
       "properties": {
         "dancer": {
           "$ref": "#/definitions/dancer",
@@ -62,7 +71,10 @@
     "dancer": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "gender"],
+      "required": [
+        "name",
+        "gender"
+      ],
       "properties": {
         "name": {
           "type": "string",
@@ -72,7 +84,10 @@
         },
         "gender": {
           "type": "string",
-          "enum": ["M", "F"],
+          "enum": [
+            "M",
+            "F"
+          ],
           "description": "Gender of the dancer: M=Man/Male, F=Woman/Female (affects rendering: M=circle, F=square)"
         }
       },
@@ -82,11 +97,18 @@
       "type": "array",
       "minItems": 2,
       "maxItems": 2,
-      "items": {
-        "type": "number",
-        "description": "Row or column coordinate value"
-      },
-      "description": "Coordinate pair [row, column]. Both values can be integers or floats. Typically in range 1-16."
+      "items": [
+        {
+          "type": "number",
+          "minimum": 1,
+          "description": "1-based row/couple position"
+        },
+        {
+          "type": "number",
+          "description": "Column may be negative on the centered grid"
+        }
+      ],
+      "description": "Coordinate pair [row, column]. Both values can be integers or floats. Rows are 1-based; columns use the centered grid (men -1, centre 0, ladies +1)."
     }
   }
 }

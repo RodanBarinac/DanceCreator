@@ -24,18 +24,25 @@
       "description": "Formation type (turn, reel, hey, circle, etc.)"
     },
     "Version": {
-      "type": ["number", "integer"],
+      "type": [
+        "number",
+        "integer"
+      ],
       "minimum": 1,
       "description": "Schema version of the figure definition"
     },
     "Anker": {
       "type": "array",
-      "items": { "type": "number" },
+      "items": {
+        "type": "number"
+      },
       "description": "Anchor points for positioning"
     },
     "Addons": {
       "type": "object",
-      "additionalProperties": { "$ref": "#/definitions/Addon" },
+      "additionalProperties": {
+        "$ref": "#/definitions/Addon"
+      },
       "default": {},
       "description": "Map of addon variations for this figure"
     },
@@ -52,27 +59,108 @@
       "type": "array",
       "description": "Ending positions for dancers"
     },
+    "EndFacing": {
+      "type": "array",
+      "description": "Ending facing directions for each dancer"
+    },
     "CriptDesc": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "Cribs descriptions for each dancer"
     },
     "FigureList": {
       "type": "array",
-      "items": { "type": ["object", "array", "string", "number"] },
+      "items": {
+        "type": [
+          "object",
+          "array",
+          "string",
+          "number"
+        ]
+      },
       "description": "List of sub-figures (for complex figures)"
+    },
+    "StartDancers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?:[1-9][0-9]*[mw])?$",
+        "description": "Dancer ID (couple number plus m/w); an empty string uses automatic preview allocation."
+      },
+      "description": "Preview dancer identifiers parallel to StartPos; runtime validates matching length and uniqueness after automatic allocation."
+    },
+    "StartFacing": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "array",
+            "maxItems": 0
+          },
+          {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "additionalItems": false
+          }
+        ]
+      },
+      "description": "Preview starting-facing targets parallel to StartPos; empty arrays use the default same-row opposite-line target. Runtime validates matching length."
     }
+  },
+  "not": {
+    "required": [
+      "Faceing"
+    ]
   },
   "oneOf": [
     {
       "description": "Atomic figure: has execution details",
-      "required": ["Name", "Desc", "Formation", "Version", "Addons", "Bars", "StartPos", "EndPos", "CriptDesc"],
-      "not": { "required": ["FigureList"] }
+      "required": [
+        "Name",
+        "Desc",
+        "Formation",
+        "Version",
+        "Addons",
+        "Bars",
+        "StartPos",
+        "EndPos",
+        "CriptDesc"
+      ],
+      "not": {
+        "required": [
+          "FigureList"
+        ]
+      }
     },
     {
       "description": "Complex figure: composed of other figures",
-      "required": ["Name", "Desc", "Formation", "Version", "FigureList"],
-      "not": { "required": ["Addons", "Bars", "StartPos", "EndPos", "CriptDesc"] }
+      "required": [
+        "Name",
+        "Desc",
+        "Formation",
+        "Version",
+        "FigureList"
+      ],
+      "not": {
+        "required": [
+          "Addons",
+          "Bars",
+          "StartPos",
+          "EndPos",
+          "CriptDesc"
+        ]
+      }
     }
   ],
   "definitions": {
@@ -90,7 +178,10 @@
           "description": "Addon description"
         },
         "Version": {
-          "type": ["number", "integer"],
+          "type": [
+            "number",
+            "integer"
+          ],
           "minimum": 1,
           "description": "Addon version"
         },
@@ -102,22 +193,35 @@
           "type": "array",
           "description": "Modified ending positions"
         },
-        "Faceing": {
+        "EndFacing": {
           "type": "array",
           "description": "Modified facing directions"
         },
         "CriptDesc": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Modified crib descriptions"
         },
         "CriptReplace": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Replacement cribs"
         }
       },
-      "required": ["Name", "Desc", "Version"],
+      "required": [
+        "Name",
+        "Desc",
+        "Version"
+      ],
+      "not": {
+        "required": [
+          "Faceing"
+        ]
+      },
       "additionalProperties": true
     }
   },

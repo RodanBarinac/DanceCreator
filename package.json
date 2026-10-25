@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "test:unit": "jest --config=jest.config.cjs",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config=jest.config.cjs",
     "test:integration": "node tests/integration/run_playwright_tests.js",
     "test": "npm run test:unit && npm run test:integration"
   },

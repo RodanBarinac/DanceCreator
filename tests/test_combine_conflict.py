@@ -20,7 +20,7 @@ from engine.models import Dance
 from engine.models import DanceFloor as DF
 from engine.models.Dancer import Dancer
 
-FIG_DIR = os.path.join(os.path.dirname(__file__), '..', 'Figures')
+FIG_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'Figures')
 FIG_DIR = os.path.abspath(FIG_DIR)
 
 

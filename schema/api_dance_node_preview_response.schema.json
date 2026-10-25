@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Dance Node Preview Response",
+  "type": "object",
+  "required": [
+    "danceId",
+    "nodeId",
+    "figureRef",
+    "incomingFloor",
+    "outgoingFloor",
+    "crips"
+  ],
+  "properties": {
+    "danceId": {
+      "type": "string"
+    },
+    "nodeId": {
+      "type": "string"
+    },
+    "figureRef": {
+      "type": "string"
+    },
+    "incomingFloor": {
+      "$ref": "./api_floor_snapshot.schema.json"
+    },
+    "outgoingFloor": {
+      "$ref": "./api_floor_snapshot.schema.json"
+    },
+    "crips": {
+      "$ref": "./api_crips.schema.json"
+    }
+  },
+  "additionalProperties": false
+}

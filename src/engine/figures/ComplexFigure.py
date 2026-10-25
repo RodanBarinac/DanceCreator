@@ -21,21 +21,26 @@ class ComplexFigure(Fig.Figure):
     def SubBars(self, FigObjs):
         if isinstance(FigObjs, Fig.Figure):
             return FigObjs.Bars
-        else:
-            if isinstance(FigObjs[0], Fig.Figure):
-                newBars = 0
-                for FigObj in FigObjs:
-                    newBars += self.SubBars(FigObj)
-                return newBars
-            else:
-                newBars = []
-                for FigObj in FigObjs:
-                    newBars.append(self.SubBars(FigObj))
+        if not isinstance(FigObjs, (list, tuple)) or not FigObjs:
+            return 0
 
-                if not newBars[:-1] == newBars[1:]:
-                    raise Exception("Sorry, not all the Bars are allocated")
+        if FigObjs[0] in ('s', 'p') and len(FigObjs) == 2:
+            group_type, children = FigObjs
+            child_bars = [self.SubBars(child) for child in children]
+            if not child_bars:
+                return 0
+            if group_type == 's':
+                return sum(child_bars)
+            if any(bars != child_bars[0] for bars in child_bars[1:]):
+                raise Exception("Sorry, not all the Bars are allocated")
+            return child_bars[0]
 
-                return newBars[0]
+        child_bars = [self.SubBars(child) for child in FigObjs]
+        if all(isinstance(child, Fig.Figure) for child in FigObjs):
+            return sum(child_bars)
+        if any(bars != child_bars[0] for bars in child_bars[1:]):
+            raise Exception("Sorry, not all the Bars are allocated")
+        return child_bars[0]
     @property
     def Bars(self):
         return self.SubBars(self._FigureObjs)
@@ -97,11 +102,11 @@ class ComplexFigure(Fig.Figure):
 
         # Determine the actual file path.
         # If an absolute path or a path containing separators is provided, use it (ensure .json suffix).
-        # Otherwise, assume the file is in the project's Figures directory and append .json.
+        # Otherwise, assume the file is in the project's data/Figures directory and append .json.
         if os.path.isabs(Filename) or (os.path.sep in Filename) or ('/' in Filename):
             filepath = Filename if Filename.lower().endswith('.json') else Filename + '.json'
         else:
-            filepath = os.path.join(os.getcwd(), 'Figures', Filename + '.json')
+            filepath = os.path.join(os.getcwd(), 'data', 'Figures', Filename + '.json')
 
         # Check if the file exists before attempting to open it.
         if not os.path.exists(filepath):
@@ -109,6 +114,8 @@ class ComplexFigure(Fig.Figure):
 
         with open(filepath, 'r') as f:
             FigData = json.load(f)
+        if 'Faceing' in FigData:
+            raise ValueError("Unsupported legacy figure key 'Faceing'; use 'EndFacing'.")
         myKeys = FigData.keys()
         if 'Version' in myKeys:
             if FigData['Version'] != 3:

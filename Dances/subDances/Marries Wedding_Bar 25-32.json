@@ -1,7 +1,0 @@
-{"Name": "Marries Wedding_Bar 25-32",
-  "Desc": "Fourth 8 Bars of Marrie's Wedding",
-"FigureList": ["s",[
-                  ["p",[[[0,0], ["HLReelAU", ["SDown"]]], [[2,0], ["HLReelAD", ["SUp"]]]]],
-                  ["p",[[[0,0], ["HRReelAU", ["EDown"  ]]], [[2,0], ["HRReelAD", ["EUp"]]]]]]],
-  "Version": 3}
-

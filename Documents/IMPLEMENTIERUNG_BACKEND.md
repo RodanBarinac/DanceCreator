@@ -37,7 +37,7 @@ Dieses Dokument beschreibt die minimale und vollständige Backend-API, Daten- un
 
 2) Datenträger / JSON-Formate (unbedingt exakt implementieren)
 - SimpleFigure (Version 2)
-  - Felder: Version, Name, Desc, Bars, StartPos (list of [row,col]), EndPos, CriptDesc (list str mit Template-Variablen), Faceing, Partner, Addons
+  - Felder: Version, Name, Desc, Bars, StartPos (list of [row,col]), EndPos, CriptDesc (list str mit Template-Variablen), EndFacing, Partner, Addons
   - Beispiel im Konzept (kopieren)
 - ComplexFigure (Version 3)
   - Felder: Version, Name, Desc, FigureList: [ [Anchor, Figure] ] wobei Figure String oder ["s", [..]] / ["p", [..]]
@@ -237,7 +237,7 @@ SimpleFigure (v2):
   "StartPos":[[1,1],[1,3]],
   "EndPos":[[3,3],[3,1]],
   "CriptDesc":["Bar 1-8: ..."],
-  "Faceing":[[1,3],[1,1]],
+  "EndFacing":[[1,3],[1,1]],
   "Partner":[[1,3],[1,1]],
   "Addons":{}
 }

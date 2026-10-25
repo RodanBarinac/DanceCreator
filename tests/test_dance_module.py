@@ -1,4 +1,4 @@
-﻿"""
+"""
 Unit tests for Dance module - File loading and figure management.
 
 Tests critical Dance module functionality:
@@ -23,7 +23,7 @@ class TestFigureLoading:
     """Test loading figures from files."""
     
     def test_load_existing_figure(self):
-        """Test loading a figure that exists in /Figures/."""
+        """Test loading a figure that exists in data/Figures/."""
         fig = Dance.getFigure('1cCast1p')
         assert fig is not None
     
@@ -50,14 +50,15 @@ class TestDanceLoading:
     """Test loading dances from files."""
     
     def test_load_existing_dance(self):
-        """Test loading a dance that exists in /Dances/."""
+        """Test loading a dance that exists in data/Dances/."""
         dance = Dance.getDance('Marries Wedding_all')
         assert dance is not None
     
     def test_loaded_dance_has_name(self):
-        """Test that loaded dance has Name attribute."""
+        """Test that the loaded dance exposes its canonical name."""
         dance = Dance.getDance('Marries Wedding_all')
-        assert hasattr(dance, 'Name')
+        assert dance.name == 'Marries Wedding'
+        assert dance.name.strip()
     
     def test_loaded_dance_has_dance_move(self):
         """Test that loaded dance has DanceMove method."""
@@ -87,22 +88,15 @@ class TestErrorHandling:
 
 
 class TestShowCrips:
-    """Test showCrips output functionality."""
-    
-    def test_show_crips_with_valid_dance_and_floor(self):
-        """Test that showCrips executes without error."""
-        dance = Dance.getDance('Marries Wedding_all')
-        floor = DF.DanceFloor('Test', 3)
-        
-        # Should not raise
-        result = Dance.showCrips(dance, floor)
-        assert result is not None
-    
-    def test_show_crips_returns_list(self):
-        """Test that showCrips returns a list."""
-        dance = Dance.getDance('Marries Wedding_all')
-        floor = DF.DanceFloor('Test', 3)
-        
-        result = Dance.showCrips(dance, floor)
-        assert isinstance(result, list) or result is None
+    """Test structured, non-printing instruction data."""
 
+    def test_show_crips_returns_lines_without_printing(self, capsys):
+        dance = Dance.getDance('Marries Wedding_all')
+        floor = DF.DanceFloor('Test', 3)
+
+        result = Dance.showCrips(dance, floor)
+
+        assert result
+        assert all(set(line) == {"figureRef", "dancer", "barRange", "text"} for line in result)
+        assert any(line["text"] and "turns right hand" in line["text"] for line in result)
+        assert capsys.readouterr().out == ""

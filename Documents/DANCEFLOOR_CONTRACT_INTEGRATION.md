@@ -63,18 +63,21 @@
 
 ## Key Concepts
 
+**Centered grid (breaking change):** rows remain 1-based; columns are `-1` (men), `0` (centre), and `+1` (ladies). Default facing targets the same row on the opposite side of the centre line (`[row, column]` faces `[row, -column]`, e.g. `[2,-1]` to `[2,1]`). It is a target coordinate, not a direction vector.
+
+
 ### Facing Coordinates
 The `facing` field is **not** a direction vector—it's a target position:
 
 ```javascript
-// Example: Dancer at position [1,1] facing [1,3]
-const coord = [1, 1];      // Current position
-const facing = [1, 3];     // Target position they're facing
+// Example: Dancer at position [1,-1] facing [1,1]
+const coord = [1, -1];      // Current position
+const facing = [1, 1];     // Target position they're facing
 
 // Renderer converts to direction vector:
-const dx = facing[1] - coord[1];  // 3 - 1 = 2 (facing right)
+const dx = facing[1] - coord[1];  // 1 - (-1) = 2 (facing across)
 const dy = facing[0] - coord[0];  // 1 - 1 = 0 (not up/down)
-const direction = [dx, dy];       // [2, 0] = facing right
+const direction = [dx, dy];       // [2, 0] = facing across
 ```
 
 ### Position Keys
@@ -83,7 +86,7 @@ Position identifiers follow specific patterns:
 - `"1m"` - Couple 1, Man
 - `"1w"` - Couple 1, Woman  
 - `"2m"`, `"2w"` - Couple 2, etc.
-- `"3:2"` - Arbitrary position (row 3, column 2)
+- `"3:0"` - Arbitrary position (row 3, centre column)
 
 ### Couples Count
 The `couples` field is informational:
@@ -99,10 +102,10 @@ The `couples` field is informational:
 
 ```python
 # Wrong
-positions['1m'] = {'dancer': {...}, 'coord': [1, 1]}
+positions['1m'] = {'dancer': {...}, 'coord': [1, -1]}
 
 # Right
-positions['1m'] = {'dancer': {...}, 'coord': [1, 1], 'facing': [1, 3]}
+positions['1m'] = {'dancer': {...}, 'coord': [1, -1], 'facing': [1, 1]}
 ```
 
 ### Issue: "gender must be 'M' or 'F'"
@@ -126,10 +129,10 @@ dancer_gender = 'F'  # uppercase letter
 
 ```python
 # Wrong - no direction
-facing = coord  # [1, 1]
+facing = coord  # [1, -1]
 
 # Right - has direction
-facing = [1, 3]  # facing to the right
+facing = [1, 1]  # facing across to the opposite side
 ```
 
 ## Testing Your Implementation
@@ -153,8 +156,8 @@ const testFloor = {
     positions: {
         "1m": {
             dancer: {name: "1m", gender: "M"},
-            coord: [1, 1],
-            facing: [1, 3]
+            coord: [1, -1],
+            facing: [1, 1]
         }
     }
 };

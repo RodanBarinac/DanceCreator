@@ -1,4 +1,4 @@
-﻿"""
+"""
 Unit tests for DanceFloor class - Position Management and Dancer Placement.
 
 Tests critical DanceFloor functionality to prevent regressions:
@@ -28,16 +28,16 @@ def empty_floor():
 @pytest.fixture
 def populated_floor():
     """Create a dance floor with dancers in starting positions."""
-    floor = DF.DanceFloor('test', 2)
+    floor = DF.DanceFloor('test')
     d1m = Dancer('John', 'M')
     d1w = Dancer('Jane', 'F')
     d2m = Dancer('Bob', 'M')
     d2w = Dancer('Alice', 'F')
     
-    floor.addDancer(d1m, (0, 0), 0)  # 1m position
-    floor.addDancer(d1w, (0, 1), 0)  # 1w position
-    floor.addDancer(d2m, (1, 0), 0)  # 2m position
-    floor.addDancer(d2w, (1, 1), 0)  # 2w position
+    floor.addDancer(d1m, (1, -1), 0)  # 1m position
+    floor.addDancer(d1w, (1, 1), 0)  # 1w position
+    floor.addDancer(d2m, (2, -1), 0)  # 2m position
+    floor.addDancer(d2w, (2, 1), 0)  # 2w position
     return floor
 
 
@@ -79,23 +79,23 @@ class TestDancerPlacement:
     
     def test_dancer_retrieval_by_position(self, populated_floor):
         """Test retrieving a dancer by position."""
-        dancer = populated_floor.DancerbyPos((0, 0))
+        dancer = populated_floor.DancerbyPos((1, -1))
         assert dancer is not None
         assert dancer.name == 'John'
     
     def test_get_dancer_position_tuple_format(self, populated_floor):
         """Test that DancerbyPos accepts tuple positions."""
-        dancer1 = populated_floor.DancerbyPos((0, 0))
+        dancer1 = populated_floor.DancerbyPos((1, -1))
         assert dancer1.name == 'John'
     
     def test_get_dancer_position_list_format(self, populated_floor):
         """Test that DancerbyPos accepts list positions."""
-        dancer1 = populated_floor.DancerbyPos([0, 0])
+        dancer1 = populated_floor.DancerbyPos([1, -1])
         assert dancer1.name == 'John'
     
     def test_dancer_properties_maintained(self, populated_floor):
         """Test that dancer properties are preserved."""
-        dancer = populated_floor.DancerbyPos((0, 0))
+        dancer = populated_floor.DancerbyPos((1, -1))
         assert dancer.name == 'John'
         assert dancer.gender == 'M'
 
@@ -106,7 +106,7 @@ class TestPositionValidation:
     def test_dancer_not_found_raises_exception(self, empty_floor):
         """Test that accessing non-existent dancer raises exception."""
         with pytest.raises(Exception) as exc_info:
-            empty_floor.DancerbyPos((0, 0))
+            empty_floor.DancerbyPos((3, -1))
         assert "no dancer here" in str(exc_info.value).lower()
     
     def test_invalid_position_raises_error(self, populated_floor):
@@ -118,8 +118,8 @@ class TestPositionValidation:
     def test_position_conversion_tuple_to_tuple(self, populated_floor):
         """Test position format conversion works correctly."""
         # Both should return same dancer
-        dancer_tuple = populated_floor.DancerbyPos((0, 0))
-        dancer_list = populated_floor.DancerbyPos([0, 0])
+        dancer_tuple = populated_floor.DancerbyPos((1, -1))
+        dancer_list = populated_floor.DancerbyPos([1, -1])
         assert dancer_tuple.name == dancer_list.name
 
 
@@ -136,9 +136,9 @@ class TestFloorStateConsistency:
     
     def test_multiple_dancers_independent(self, populated_floor):
         """Test that multiple dancers don't interfere."""
-        d1m = populated_floor.DancerbyPos((0, 0))
-        d1w = populated_floor.DancerbyPos((0, 1))
-        d2m = populated_floor.DancerbyPos((1, 0))
+        d1m = populated_floor.DancerbyPos((1, -1))
+        d1w = populated_floor.DancerbyPos((1, 1))
+        d2m = populated_floor.DancerbyPos((2, -1))
         
         assert d1m.name == 'John'
         assert d1w.name == 'Jane'
@@ -149,7 +149,7 @@ class TestFloorStateConsistency:
         floor_str = str(populated_floor)
         assert floor_str is not None
         assert len(floor_str) > 0
-        assert '1m' in floor_str or 'John' in floor_str
+        assert 'ohn' in floor_str
 
 
 class TestDanceFloorIntegration:
@@ -165,7 +165,7 @@ class TestDanceFloorIntegration:
         """Test empty floor can be printed without error."""
         floor_str = str(empty_floor)
         assert floor_str is not None
-        assert 'test' in floor_str.lower()
+        assert 'men(-1)' in floor_str.lower()
 
 
 

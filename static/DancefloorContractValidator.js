@@ -126,7 +126,7 @@ class DancefloorValidator {
 
         for (const key of positionKeys) {
           // Validate position key format
-          const validKeyPattern = /^[1-9]\d?[mwMW]$|^[1-9]\d?:[1-9]\d?$/;
+          const validKeyPattern = /^[1-9]\d*(?:\.\d+)?[mwMW]$|^[1-9]\d*(?:\.\d+)?:-?\d+(?:\.\d+)?$/;
           if (!validKeyPattern.test(key)) {
             errors.push(`Invalid position key: '${key}' (expected format like '1m', '2w', '3:1')`);
           }
@@ -266,6 +266,8 @@ class DancefloorValidator {
         errors.push(`${path}[${i}] must be a number (got ${typeof coord[i]})`);
       } else if (!isFinite(coord[i])) {
         errors.push(`${path}[${i}] must be a finite number`);
+      } else if (i === 0 && coord[i] < 1) {
+        errors.push(`${path}[0] row must be at least 1`);
       }
     }
 
