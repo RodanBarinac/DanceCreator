@@ -508,6 +508,8 @@ describe('app.js utility functions', () => {
     expect(document.querySelector('#figure-crips').textContent).toContain('Selected step.');
     expect(document.querySelector('#figure-crips').textContent).not.toContain('Earlier step.');
     expect(document.querySelector('#incoming-floor [data-dancer="1m"]')).not.toBeNull();
+    expect(document.querySelector('#outgoing-floor svg').textContent).not.toContain('Outgoing dancefloor');
+    expect(document.querySelector('#outgoing-floor svg').getAttribute('aria-label')).toBe('Outgoing dancefloor');
   });
 
   test('inspector filters by active identity and shares full-set frame across snapshots', async () => {
@@ -705,7 +707,9 @@ describe('app.js utility functions', () => {
       <h3 id="dance-title"></h3><div id="dance-tree"></div><div id="draft-status"></div>
       <p id="incomplete-warning"></p><h3 id="figure-name"></h3><div id="figure-meta"></div>
       <div id="addon-controls"></div><input id="anchor-row"><input id="anchor-col">
-      <p id="trace-status"></p><pre id="incoming-floor"></pre><pre id="outgoing-floor"></pre>
+      <p id="trace-status"></p>
+      <div class="incoming-snapshot"><h4>Incoming dancefloor</h4><div id="incoming-floor"></div></div>
+      <div class="outgoing-snapshot"><h4>Outgoing dancefloor</h4><div id="outgoing-floor"></div></div>
       <button id="delete-node"></button><button id="apply-proposal"></button>
       <pre id="validation-panel"></pre>
       <p id="error-panel"></p><button id="save-dance"></button>
@@ -772,13 +776,19 @@ describe('app.js utility functions', () => {
 
     expect(document.getElementById('playback-warning').textContent).toContain('last valid floor');
     expect(document.querySelector('#incoming-floor svg')).not.toBeNull();
-    expect(document.querySelector('#incoming-floor svg').textContent)
-      .toContain('Incoming dancefloor');
+    expect(document.querySelector('.incoming-snapshot').textContent.match(/Incoming dancefloor/g)).toHaveLength(1);
+    expect(document.querySelector('#incoming-floor svg').getAttribute('aria-label')).toBe('Incoming dancefloor');
+    expect(document.querySelector('.outgoing-snapshot').textContent.match(/Outgoing dancefloor/g)).toHaveLength(1);
     expect(document.querySelector('#dance-floor-canvas svg [data-context="group"]')).not.toBeNull();
     expect(document.querySelector('#dance-floor-canvas [data-position="2.5,3.25"]')).not.toBeNull();
     expect(document.querySelector('#dance-floor-canvas [data-position="1,1"]')).toBeNull();
+    expect(document.querySelectorAll('#dance-floor-canvas line[data-set-line]')).toHaveLength(2);
     expect(document.querySelectorAll('#branch-floors .branch-floor')).toHaveLength(2);
-    expect(document.querySelector('#branch-floors [data-context="parallel-branch"]')).not.toBeNull();
+    for (const branch of document.querySelectorAll('#branch-floors .branch-floor')) {
+      expect(branch.textContent.match(/Isolated branch/g)).toHaveLength(1);
+      expect(branch.querySelector('svg').getAttribute('aria-label')).toContain('Isolated branch');
+      expect(branch.querySelectorAll('line[data-set-line]')).toHaveLength(2);
+    }
   });
 
   test('workspace columns resize by pointer and keyboard without crossing minimum widths', () => {
@@ -847,6 +857,52 @@ describe('app.js utility functions', () => {
   });
 
   describe('single Apply button', () => {
+    test('tree and playback selections initialize each occurrence with its own add-ons', async () => {
+      document.body.innerHTML = `
+        <div id="dance-tree"></div><div id="figure-meta"></div><div id="addon-controls"></div>
+        <input id="anchor-row"><input id="anchor-col"><button id="apply-proposal"></button>
+        <button id="playback-prev"></button><button id="playback-next"></button>
+        <div id="incoming-floor"></div><div id="outgoing-floor"></div>`;
+      const a = { type: 'figure', id: 'a', figureRef: 'First', anchor: [1, 0], addons: ['FirstAddon'] };
+      const b = { type: 'figure', id: 'b', figureRef: 'H1DR', anchor: [2, 0], addons: ['E2c'] };
+      const root = { type: 'group', id: 'root', kind: 'series', children: [a, b] };
+      const floor = { p: { position: [1, -1], dancer: { name: '1m', gender: 'male' } } };
+      const trace = [root, a, b].map(node => ({
+        nodeId: node.id, kind: node.kind || 'figure', figureRef: node.figureRef,
+        status: 'completed', incomingFloor: floor, outgoingFloor: floor, writes: [],
+        barRange: [1, 4],
+      }));
+      const model = { document: { root, metadata: { name: 'Dance' } }, tree: root,
+        trace, crips: [], validation: { isValid: true, errors: [] } };
+      const send = async path => path === '/api/figures'
+        ? { status: 200, body: { figures: [
+          { figureRef: 'First', name: 'First', capabilities: {
+            validAddons: [{ name: 'FirstAddon', description: 'First description' }] } },
+          { figureRef: 'H1DR', name: 'H1DR', capabilities: {
+            validAddons: [{ name: 'E2c', description: 'End facing 2 corner' }] } },
+        ] } }
+        : { status: 200, body: model };
+      const editor = createEditor({ send, documentRef: document });
+      editor.wire();
+      await editor.loadCatalog();
+      await editor.loadDance('dance');
+      document.querySelector('[data-node-id="a"]').click();
+      document.querySelector('[data-node-id="b"]').click();
+
+      expect(document.querySelector('#addon-controls input[value="E2c"]').checked).toBe(true);
+      expect(document.querySelector('#figure-meta').textContent).toContain('End facing 2 corner');
+      expect(document.querySelector('#anchor-row').value).toBe('2');
+      expect(document.querySelector('#apply-proposal').disabled).toBe(true);
+
+      document.querySelector('[data-node-id="a"]').click();
+      document.querySelector('#playback-next').click();
+      expect(editor.state.selectedNodeId).toBe('b');
+      expect(document.querySelector('#addon-controls input[value="E2c"]').checked).toBe(true);
+      expect(document.querySelector('#figure-meta').textContent).toContain('End facing 2 corner');
+      expect(document.querySelector('#anchor-row').value).toBe('2');
+      expect(document.querySelector('#apply-proposal').disabled).toBe(true);
+    });
+
     const setup = async () => {
       document.body.innerHTML = `
         <ul id="fig-list"></ul><select id="dance-select"></select>

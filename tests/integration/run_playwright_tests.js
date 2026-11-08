@@ -374,6 +374,27 @@ try {
   if (JSON.stringify(groupInstructions) !== JSON.stringify(parallelGroup.lines.map(line => line.text))) {
     throw new Error(`Parallel group instructions differ from its descendant trace: ${JSON.stringify(groupInstructions)}`);
   }
+  const h1drNode = await page.evaluate(() => {
+    function find(node) {
+      if (node.type === 'figure' && node.figureRef === 'H1DR' && node.addons.includes('E2c')) {
+        return node.id;
+      }
+      if (node.type === 'compositeOccurrence') return find(node.root);
+      for (const child of node.children || []) {
+        const found = find(child);
+        if (found) return found;
+      }
+      return null;
+    }
+    return find(window.danceCreatorEditor.state.readModel.document.root);
+  });
+  if (!h1drNode) throw new Error('Expected H1DR with E2c in Marries Wedding.');
+  await page.locator(`#dance-tree [data-node-id="${h1drNode}"]`).click();
+  if (!(await page.locator('#addon-controls input[value="E2c"]').isChecked()) ||
+      !(await page.locator('#figure-meta').textContent()).includes('End facing 2 corner') ||
+      !(await page.locator('#apply-proposal').isDisabled())) {
+    throw new Error('H1DR selection did not immediately show its actual E2c add-on.');
+  }
   const cast = page.locator('#dance-tree li[data-node-type="figure"] > button')
     .filter({ hasText: '1cCast1p' }).first();
   await cast.waitFor({ timeout: 15000 });

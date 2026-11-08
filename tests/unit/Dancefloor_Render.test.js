@@ -34,6 +34,19 @@ describe('Dancefloor_Render helpers', () => {
 });
 
 describe('renderDanceFloor', () => {
+  test('keeps both set lines within the canvas when dancers are on one side', () => {
+    const svg = renderDanceFloor({ positions: {
+      man: { coord: [1, -1], dancer: { name: '1m' } },
+    } }, { width: 320, height: 220, showSetLines: true });
+
+    const lines = [...svg.querySelectorAll('line[data-set-line]')];
+    expect(lines).toHaveLength(2);
+    for (const line of lines) {
+      expect(Number(line.getAttribute('y1'))).toBeGreaterThan(30);
+      expect(Number(line.getAttribute('y1'))).toBeLessThan(212);
+    }
+  });
+
   test('draws the two set lines in logical coordinates when requested', () => {
     const svg = renderDanceFloor({ positions: {
       man: { coord: [1, -1], dancer: { name: '1m' } },

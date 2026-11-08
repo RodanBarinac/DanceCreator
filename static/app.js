@@ -496,6 +496,7 @@ export function createEditor({
           width: 300,
           height: 210,
           contextLabel: label,
+          showContextLabel: false,
           contextType: 'occurrence-snapshot',
           referenceBounds: snapshotOptions.referenceBounds,
           showSetLines: true,
@@ -514,7 +515,7 @@ export function createEditor({
     renderSnapshot(
       incoming,
       incomingFloor,
-      catalogSelection ? null : 'Incoming dancefloor',
+      'Incoming dancefloor',
       true,
       {
         referenceBounds
@@ -526,7 +527,7 @@ export function createEditor({
     renderSnapshot(
       outgoing,
       outgoingFloor,
-      catalogSelection ? null : 'Outgoing dancefloor',
+      'Outgoing dancefloor',
       false,
       {
         invalid: outgoingInvalid,
@@ -635,6 +636,7 @@ export function createEditor({
       height: 360,
       contextLabel,
       contextType: step.kind,
+      showSetLines: true,
       selectedNodeId: step.nodeId,
       selectedPositions: record && record.writes ? record.writes : []
     }));
@@ -665,7 +667,9 @@ export function createEditor({
             width: 320,
             height: 220,
             contextLabel: `Isolated branch ${branch.nodeId}`,
+            showContextLabel: false,
             contextType: 'parallel-branch',
+            showSetLines: true,
             selectedNodeId: branch.nodeId,
             selectedPositions: branch.writes
           }));
@@ -948,6 +952,36 @@ export function createEditor({
     return body;
   }
 
+  function selectDanceNode(nodeId, syncPlayback = true) {
+    state.selectedNodeId = nodeId;
+    state.proposal = null;
+    state.selectedFigureRef = null;
+    state.figurePreview = null;
+    state.selectedCripDancer = null;
+    state.error = null;
+    state.notice = '';
+    const selectedNode = state.readModel && state.readModel.document
+      ? findNode(state.readModel.document.root, nodeId)
+      : null;
+    if (selectedNode && selectedNode.type !== 'group') {
+      const row = element('anchor-row');
+      const column = element('anchor-col');
+      const controls = element('addon-controls');
+      const figure = state.figures.find(item => item.figureRef === selectedNode.figureRef);
+      if (row) row.value = selectedNode.anchor[0];
+      if (column) column.value = selectedNode.anchor[1];
+      if (controls) {
+        controls.innerHTML = renderAddonOptions(
+          figure && figure.capabilities, selectedNode.addons || []
+        );
+      }
+    }
+    resetNodePreview();
+    previewRequestSequence += 1;
+    if (syncPlayback && state.playback) state.playback.selectNode(nodeId);
+    render();
+  }
+
   function wire() {
     if (!documentRef) return;
     const bind = (id, handler) => {
@@ -975,30 +1009,7 @@ export function createEditor({
       tree.addEventListener('click', event => {
         const button = event.target.closest('[data-node-id]');
         if (!button) return;
-        state.selectedNodeId = button.dataset.nodeId;
-        state.proposal = null;
-        state.selectedFigureRef = null;
-        state.figurePreview = null;
-        state.selectedCripDancer = null;
-        state.error = null;
-        state.notice = '';
-        const selectedNode = state.readModel && state.readModel.document
-          ? findNode(state.readModel.document.root, state.selectedNodeId)
-          : null;
-        if (selectedNode && selectedNode.type !== 'group') {
-          const row = element('anchor-row');
-          const column = element('anchor-col');
-          if (row) row.value = selectedNode.anchor[0];
-          if (column) column.value = selectedNode.anchor[1];
-          const selected = new Set(selectedNode.addons || []);
-          if (documentRef) documentRef.querySelectorAll('input[name="addon"]').forEach(input => {
-            input.checked = selected.has(input.value);
-          });
-        }
-        resetNodePreview();
-        previewRequestSequence += 1;
-        if (state.playback) state.playback.selectNode(state.selectedNodeId);
-        render();
+        selectDanceNode(button.dataset.nodeId);
       });
     }
     const catalog = element('fig-list');
@@ -1070,13 +1081,11 @@ export function createEditor({
     bind('save-dance', save);
     bind('playback-prev', () => {
       const step = state.playback && state.playback.previous();
-      state.selectedNodeId = step && step.nodeId;
-      render();
+      selectDanceNode(step && step.nodeId, false);
     });
     bind('playback-next', () => {
       const step = state.playback && state.playback.next();
-      state.selectedNodeId = step && step.nodeId;
-      render();
+      selectDanceNode(step && step.nodeId, false);
     });
     bind('insert-figure', () => {
       const root = state.readModel.document.root;

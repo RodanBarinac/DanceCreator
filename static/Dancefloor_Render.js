@@ -136,6 +136,10 @@ export function renderDanceFloor(floorJson, options = {}) {
     maxX: options.couples || 4,
     maxY: 0
   }, referenceBounds);
+  if (options.showSetLines) {
+    bbox[1] = Math.min(bbox[1], -1.8);
+    bbox[3] = Math.max(bbox[3], 1.8);
+  }
   // map function closure
   const mapper = coord => mapLogicalToPixel(coord, bbox, [width, height], paddingPx);
 
@@ -146,7 +150,7 @@ export function renderDanceFloor(floorJson, options = {}) {
   header.setAttribute('fill','#ffffff');
   svg.appendChild(header);
 
-  if (options.contextLabel) {
+  if (options.contextLabel && options.showContextLabel !== false) {
     const context = document.createElementNS(svgNS, 'text');
     context.setAttribute('x', String(paddingPx));
     context.setAttribute('y', '18');
