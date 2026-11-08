@@ -8,6 +8,7 @@
     "figureRef",
     "incomingFloor",
     "outgoingFloor",
+    "activeDancers",
     "crips"
   ],
   "properties": {
@@ -25,6 +26,11 @@
     },
     "outgoingFloor": {
       "$ref": "./api_floor_snapshot.schema.json"
+    },
+    "activeDancers": {
+      "type": ["array", "null"],
+      "items": { "type": "string" },
+      "uniqueItems": true
     },
     "crips": {
       "$ref": "./api_crips.schema.json"

@@ -109,6 +109,26 @@ def _flatten_instruction_text(value):
     return []
 
 
+_EXPECTED_H1DR_E2C_CRIP_CORRECTIONS = {
+    "9 - 12: 1w dances half a diagonal reel to face 3w's position":
+        "9 - 12: 1w dances half a diagonal reel to face 3m's position",
+    "9 - 12: 1m dances half a diagonal reel to face 1m's position":
+        "9 - 12: 1m dances half a diagonal reel to face 1w's position",
+    "13 - 16: 1w dances half a diagonal reel to face 3m's position":
+        "13 - 16: 1w dances half a diagonal reel to face 3w's position",
+    "13 - 16: 1m dances half a diagonal reel to face 1w's position":
+        "13 - 16: 1m dances half a diagonal reel to face 1m's position",
+    "17 - 20: 1m dances half a diagonal reel to face 3w's position":
+        "17 - 20: 1m dances half a diagonal reel to face 3m's position",
+    "17 - 20: 1w dances half a diagonal reel to face 1m's position":
+        "17 - 20: 1w dances half a diagonal reel to face 1w's position",
+    "21 - 24: 1m dances half a diagonal reel to face 3m's position":
+        "21 - 24: 1m dances half a diagonal reel to end in 2m's position",
+    "21 - 24: 1w dances half a diagonal reel to face 1w's position":
+        "21 - 24: 1w dances half a diagonal reel to end in 2w's position",
+}
+
+
 @pytest.mark.parametrize('dance_name', ['Marries Wedding.json', 'Marries Wedding_all.json'])
 def test_three_couple_dance_execution_matches_captured_grid_invariant(dance_name):
     from src.engine.models.Dance import getDance
@@ -141,13 +161,21 @@ def test_three_couple_dance_execution_matches_captured_grid_invariant(dance_name
             [entry['position'][0], entry['position'][1] - 2],
             entry['dancer'],
             entry['gender'],
-            [entry['facing'][0], entry['facing'][1] - 2] if entry['facing'] else [],
+            (
+                [entry['facing'][0], entry['facing'][1] - 2]
+                if entry['facing']
+                else [entry['position'][0], -(entry['position'][1] - 2)]
+            ),
         )
         for entry in baseline['floor']
     )
 
     assert final_floor.AktBar - 1 == baseline['bar_count']
-    assert instructions == _flatten_instruction_text(baseline['instructions'])
+    expected_instructions = [
+        _EXPECTED_H1DR_E2C_CRIP_CORRECTIONS.get(line, line)
+        for line in _flatten_instruction_text(baseline['instructions'])
+    ]
+    assert instructions == expected_instructions
     assert actual_positions == expected_positions
 
 

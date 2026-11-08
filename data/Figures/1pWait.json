@@ -18,6 +18,9 @@
       -1
     ]
   ],
+  "EndFacing": [
+    "="
+  ],
   "Bars": 2,
   "Version": 2
 }

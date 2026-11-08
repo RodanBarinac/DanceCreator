@@ -80,6 +80,49 @@ def test_parallel_children_receive_same_immutable_input_and_merge_disjoint_chang
     assert initial == floor()
 
 
+def test_parallel_branches_can_exchange_positions_vacated_by_other_branches():
+    initial = floor()
+
+    def execute_figure(node, incoming, path, repository):
+        positions = dict(incoming.positions)
+        if node.id == "move-couple-one-down":
+            positions.pop((1, -1))
+            positions.pop((1, 1))
+            positions[(2, -1)] = incoming.positions[(1, -1)]
+            positions[(2, 1)] = incoming.positions[(1, 1)]
+        elif node.id == "move-couple-two-up":
+            positions.pop((2, -1))
+            positions.pop((2, 1))
+            positions[(1, -1)] = incoming.positions[(2, -1)]
+            positions[(1, 1)] = incoming.positions[(2, 1)]
+        return FloorState(positions)
+
+    dance = document(
+        GroupNode(
+            "root",
+            "parallel",
+            (
+                occurrence("move-couple-one-down"),
+                occurrence("move-couple-two-up"),
+            ),
+        )
+    )
+
+    result = execute_document(
+        dance,
+        initial,
+        repository=_TestRepository(),
+        figure_executor=execute_figure,
+    )
+
+    assert result.status == "completed"
+    assert result.outgoing_floor.positions[(1, -1)].dancer_name == "M2"
+    assert result.outgoing_floor.positions[(1, 1)].dancer_name == "W2"
+    assert result.outgoing_floor.positions[(2, -1)].dancer_name == "M1"
+    assert result.outgoing_floor.positions[(2, 1)].dancer_name == "W1"
+    assert initial == floor()
+
+
 def test_nested_series_and_parallel_execute_repeated_references_by_occurrence_id():
     initial = floor()
     executed = []
@@ -210,6 +253,39 @@ def test_parallel_conflicts_on_overlapping_writes_even_when_values_match():
     assert conflict.positions == ((1, -1),)
     assert conflict.branch_ids == ("left", "right")
     assert initial == floor()
+
+
+def test_parallel_conflicts_when_a_peer_rewrites_a_dancer_another_branch_moves():
+    initial = floor()
+
+    def execute_figure(node, incoming, path, repository):
+        positions = dict(incoming.positions)
+        if node.id == "move-man":
+            positions.pop((1, -1))
+            positions[(3, -1)] = incoming.positions[(1, -1)]
+        else:
+            positions[(1, -1)] = FloorEntry("M1", "male", (1, 2))
+        return FloorState(positions)
+
+    dance = document(
+        GroupNode(
+            "root",
+            "parallel",
+            (occurrence("move-man"), occurrence("change-man-facing")),
+        )
+    )
+
+    result = execute_document(
+        dance,
+        initial,
+        repository=_TestRepository(),
+        figure_executor=execute_figure,
+    )
+
+    assert result.status == "failed"
+    conflict = result.diagnostics[0]
+    assert conflict.positions == ((1, -1),)
+    assert conflict.branch_ids == ("move-man", "change-man-facing")
 
 
 def test_parallel_conflict_tracks_series_writes_even_when_later_child_restores_state():
@@ -442,7 +518,7 @@ def test_default_legacy_figure_bridge_executes_fractional_figure_positions():
     ) == 4
 
 
-def test_real_legacy_dance_surfaces_conflict_inside_embedded_composite():
+def test_real_legacy_dance_merges_reciprocal_moves_inside_embedded_composite():
     from pathlib import Path
 
     from src.engine.domain.legacy_adapter import LegacyDanceAdapter
@@ -460,14 +536,12 @@ def test_real_legacy_dance_surfaces_conflict_inside_embedded_composite():
     result = execute_document(document, initial, repository)
 
     assert document.incomplete is False
-    assert result.status == "failed"
-    conflict = next(
-        diagnostic
-        for diagnostic in result.diagnostics
-        if isinstance(diagnostic, ParallelWriteConflict)
-    )
-    conflicted_group = document.find_node(conflict.group_id)
-    assert isinstance(conflicted_group, GroupNode)
-    assert conflicted_group.kind == "parallel"
-    assert conflict.positions
+    assert result.status == "completed"
+    assert result.diagnostics == ()
+    assert result.outgoing_floor is not None
+    assert len(result.outgoing_floor.positions) == 6
+    assert len({
+        entry.dancer_name
+        for entry in result.outgoing_floor.positions.values()
+    }) == 6
     assert len(initial.DanceFloorMap) == 6

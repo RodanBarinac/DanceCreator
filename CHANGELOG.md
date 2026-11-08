@@ -8,10 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Canonical previews now execute Version 3 catalog composites and selected composite dance nodes, preserving serial/parallel semantics, child anchors/add-ons, trace-derived active participants, crips, and bar ranges. Composite-level add-ons are rejected explicitly; unsupported initial catalog formations do not return partial floors. Corrected the malformed `1DR` FigureList nesting.
 - Dance-figure inspector now shows the incoming floor from the execution trace and, when the anchor or add-ons change, refreshes the outgoing floor and instruction list through a debounced (250 ms) `POST /api/dances/<dance-id>/nodes/<node-id>/preview` call. Stale responses are ignored (latest request wins); catalog selections are unchanged.
 - Failed dance-node and catalog previews retain and dim the last valid outgoing floor, show the backend error above it, and mark affected dancers and instruction lines; Apply stays disabled until the matching node preview succeeds. Start-position errors map by floor order, while selected dancers retain their selection stroke.
 
 ### Changed
+- **End-facing notation:** implemented `=`, `I`, `O`, `U`, `D`, `OwnL`, and `OpL` as position-aware symbolic targets across base figures, addons, execution, catalog/dance previews, and `{Face}` crips. `M` is accepted by the schemas but returns `unsupported_facing_notation` at runtime because last-move direction is unavailable. Canonical wait figures now explicitly use `=`, preview outgoing facing comes from execution, and the upstream JSON contract is renamed and updated as `Documents/Project Design/GENERAL_DANCE_AND_FIGURE_JSON_CONTRACT.md`.
 - Replaced the inspector's propose-anchor, propose-add-ons, Apply and Cancel buttons with a single Apply button in the inspector's upper right. It is disabled for catalog figures and enabled for a dance figure only while the anchor/add-ons differ from its current values; clicking it creates the proposal and applies it as one step. Selecting another figure silently discards pending edits.
 - Kept incoming and outgoing inspector dancefloor previews side by side at equal widths and aspect ratios, including during inspector resizing.
 - Moved the Instructions list to the full inspector width below the preview status and above both dancefloor snapshots; catalog and dance-node highlighting behavior is unchanged.

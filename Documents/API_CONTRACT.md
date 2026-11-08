@@ -70,7 +70,7 @@ The `/api/` namespace mirrors the current backend contract and is the preferred 
 ## Structured crips (Q9)
 
 The engine exposes one non-printing crips data path for a figure or dance figure node and its
-incoming floor. Its line objects have this exact shape (schema:
+incoming floor. A basic line has this shape (schema:
 `schema/api_crip_line.schema.json`; list schema: `schema/api_crips.schema.json`):
 
 ```json
@@ -85,16 +85,36 @@ incoming floor. Its line objects have this exact shape (schema:
 `text` is rendered from the existing `getCrips` text without the legacy `start - end:` prefix or a repeated leading dancer name; the `dancer` field is the authoritative line label. Position references use possessives, for example `2w's position`. The legacy `getCrips` method keeps its dancer-prefixed text for existing CLI callers.
 `barRange` is inclusive and reflects the effective `B<n>` duration. Serial children advance the
 range; parallel children share the group's incoming range. Addon text such as `E1c` is included.
-Floor snapshots are maps from the serialized position key to an entry with `position`, `dancer` (`name` and `gender`), and `facing`; see `schema/api_floor_snapshot.schema.json`. For catalog figures, `POST /api/figures/<identifier>/preview` returns `crips` for the generated `incomingFloor` and selected `addons`. For dance nodes, the dance detail/tree/trace response
+Floor snapshots are maps from the serialized position key to an entry with `position`, `dancer` (`name` and `gender`), and `facing`; see `schema/api_floor_snapshot.schema.json`. For simple catalog figures, `POST /api/figures/<identifier>/preview` returns `crips` for the generated `incomingFloor` and selected `addons`. Version 3 catalog composites use their canonical serial/parallel tree and return trace-derived crips and `activeDancers`. Their isolated incoming floor is the minimum participant set required by the first serial step (or the union of parallel branches), using constituent `StartDancers` and `StartFacing` declarations where present. Ambiguous or incomplete initial formations fail explicitly; no partial floor is returned. Composite-level add-ons are unsupported and are rejected rather than ignored. For dance nodes, the dance detail/tree/trace response
 returns a flattened `crips` list built from each figure occurrence's trace `incomingFloor` and
-`barRange`; the caller's floor is not used. Dance response lines do not include a node ID: the
-figure reference, dancer, range and text identify each instruction line. The preview response
+`barRange`; the caller's floor is not used. Trace-derived lines also include `nodeId`, the
+source figure occurrence's canonical ID, allowing callers to distinguish parallel branches
+with the same figure and bar range. Dance-node previews use the same IDs; composite catalog
+previews use IDs from their isolated canonical execution tree. Simple catalog and legacy
+non-trace crips omit `nodeId`. The preview response
 shape is documented by `schema/api_figure_preview_response.schema.json`.
+
+Figure and addon `EndFacing` accepts coordinate targets or the exact symbolic entries `=`, `I`,
+`O`, `U`, `D`, `OwnL`, `OpL`, and `M`. The target is resolved after anchor and addon changes;
+catalog previews report the facing produced by execution, and `{Face}` crips use that same target.
+`M` is schema-valid for forward compatibility but runtime execution returns the structured
+`unsupported_facing_notation` error because last-move direction is unavailable. The normative
+definitions, including center-column and identity-dependent errors, are in
+[`Project Design/GENERAL_DANCE_AND_FIGURE_JSON_CONTRACT.md`](Project%20Design/GENERAL_DANCE_AND_FIGURE_JSON_CONTRACT.md).
+
+Each execution trace record also includes `activeDancers`: the identities occupying an
+atomic figure's declared start positions on its actual incoming floor, including waits.
+Group and composite records contain the union of executed descendant identities. A null
+value means the participants could not be determined; it is not an empty set. These are
+display metadata only and do not change writes, branch conflicts, or execution.
+Inspector snapshots filter by these identities while retaining a shared frame derived from
+the original set and both full snapshots. The reference lines represent logical columns
+`+1` (ladies) and `-1` (men); playback remains unfiltered.
 
 
 ### No-side-effect dance-node preview (Q10)
 
-`POST /api/dances/<dance-id>/nodes/<node-id>/preview` previews proposed anchor/add-on values for a simple figure occurrence inside a dance. `<node-id>` is the canonical node ID exposed in the dance response's `tree`; it is not the figure reference. Request body (schema: `schema/api_dance_node_preview_request.schema.json`):
+`POST /api/dances/<dance-id>/nodes/<node-id>/preview` previews proposed anchor/add-on values for a simple figure or composite occurrence inside a dance. `<node-id>` is the canonical node ID exposed in the dance response's `tree`; it is not the figure reference. Request body (schema: `schema/api_dance_node_preview_request.schema.json`):
 
 ```json
 {"anchor": [1, 0], "addons": ["B4", "E1c"]}
@@ -115,11 +135,12 @@ The `anchor` is the selected node's own anchor (not including a containing compo
     "1.5:0.5": {"position": [1.5, 0.5], "dancer": {"name": "1m", "gender": "male"}, "facing": [2, 1]},
     "0.5:-0.5": {"position": [0.5, -0.5], "dancer": {"name": "1w", "gender": "female"}, "facing": [0, -1]}
   },
+  "activeDancers": ["1m", "1w"],
   "crips": [{"figureRef": "1cLT", "dancer": "1m", "barRange": [1, 4], "text": "turns left hand with 1w and ends facing 2w's position."}]
 }
 ```
 
-`incomingFloor` comes from that node's execution trace, not from a newly generated catalog floor. The proposed occurrence is executed in isolation against a private floor snapshot. The route does not alter the dance document, execution history, revision, proposal registry, or dance file. Composite nodes and non-figure nodes are not previewable. Catalog preview remains `POST /api/figures/<figure-ref>/preview` and uses the generated incoming floor.
+`incomingFloor` comes from that node's execution trace, not from a newly generated catalog floor. The proposed occurrence is executed in isolation against a private floor snapshot. For a composite occurrence, its child anchors and child add-ons remain intact; returned crips come from executed leaf traces and retain their actual bar ranges and active participants. Composite-level add-ons are unsupported and rejected. The route does not alter the dance document, execution history, revision, proposal registry, or dance file. Non-occurrence nodes are not previewable. Catalog preview remains `POST /api/figures/<figure-ref>/preview` and uses the generated incoming floor.
 
 The existing `POST /api/dances/<dance-id>/proposals` route applies edit commands to an immutable document copy and does not commit the dance document, execution history, revision, or file. It does create a server-memory pending-proposal token. `POST /api/dances/<dance-id>/apply` validates and commits that token to in-memory document/history state (including its revision and trace); it does not write the dance file. A rejected apply does not commit and returns affected dancers when the validation issue identifies them. `POST /api/dances/<dance-id>/save` persists a validated document. The inspector preview route deliberately does not create a proposal token.
 

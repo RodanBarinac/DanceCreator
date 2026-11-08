@@ -6,7 +6,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
-from .addon_utils import duration_addon_bars, is_malformed_duration_addon
+from .addon_utils import (
+    duration_addon_bars,
+    is_addon_array_noop,
+    is_malformed_duration_addon,
+    validate_addon_array_nulls,
+    validate_end_facing_values,
+)
 
 
 class AddonValidationError(ValueError):
@@ -281,7 +287,7 @@ class FigureRepository:
                 values = data[field]
                 entries = [(None, values)] if field == "Bars" else (
                     [(index, value) for index, value in enumerate(values)
-                     if value not in (None, [], "")]
+                     if not is_addon_array_noop(field, value)]
                     if isinstance(values, (list, tuple)) else []
                 )
                 for index, value in entries:
@@ -410,6 +416,13 @@ class FigureRepository:
                 )
             if not isinstance(definition, Mapping):
                 raise ValueError(f"Addon definition for {name!r} must be an object")
+            validate_addon_array_nulls(name, definition)
+            if "EndFacing" in definition:
+                validate_end_facing_values(
+                    definition["EndFacing"],
+                    owner=f"Addon {name!r} EndFacing",
+                    allow_null=True,
+                )
             description = definition.get("Desc", definition.get("description", ""))
             if not isinstance(description, str):
                 raise ValueError(f"Addon description for {name!r} must be a string")

@@ -34,6 +34,19 @@ describe('Dancefloor_Render helpers', () => {
 });
 
 describe('renderDanceFloor', () => {
+  test('draws the two set lines in logical coordinates when requested', () => {
+    const svg = renderDanceFloor({ positions: {
+      man: { coord: [1, -1], dancer: { name: '1m' } },
+      lady: { coord: [1, 1], dancer: { name: '1w' } },
+    } }, { showSetLines: true, referenceBounds: [1, -1, 4, 1] });
+    const lines = [...svg.querySelectorAll('line[data-set-line]')];
+    expect(lines.map(line => line.getAttribute('data-set-line'))).toEqual(['ladies', 'men']);
+    expect(lines.every(line => line.getAttribute('stroke-dasharray'))).toBe(true);
+    const y = name => Number(svg.querySelector(`[data-dancer="${name}"]`)
+      .getAttribute('transform').match(/, ([^)]+)\)/)[1]);
+    expect(Number(lines[0].getAttribute('y1'))).toBeCloseTo(y('1w'));
+    expect(Number(lines[1].getAttribute('y1'))).toBeCloseTo(y('1m'));
+  });
   test('returns an SVG element with tokens for positions', () => {
     const floor = {
       name: 'test',

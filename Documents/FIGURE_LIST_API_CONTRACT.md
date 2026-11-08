@@ -554,6 +554,15 @@ Figure offsets use the centered grid: columns are `-1` (men), `0` (centre), and 
 legacy `Faceing` spelling is not accepted, and `Facing` alone is not a key or property.
 Optional `StartDancers` and `StartFacing` fields are available for isolated preview; their validation and execution semantics are described above.
 
+`EndFacing` entries may be coordinate pairs, empty entries, or the symbolic values `=`, `I`,
+`O`, `U`, `D`, `OwnL`, `OpL`, and `M`. The symbols resolve after the complete anchor and addon
+translation. Addon `[]` is no override, while addon `null` explicitly resets to default facing;
+symbolic entries are writes and participate in per-dancer conflict detection. `M` is accepted by
+the schema but is explicitly unsupported during execution (`unsupported_facing_notation`).
+See the normative
+[general dance and figure contract](Project%20Design/GENERAL_DANCE_AND_FIGURE_JSON_CONTRACT.md)
+for definitions and resolution errors.
+
 Engine-reserved addon names `B<n>` (capital B followed by any positive integer) set the bar count
 on any simple figure and are not defined in the figure file; they change bars only, and can
 shorten or lengthen the figure. Other addons can modify positions, end facing, and/or instruction

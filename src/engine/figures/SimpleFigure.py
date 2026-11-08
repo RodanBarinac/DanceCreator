@@ -4,7 +4,23 @@ import math
 import re
 from ..models import Figures
 from ..models import DanceFloor as DF
-from .addon_utils import duration_addon_bars, is_malformed_duration_addon
+from .addon_utils import (
+    END_FACING_NOTATIONS,
+    duration_addon_bars,
+    is_addon_array_noop,
+    is_malformed_duration_addon,
+    validate_addon_array_nulls,
+    validate_end_facing_values,
+)
+
+
+class EndFacingError(ValueError):
+    """A structured error raised when an EndFacing target cannot be resolved."""
+
+    def __init__(self, code, message):
+        self.code = code
+        super().__init__(message)
+
 
 class SimpleFigure(Figures.Figure):
     _Partner = []
@@ -106,15 +122,112 @@ class SimpleFigure(Figures.Figure):
         for i in range(len(self.StartPos)):
             tmpStartPos = self.posWithAnchor(self.StartPos[i])
             tmpEndPos = self.posWithAnchor(self.EndPos[i])
-            facing = self.EndFacing[i] if len(self.EndFacing) > i else None
-            tmpFacing = (
-                self.posWithAnchor(facing)
-                if isinstance(facing, (list, tuple)) and len(facing) == 2
-                else []
+            dancer = oldDF.DancerbyPos(tmpStartPos)
+            tmpFacing = self.resolve_end_facing(
+                i, oldDF, tmpStartPos, tmpEndPos, dancer
             )
-            newDF.addDancer(oldDF.DancerbyPos(tmpStartPos), tmpEndPos, tmpFacing)
+            newDF.addDancer(dancer, tmpEndPos, tmpFacing)
 
         return newDF
+
+    def resolve_end_facing(self, index, incoming_floor, start_position, end_position, dancer=None):
+        """Resolve one outgoing facing to an absolute target using the actual floor."""
+        facing_entries = self.EndFacing
+        declaration = facing_entries[index] if index < len(facing_entries) else None
+        is_implicit_default = declaration is None or declaration == "" or declaration == []
+        if is_implicit_default:
+            target = DF.default_facing_target(end_position)
+        elif isinstance(declaration, (list, tuple)) and len(declaration) == 2:
+            target = self.posWithAnchor(declaration)
+        elif isinstance(declaration, str):
+            if declaration == "M":
+                raise EndFacingError(
+                    "unsupported_facing_notation",
+                    "EndFacing notation 'M' is explicitly unsupported because last-move direction is not available.",
+                )
+            if declaration not in END_FACING_NOTATIONS:
+                raise EndFacingError(
+                    "invalid_end_facing",
+                    f"Unsupported EndFacing notation {declaration!r}.",
+                )
+            if declaration == "=":
+                incoming_facing = incoming_floor.DanceFloorMap[start_position][1]
+                if (
+                    not isinstance(incoming_facing, (list, tuple))
+                    or len(incoming_facing) != 2
+                    or any(
+                        isinstance(value, bool)
+                        or not isinstance(value, (int, float))
+                        or not math.isfinite(value)
+                        for value in incoming_facing
+                    )
+                    or tuple(incoming_facing) == tuple(start_position)
+                ):
+                    raise EndFacingError(
+                        "invalid_incoming_facing",
+                        f"EndFacing '=' requires a valid incoming facing target for dancer {index + 1}.",
+                    )
+                target = (
+                    end_position[0] + incoming_facing[0] - start_position[0],
+                    end_position[1] + incoming_facing[1] - start_position[1],
+                )
+            elif declaration in ("I", "O"):
+                column = end_position[1]
+                if column == 0:
+                    raise EndFacingError(
+                        "invalid_end_facing",
+                        f"EndFacing {declaration!r} is undefined at absolute center column 0.",
+                    )
+                target = (
+                    end_position[0],
+                    0 if declaration == "I" else 2 * column,
+                )
+            elif declaration in ("U", "D"):
+                target = (
+                    end_position[0] - 1 if declaration == "U" else end_position[0] + 1,
+                    end_position[1],
+                )
+            else:
+                if dancer is None:
+                    dancer = incoming_floor.DancerbyPos(start_position)
+                gender = str(getattr(dancer, "gender", "")).lower()
+                if gender.startswith("m"):
+                    own_line = -1
+                elif gender.startswith("f"):
+                    own_line = 1
+                else:
+                    raise EndFacingError(
+                        "invalid_dancer_identity",
+                        f"EndFacing {declaration!r} requires a dancer with male or female identity.",
+                    )
+                target_line = own_line if declaration == "OwnL" else -own_line
+                if end_position[1] == target_line:
+                    raise EndFacingError(
+                        "invalid_end_facing",
+                        f"EndFacing {declaration!r} is undefined because dancer {index + 1} is already on target line {target_line}.",
+                    )
+                target = (end_position[0], target_line)
+        else:
+            raise EndFacingError(
+                "invalid_end_facing",
+                f"Invalid EndFacing declaration for dancer {index + 1}.",
+            )
+
+        if (
+            not isinstance(target, (list, tuple))
+            or len(target) != 2
+            or any(
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                for value in target
+            )
+        ):
+            raise EndFacingError(
+                "invalid_end_facing",
+                f"EndFacing for dancer {index + 1} resolved to an invalid target {target!r} from final position {end_position!r}.",
+            )
+        return target
 
     def getCrips(self, myDF):
         myCrips = []
@@ -141,18 +254,16 @@ class SimpleFigure(Figures.Figure):
                 myCript = myCript.replace('{EndPos}', myDF.PosNamebyPos(self.posWithAnchor(self.EndPos[i])))
 
             if '{Face}' in myCript:
-                base_facing = self._EndFacingPos[i] if len(self._EndFacingPos) > i else ''
-                facing = (
-                    base_facing
-                    if isinstance(base_facing, (list, tuple)) and len(base_facing) == 2
-                    else (self.EndFacing[i] if len(self.EndFacing) > i else '')
+                start_position = self.posWithAnchor(self.StartPos[i])
+                end_position = self.posWithAnchor(self.EndPos[i])
+                dancer = myDF.DancerbyPos(start_position)
+                target = self.resolve_end_facing(
+                    i, myDF, start_position, end_position, dancer
                 )
-                if isinstance(facing, (list, tuple)) and len(facing) == 2:
-                    myCript = myCript.replace(
-                        '{Face}', myDF.PosNamebyPos(self.posWithAnchor(facing))
-                    )
-                else:
-                    raise Exception("Sorry, noone to face!")
+                face_name = myDF.PosNamebyPos(target)
+                if not face_name:
+                    face_name = f"position {tuple(target)}"
+                myCript = myCript.replace('{Face}', face_name)
 
             if '{Partner}' in myCript:
                 partner_position = self.Partner[i] if len(self.Partner) > i else ''
@@ -281,18 +392,28 @@ class SimpleFigure(Figures.Figure):
                 raise ValueError(
                     f"Figure addon {addon_name!r} uses the reserved B<n> duration addon name."
                 )
+            if isinstance(addon_data, dict):
+                validate_addon_array_nulls(addon_name, addon_data)
+                if 'EndFacing' in addon_data:
+                    validate_end_facing_values(
+                        addon_data['EndFacing'],
+                        owner=f"Addon {addon_name!r} EndFacing",
+                        allow_null=True,
+                    )
             if isinstance(addon_data, dict) and 'Faceing' in addon_data:
                 raise ValueError(
                     f"Unsupported legacy addon key 'Faceing' in {addon_name}; use 'EndFacing'."
                 )
         if 'EndFacing' in myKeys:
-            tmpList = []
-            for i in range(len(FigData['EndFacing'])):
-                if len(FigData['EndFacing'][i]) == 2:
-                    tmpList.append((FigData['EndFacing'][i][0], FigData['EndFacing'][i][1]))
-                else:
-                    tmpList.append('')
+            validate_end_facing_values(FigData['EndFacing'])
+            tmpList = [
+                '' if value == [] else
+                (value[0], value[1]) if isinstance(value, (list, tuple)) else value
+                for value in FigData['EndFacing']
+            ]
             self._EndFacingPos = tmpList
+        else:
+            self._EndFacingPos = []
         if 'Partner' in myKeys:
             tmpList = []
             for i in range(len(FigData['Partner'])):
@@ -363,7 +484,11 @@ class SimpleFigure(Figures.Figure):
                 if field == 'Bars':
                     entries = [(None, values)]
                 elif isinstance(values, (list, tuple)):
-                    entries = [(index, value) for index, value in enumerate(values) if value not in (None, [], '')]
+                    entries = [
+                        (index, value)
+                        for index, value in enumerate(values)
+                        if not is_addon_array_noop(field, value)
+                    ]
                 else:
                     continue
                 for index, value in entries:

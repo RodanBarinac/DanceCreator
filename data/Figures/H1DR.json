@@ -122,14 +122,14 @@
       "Name": "ELA",
       "CriptDesc": [
         "",
-        "face {Face}",
-        "face {Face}",
+        "to end in {EndPos}",
+        "to end in {EndPos}",
         ""
       ],
       "CriptReplace": [
         "",
-        "face {Face}",
-        "face {Face}",
+        "to face {Face}",
+        "to face {Face}",
         ""
       ],
       "Desc": "End in lines across",

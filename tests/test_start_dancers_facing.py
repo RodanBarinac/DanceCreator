@@ -348,7 +348,8 @@ def test_start_facing_is_ignored_during_dance_execution_and_missing_start_is_rej
     assert result.trace_records[-1].incoming_floor.positions[(1, -1)].facing == (7, 7)
     assert result.outgoing_floor.positions[(1, -1)].dancer_name == "1m"
     assert result.outgoing_floor.positions[(1, 1)].dancer_name == "1w"
-    assert result.outgoing_floor.positions[(1, -1)].facing in (None, ())
+    assert result.outgoing_floor.positions[(1, -1)].facing == (1, 1)
+    assert result.outgoing_floor.positions[(1, 1)].facing == (1, -1)
 
     missing = FloorState({(1, -1): FloorEntry("1m", "male", (1, 1))})
     with pytest.raises(FigureExecutionError, match="Missing dancer.*StartPos"):

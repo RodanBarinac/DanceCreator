@@ -100,6 +100,48 @@ def test_preview_response_includes_structured_crips_for_selected_addons():
     assert preview_schema["properties"]["crips"]["$ref"] == "./api_crips.schema.json"
 
 
+def test_h1dr_preview_crips_reflect_addon_endings():
+    client = __import__("GUI_DanceCreator_App").app.test_client()
+
+    base = client.post(
+        "/api/figures/H1DR/preview",
+        json={"anchor": [1, 0], "addons": []},
+    )
+    across = client.post(
+        "/api/figures/H1DR/preview",
+        json={"anchor": [1, 0], "addons": ["ELA"]},
+    )
+    corner = client.post(
+        "/api/figures/H1DR/preview",
+        json={"anchor": [1, 0], "addons": ["E2c"]},
+    )
+
+    assert base.status_code == across.status_code == corner.status_code == 200
+    base_crips = base.get_json()["crips"]
+    across_crips = across.get_json()["crips"]
+    corner_crips = corner.get_json()["crips"]
+    assert across_crips[1]["text"] == "dances half a diagonal reel to end in between 3c's position"
+    assert across_crips[2]["text"] == "dances half a diagonal reel to end in between 1c's position"
+    assert corner_crips[1]["text"] == "dances half a diagonal reel to face 3m's position"
+    assert corner_crips[2]["text"] == "dances half a diagonal reel to face 1w's position"
+    assert base_crips[1]["text"] != corner_crips[1]["text"]
+    assert base_crips[2]["text"] != corner_crips[2]["text"]
+
+
+def test_h2dr_esl_crips_do_not_duplicate_the_directional_preposition():
+    client = __import__("GUI_DanceCreator_App").app.test_client()
+
+    response = client.post(
+        "/api/figures/H2DR/preview",
+        json={"anchor": [1, 0], "addons": ["ESL"]},
+    )
+
+    assert response.status_code == 200, response.get_json()
+    crips = response.get_json()["crips"]
+    assert crips[1]["text"] == "dances half a diagonal reel to end in 2m's position"
+    assert crips[2]["text"] == "dances half a diagonal reel to end in 2w's position"
+
+
 def test_dance_response_includes_structured_crips_from_trace_incoming_floors():
     response = __import__("GUI_DanceCreator_App").app.test_client().get(
         "/api/dances/Marries%20Wedding_all"
@@ -110,7 +152,7 @@ def test_dance_response_includes_structured_crips_from_trace_incoming_floors():
     assert body["crips"]
     figure_records = [record for record in body["trace"] if record["kind"] == "figure"]
     for line in body["crips"]:
-        assert set(line) == {"figureRef", "dancer", "barRange", "text"}
+        assert set(line) == {"nodeId", "figureRef", "dancer", "barRange", "text"}
         assert isinstance(line["dancer"], str) and line["dancer"]
         assert len(line["barRange"]) == 2
         assert isinstance(line["text"], str) and line["text"]
@@ -119,7 +161,8 @@ def test_dance_response_includes_structured_crips_from_trace_incoming_floors():
             json.loads(Path("schema/api_crip_line.schema.json").read_text()),
         )
         assert any(
-            record["figureRef"] == line["figureRef"]
+            record["nodeId"] == line["nodeId"]
+            and record["figureRef"] == line["figureRef"]
             and record["barRange"] == line["barRange"]
             and line["dancer"] in {
                 entry["dancer"]["name"]
@@ -127,3 +170,29 @@ def test_dance_response_includes_structured_crips_from_trace_incoming_floors():
             }
             for record in figure_records
         )
+
+
+def test_marries_wedding_parallel_group_crips_identify_descendant_occurrences():
+    client = __import__("GUI_DanceCreator_App").app.test_client()
+    url = "/api/dances/Marries%20Wedding_all"
+    response = client.get(url)
+    assert response.status_code == 200
+    body = response.get_json()
+    for suffix in ("/tree", "/trace"):
+        alternate = client.get(url + suffix)
+        assert alternate.status_code == 200
+        assert alternate.get_json()["crips"] == body["crips"]
+    group = next(
+        record for record in body["trace"]
+        if record["kind"] == "parallel" and record["barRange"] == [21, 24]
+    )
+    descendants = {
+        record["nodeId"] for record in body["trace"]
+        if record["kind"] == "figure" and group["nodeId"] in record["path"]
+    }
+    lines = [line for line in body["crips"] if line["nodeId"] in descendants]
+    assert any(line["figureRef"] == "H2DR" and line["barRange"] == [21, 24]
+               for line in lines)
+    assert {line["dancer"] for line in lines if line["figureRef"] == "H2DR"} == {
+        "2w", "1m", "1w", "3m"
+    }

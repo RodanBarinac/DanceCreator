@@ -59,7 +59,11 @@ export function mapLogicalToPixel(coord, bbox, pxSize, padding) {
   return {x,y,scale,scaleX,scaleY,offsetX,offsetY};
 }
 
-export function computeBBox(positions, fallback = {minX:0,minY:0,maxX:5,maxY:5}) {
+export function computeBBox(
+  positions,
+  fallback = {minX:0,minY:0,maxX:5,maxY:5},
+  referenceBounds = null
+) {
   // positions: object with keys -> { coord: [x,y], dancer: {...}, facing: ... }
   const coords = [];
   for (const key in positions) {
@@ -69,7 +73,9 @@ export function computeBBox(positions, fallback = {minX:0,minY:0,maxX:5,maxY:5})
       if (Array.isArray(c) && c.length >= 2) coords.push([Number(c[0]), Number(c[1])]);
     } catch(e){}
   }
-  if (coords.length === 0) {
+  const validReference = Array.isArray(referenceBounds) &&
+    referenceBounds.length === 4 && referenceBounds.every(Number.isFinite);
+  if (coords.length === 0 && !validReference) {
     return [fallback.minX, fallback.minY, fallback.maxX, fallback.maxY];
   }
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -79,6 +85,14 @@ export function computeBBox(positions, fallback = {minX:0,minY:0,maxX:5,maxY:5})
     if (x > maxX) maxX = x;
     if (y > maxY) maxY = y;
   });
+  if (
+    validReference
+  ) {
+    minX = Math.min(minX, referenceBounds[0]);
+    minY = Math.min(minY, referenceBounds[1]);
+    maxX = Math.max(maxX, referenceBounds[2]);
+    maxY = Math.max(maxY, referenceBounds[3]);
+  }
   // add small margin
   const margin = 0.8; // logical units
   return [minX - margin, minY - margin, maxX + margin, maxY + margin];
@@ -111,12 +125,17 @@ export function renderDanceFloor(floorJson, options = {}) {
       { ...position, coord: Array.isArray(position.coord) ? displayCoord(position.coord) : null }
     ])
   );
+  const referenceBounds = Array.isArray(options.referenceBounds) &&
+    options.referenceBounds.length === 4
+    ? [options.referenceBounds[0], -options.referenceBounds[3],
+      options.referenceBounds[2], -options.referenceBounds[1]]
+    : null;
   const bbox = computeBBox(displayPositions, {
     minX: 0,
     minY: -(options.couples || 4),
     maxX: options.couples || 4,
     maxY: 0
-  });
+  }, referenceBounds);
   // map function closure
   const mapper = coord => mapLogicalToPixel(coord, bbox, [width, height], paddingPx);
 
@@ -155,6 +174,22 @@ export function renderDanceFloor(floorJson, options = {}) {
 
   const minRow = Math.ceil(bbox[0]);
   const maxRow = Math.floor(bbox[2]);
+  if (options.showSetLines) {
+    [['ladies', 1], ['men', -1]].forEach(([name, side]) => {
+      const start = mapper(displayCoord([minRow, side]));
+      const end = mapper(displayCoord([maxRow, side]));
+      const line = document.createElementNS(svgNS, 'line');
+      line.setAttribute('data-set-line', name);
+      line.setAttribute('x1', String(start.x));
+      line.setAttribute('x2', String(end.x));
+      line.setAttribute('y1', String(start.y));
+      line.setAttribute('y2', String(end.y));
+      line.setAttribute('stroke', '#9ca3af');
+      line.setAttribute('stroke-width', '1');
+      line.setAttribute('stroke-dasharray', '2 4');
+      svg.appendChild(line);
+    });
+  }
   for (let r = minRow; r <= maxRow; r++) {
     const p = mapper([r, bbox[3] - 0.2]);
     const t = document.createElementNS(svgNS,'text');

@@ -4,6 +4,7 @@
   "type": "object",
   "required": ["figureRef", "dancer", "barRange", "text"],
   "properties": {
+    "nodeId": { "type": "string", "minLength": 1, "description": "Source figure occurrence ID when generated from a canonical execution trace." },
     "figureRef": { "type": "string", "minLength": 1 },
     "dancer": { "type": "string", "minLength": 1, "description": "Dancer name; the text field does not repeat it at the start." },
     "barRange": {

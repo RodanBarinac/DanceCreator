@@ -2,8 +2,8 @@
 
 > **Valid for version:** 0.1.0  
 > **End of validity:** (current)  
-> **Last updated:** 2026-10-25 (open questions resolved)  
-> **Status:** Decision record. C18, C19, Q8, and the decided Q1c are implemented and covered by tests; this status does not claim that every earlier work package in the document is complete.
+> **Last updated:** 2026-11-08 (catalog inspector defects verified/fixed)
+> **Status:** Decision record. C18, C19, C20, Q8, and the decided Q1c are implemented and covered by tests; this status does not claim that every earlier work package in the document is complete.
 
 ## 1. Purpose
 
@@ -30,9 +30,10 @@ document and are still to be written.
 | C11 | The duration addon is parameterised (Q2): `B<n>` (for example `B3`, `B4`, `B8`) sets the bar count to `n` on any figure, without being defined in the figure's file. It can shorten as well as lengthen a figure. |
 | C12 | Conflicting addons (Q3): if two addons on one figure change the same value for the same dancer, the combination is rejected as an error. Later-wins is not allowed. |
 | C13 | The misspelled key `Faceing` is renamed to `EndFacing` everywhere (Q4, C17), without a legacy shim. |
-| C17 | Facing keys (Q1b): `StartFacing` declares facing at the start and `EndFacing` at the end, parallel to `StartPos` and `EndPos`. Both are per-dancer lists in the same format that `Faceing` has today (a position `[row, col]` to face, or an empty entry for the default). The key `Facing` alone is not used. |
+| C17 | Facing keys (Q1b): `StartFacing` declares facing at the start and `EndFacing` at the end, parallel to `StartPos` and `EndPos`. Both are per-dancer lists; `StartFacing` uses target coordinates or an empty entry, while `EndFacing` also accepts the symbolic entries defined in C20. The key `Facing` alone is not used. |
 | C14 | There are no separate 6-bar and 8-bar reel figures (Q5). A 6-bar reel is two half reels in series, each with `B3`. An 8-bar reel is two half reels at their default 4 bars. |
 | C18 | Default facing (refines C1, 2026-10-25): without a declared facing, a dancer faces straight across the floor along the column axis. The facing is a target position (the same format as `EndFacing`): the dancer faces the position in the same row on the opposite line. The dancer on `[1,-1]` faces `[1,1]`, the dancer on `[2,-1]` faces `[2,1]`, and the dancer on `[1,1]` faces `[1,-1]`. The direction is therefore `[0,1]` for the men's line and `[0,-1]` for the ladies' line, but it is stored and rendered as the target position of the dancer's own row. This replaces the partner-index and "opposite side" fallbacks (for example in the preview in `src/api/canonical.py`). |
+| C20 | Symbolic ending facing: `=` translates the incoming target-minus-start offset to the final anchored position; `I` faces `[row,0]`; `O` faces `[row,2*column]`; `U`/`D` target the row immediately up/down; `OwnL`/`OpL` target the dancer identity's own/opposite line (`male=-1`, `female=+1`). Resolve after all anchors and addons. `I`/`O` at absolute column 0 and identity targets already on the target line are errors. `=` requires a valid incoming target. `M` is explicitly unsupported because last-move direction is unavailable and returns `unsupported_facing_notation`. Addon `[]` remains no override and `null` remains an explicit default reset; shorthand entries are real writes. The normative contract is `GENERAL_DANCE_AND_FIGURE_JSON_CONTRACT.md`. |
 | C19 | Dancer roles (2026-10-25): inside a dance, the role, couple and facing of each dancer come from the previous figure and the floor. Only the catalog preview of a single figure has to guess. The default for the preview is the current preview behaviour: dancers are taken in the order of `StartPos`, even index is a man, odd index is a woman, and the couple is `index // 2 + 1` (1m, 1w, 2m, 2w, ...). A figure can overrule this by declaring its dancers: a list of dancer identifiers parallel to `StartPos`, in the same style as the names on the floor (couple number plus `m` or `w`). For H1DR the list is `["2m", "1w", "1m", "3w"]`. The preview uses the declared identifiers for name, gender and colour (the colour follows the couple number). The key is named `StartDancers`, parallel to `StartPos` and `StartFacing`. |
 | C15 | Only `data/Figures/` and `data/Dances/` are used (Q7). The root `Figures/` and `Dances/` folders are removed, along with the loader's legacy fallback to them. |
 | C16 | The `Dances/subDances/` fragments are kept and migrated like the other dances (Q6). They move to `data/Dances/subDances/` only. |
@@ -160,7 +161,7 @@ documents are updated instead; tests are written first; the full suite runs with
 
 ## 8. Status and handoff (2026-10-25)
 
-Valid for version 0.1.0. Nothing is committed. All results below were reported by the Supervisor and spot-checked; the last full runs were `npm test` (6 Jest suites, 57 tests, plus the Playwright check) and `.\.venv\Scripts\python.exe -m pytest tests/ -q` (490 passed).
+Valid for version 0.1.0. The baseline snapshot is commit `14e73d6`; changes recorded since that snapshot are uncommitted. The historical implementation status below was reported by the Supervisor and spot-checked; the last full runs were `npm test` (6 Jest suites, 57 tests, plus the Playwright check) and `.\.venv\Scripts\python.exe -m pytest tests/ -q` (490 passed).
 
 ### 8.1 Implemented (uncommitted)
 
@@ -168,13 +169,16 @@ Valid for version 0.1.0. Nothing is committed. All results below were reported b
 - `StartDancers` and `StartFacing` (C18, C19, Q8, Q1c) with data for H1DR, H2DR, HLReelAU, HLReelAD, HRReelAU and HRReelAD. The four reel `Name` values now equal their filenames.
 - Crips as data (`getCripsData`), in the API (`crips` lists in preview, dance detail, tree and trace) and in the inspector (Q9). Instructions sit at full width above two equal side-by-side floors. Line and dancer highlight each other.
 - Single Apply button, live preview for figures in a dance (`POST /api/dances/<dance-id>/nodes/<node-id>/preview`), implicit cancel, error display with affected dancers (Q10).
+- Catalog preview anchor columns are visible in the floor diagrams; the renderer keeps a standard-set reference frame so moving a reusable figure between lines does not get normalized away.
+- The inspector description includes descriptions of currently selected add-ons and removes them when deselected.
+- H1DR catalog crips now reflect add-on endings: `ELA` describes each dancer's line-ending position, and `E2c` uses the add-on's end-facing targets.
 - Dancers rotate with their facing; "catalog preview" titles removed; `npm test` works again; `Test_Comparison.py` retired; backup files use a counter (`<name>.<counter>.bak`).
 
-### 8.2 Defects found in the first browser test on a catalog figure (H1DR), not yet fixed
+### 8.2 Catalog-preview browser findings (verified 2026-11-08)
 
-1. **Apply button covers text.** The "Apply" button at the top right of the inspector overlaps the "Catalog figure" label. Fix: place the label and the button side by side without overlap.
-2. **Instructions ignore add-ons in the catalog preview.** The outgoing floor follows a ticked add-on, but the instruction lines do not change. Find out whether the preview API builds the crips without the selected add-ons, or whether the frontend keeps the old lines. Add a test: ticked add-on changes the text (for example `E1c` on `1cLT`: "ends facing ...").
-3. **Anchor column has no effect.** The floors follow the anchor row but not the anchor column. User proposal: remove the column field from the inspector, since the column is not used in real life. Needs: remove the field, the API field and the tests that use it, or fix it. The user prefers removing it.
+1. **Apply/status overlap fixed.** The inspector heading now lays out the status label and Apply button side by side. A browser check at the minimum supported viewport verifies that their boxes do not overlap.
+2. **Add-on crips verified.** Selecting `E1c` on catalog figure `1cLT` updates the instruction lines from "ends in own place" to "ends facing ..." for both dancers.
+3. **H1DR add-on descriptions and crips fixed.** The inspector adds selected add-on descriptions and removes them on deselection. H1DR's `ELA` and `E2c` now also update the crips to reflect their ending positions and facing targets; API and browser regression checks cover these outputs.
 
 ### 8.3 Open items
 
@@ -188,6 +192,5 @@ Valid for version 0.1.0. Nothing is committed. All results below were reported b
 ### 8.4 How to continue
 
 - Workflow: design agent writes decisions into this document; a Supervisor agent (`.github/Agents/Supervisor.agent.md`) delegates to the `Coding` agent with TDD, and does not commit. Always use `.\.venv\Scripts\python.exe`. The Supervisor tends to go idle early, so check the worktree and its report.
-- Suggested next task for the Supervisor: fix 8.2 items 1 to 3 (tests first), then run `npm test` and the pytest suite.
+- Suggested next task for the Supervisor: choose a remaining item from section 8.3 for a separate, scoped task.
 - Commit only after the user agrees. A commit message needs the Co-authored-by trailer.
-

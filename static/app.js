@@ -233,6 +233,8 @@ export function createEditor({
     const nodeId = selected.id;
     const requestModel = state.readModel;
     const sequence = ++nodePreviewSequence;
+    state.previewError = null;
+    state.error = null;
     state.nodePreviewLoading = true;
     render();
     const response = await send(
@@ -345,8 +347,17 @@ export function createEditor({
 
     if (name) name.textContent = figure ? figure.name : (selected ? selected.kind || selected.figureRef : 'No selection');
     if (meta) {
+      const addonDescriptions = figure && figure.capabilities &&
+        Array.isArray(figure.capabilities.validAddons)
+        ? figure.capabilities.validAddons
+          .filter(addon => addon && shownAddons.includes(addon.name) && addon.description)
+          .map(addon => addon.description)
+        : [];
+      const figureDescription = figure
+        ? [figure.description, ...addonDescriptions].filter(Boolean).join('\n')
+        : '';
       const details = figure
-        ? `${figure.description || ''}\nFigure reference: ${figure.figureRef}\nVersion: ${figure.version}`
+        ? `${figureDescription}\nFigure reference: ${figure.figureRef}\nVersion: ${figure.version}`
         : selected
           ? `${selected.type}${selected.kind ? ` (${selected.kind})` : ''}\nNode ID: ${selected.id}`
           : 'Choose a catalog figure or a dance-tree node.';
@@ -377,6 +388,12 @@ export function createEditor({
       ? (state.figurePreview && state.figurePreview.crips) || []
       : nodePreview && Array.isArray(nodePreview.crips)
         ? nodePreview.crips
+      : selected && selected.type === 'group'
+        ? (model.crips || []).filter(line => {
+          if (!line || typeof line.nodeId !== 'string' || !line.nodeId) return false;
+          const descendant = findNode(selected, line.nodeId);
+          return descendant && descendant.type === 'figure';
+        })
       : selected && occurrence && trace
         ? (model.crips || []).filter(line => {
           const composite = selected.type === 'compositeOccurrence';
@@ -394,6 +411,32 @@ export function createEditor({
       : nodePreview && nodePreview.outgoingFloor
         ? nodePreview.outgoingFloor
         : trace && trace.outgoingFloor;
+    const incomingFloor = catalogSelection
+      ? state.figurePreview && state.figurePreview.incomingFloor
+      : trace && trace.incomingFloor;
+    const activeDancers = nodePreview ? nodePreview.activeDancers : trace && trace.activeDancers;
+    const referenceCoords = [];
+    const referenceFloors = [
+      !catalogSelection && model && model.trace && model.trace[0] && model.trace[0].incomingFloor,
+      incomingFloor, outgoingFloor
+    ];
+    for (const floor of referenceFloors) {
+      const normalized = floorForRenderer(floor);
+      if (!normalized) continue;
+      for (const position of Object.values(normalized.positions)) {
+        const coord = position.coord.map(Number);
+        if (coord.length >= 2 && coord.every(Number.isFinite)) referenceCoords.push(coord);
+      }
+    }
+    if (catalogSelection && state.figurePreview && Number.isFinite(state.figurePreview.couples)) {
+      referenceCoords.push([1, -1], [state.figurePreview.couples, 1]);
+    }
+    const referenceBounds = referenceCoords.length ? [
+      Math.min(...referenceCoords.map(coord => coord[0])),
+      Math.min(-1, ...referenceCoords.map(coord => coord[1])),
+      Math.max(...referenceCoords.map(coord => coord[0])),
+      Math.max(1, ...referenceCoords.map(coord => coord[1]))
+    ] : null;
     const errorDancers = resolveErrorDancers(
       outgoingFloor,
       previewError && previewError.dancers
@@ -403,7 +446,8 @@ export function createEditor({
     }
     if (traceStatus) {
       traceStatus.textContent = trace
-        ? `${trace.kind}: ${trace.status}${trace.barRange ? ` (bars ${trace.barRange[0]}–${trace.barRange[1]})` : ''}`
+        ? `${trace.kind}: ${trace.status}${trace.barRange ? ` (bars ${trace.barRange[0]}–${trace.barRange[1]})` : ''}` +
+          (!Array.isArray(activeDancers) ? ' — Active dancers unavailable; showing full floor.' : '')
         : catalogSelection
           ? `Incoming and outgoing floors for ${figure ? figure.name : figureRef}.`
           : 'No execution snapshot for this selection.';
@@ -419,7 +463,7 @@ export function createEditor({
         ? state.previewLoading
           ? 'Calculating figure preview...'
           : state.figurePreview
-            ? `Catalog preview - smallest standard set (${state.figurePreview.couples} ` +
+            ? `Catalog preview - minimal declared participant set (${state.figurePreview.couples} ` +
               `couple${state.figurePreview.couples === 1 ? '' : 's'}).`
             : 'Figure preview unavailable.'
         : '';
@@ -435,6 +479,11 @@ export function createEditor({
       target.classList.toggle('invalid-preview', Boolean(snapshotOptions.invalid));
       const normalized = floorForRenderer(floor);
       if (normalized) {
+        if (Array.isArray(activeDancers) && !catalogSelection) {
+          const active = new Set(activeDancers);
+          normalized.positions = Object.fromEntries(Object.entries(normalized.positions)
+            .filter(([key, position]) => active.has(String(position.dancer.name || key))));
+        }
         const selectedPositions = interactive && state.selectedCripDancer
           ? Object.entries(normalized.positions).reduce((matches, [key, position]) => {
             if ((position.dancer.name || key) === state.selectedCripDancer) {
@@ -448,6 +497,8 @@ export function createEditor({
           height: 210,
           contextLabel: label,
           contextType: 'occurrence-snapshot',
+          referenceBounds: snapshotOptions.referenceBounds,
+          showSetLines: true,
           selectedPositions,
           errorDancers: snapshotOptions.errorDancers || [],
           errorPositions: snapshotOptions.errorPositions || [],
@@ -462,11 +513,12 @@ export function createEditor({
     };
     renderSnapshot(
       incoming,
-      catalogSelection
-        ? state.figurePreview && state.figurePreview.incomingFloor
-        : trace && trace.incomingFloor,
+      incomingFloor,
       catalogSelection ? null : 'Incoming dancefloor',
-      true
+      true,
+      {
+        referenceBounds
+      }
     );
     const outgoingInvalid = Boolean(previewError || state.previewLoading ||
       (occurrence && (state.nodePreviewLoading ||
@@ -476,7 +528,11 @@ export function createEditor({
       outgoingFloor,
       catalogSelection ? null : 'Outgoing dancefloor',
       false,
-      { invalid: outgoingInvalid, errorDancers }
+      {
+        invalid: outgoingInvalid,
+        errorDancers,
+        referenceBounds
+      }
     );
     const deleteButton = element('delete-node');
     if (deleteButton) deleteButton.disabled = !selected || selected.id === root.id || Boolean(state.proposal);
@@ -735,6 +791,8 @@ export function createEditor({
       return null;
     }
     state.previewAnchor = [row, column];
+    state.previewError = null;
+    state.error = null;
     state.previewLoading = true;
     render();
     let body;
@@ -792,6 +850,7 @@ export function createEditor({
     if (!body) return;
     state.danceId = danceId;
     state.readModel = body;
+    resetNodePreview();
     state.selectedCripDancer = null;
     state.proposal = null;
     state.previewError = null;
@@ -829,6 +888,7 @@ export function createEditor({
     });
     if (!body) return null;
     state.readModel = body;
+    resetNodePreview();
     state.proposal = null;
     state.playback = new TracePlayback(body);
     state.playback.selectNode(state.selectedNodeId);
@@ -849,6 +909,7 @@ export function createEditor({
     );
     if (!body) return null;
     state.readModel = body;
+    resetNodePreview();
     state.proposal = null;
     state.playback = new TracePlayback(body);
     state.playback.selectNode(state.selectedNodeId);
@@ -878,6 +939,7 @@ export function createEditor({
     }
     if (!body) return null;
     state.readModel = body;
+    resetNodePreview();
     state.proposal = null;
     state.playback = new TracePlayback(body);
     state.playback.selectNode(state.selectedNodeId);
@@ -918,6 +980,8 @@ export function createEditor({
         state.selectedFigureRef = null;
         state.figurePreview = null;
         state.selectedCripDancer = null;
+        state.error = null;
+        state.notice = '';
         const selectedNode = state.readModel && state.readModel.document
           ? findNode(state.readModel.document.root, state.selectedNodeId)
           : null;
@@ -951,6 +1015,9 @@ export function createEditor({
         state.notice = '';
         state.previewAnchor = [1, 0];
         state.previewAddons = [];
+        state.figurePreview = null;
+        state.previewLoading = false;
+        resetNodePreview();
         render();
         try {
           await loadFigurePreview();

@@ -23,15 +23,7 @@
       "default": {}
     },
     "FigureList": {
-      "type": "array",
-      "items": {
-        "type": [
-          "object",
-          "array",
-          "string",
-          "number"
-        ]
-      }
+      "$ref": "#/definitions/CompositeGroup"
     },
     "Bars": {
       "type": "number"
@@ -50,7 +42,17 @@
     },
     "EndFacing": {
       "type": "array",
-      "description": "Ending facing directions for each dancer"
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/OptionalPosition"
+          },
+          {
+            "$ref": "#/definitions/FacingNotation"
+          }
+        ]
+      },
+      "description": "Per-dancer ending-facing target or symbolic notation"
     },
     "CriptDesc": {
       "type": "array",
@@ -138,9 +140,122 @@
     }
   ],
   "definitions": {
+    "CompositeGroup": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": [
+        {
+          "type": "string",
+          "enum": ["s", "p"]
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FigureListNode"
+          }
+        }
+      ],
+      "additionalItems": false
+    },
+    "FigureListNode": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/CompositeGroup"
+        },
+        {
+          "$ref": "#/definitions/AnchoredFigure"
+        }
+      ]
+    },
+    "AnchoredFigure": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": [
+        {
+          "$ref": "#/definitions/PositionPair"
+        },
+        {
+          "$ref": "#/definitions/FigureReference"
+        }
+      ],
+      "additionalItems": false
+    },
+    "FigureReference": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ],
+          "additionalItems": false
+        }
+      ]
+    },
+    "PositionPair": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "additionalItems": false
+    },
+    "OptionalPosition": {
+      "oneOf": [
+        {
+          "type": "array",
+          "maxItems": 0
+        },
+        {
+          "$ref": "#/definitions/PositionPair"
+        }
+      ]
+    },
+    "FacingResetOrPosition": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/definitions/OptionalPosition"
+        },
+        {
+          "$ref": "#/definitions/FacingNotation"
+        }
+      ]
+    },
+    "FacingNotation": {
+      "type": "string",
+      "enum": ["=", "I", "O", "U", "D", "OwnL", "OpL", "M"]
+    },
     "Addon": {
       "type": "object",
       "properties": {
+        "Bars": {
+          "type": "number"
+        },
         "Name": {
           "type": "string"
         },
@@ -152,6 +267,43 @@
             "number",
             "integer"
           ]
+        },
+        "StartPos": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OptionalPosition"
+          }
+        },
+        "EndPos": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OptionalPosition"
+          }
+        },
+        "EndFacing": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FacingResetOrPosition"
+          },
+          "description": "Modified facing directions; null explicitly resets to default, while [] leaves the base entry unchanged."
+        },
+        "Partner": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OptionalPosition"
+          }
+        },
+        "CriptDesc": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "CriptReplace": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [

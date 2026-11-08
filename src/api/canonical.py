@@ -57,6 +57,10 @@ from src.engine.persistence.archive import (
 from src.engine.validation import validate_document
 
 
+class _PreviewUnsupported(ValueError):
+    code = "preview_unsupported"
+
+
 def create_canonical_blueprint(app_module: Any) -> Blueprint:
     bp = Blueprint("canonical_api", __name__)
     documents: dict[str, DanceDocument] = {}
@@ -224,6 +228,9 @@ def create_canonical_blueprint(app_module: Any) -> Blueprint:
                 "incomingFloor": serialize_floor(record.incoming_floor),
                 "outgoingFloor": serialize_floor(record.outgoing_floor),
                 "writes": [list(position) for position in sorted(record.writes)],
+                "activeDancers": (
+                    sorted(record.active_dancers) if record.active_dancers is not None else None
+                ),
                 "branches": [
                     {
                         "nodeId": branch.node_id,
@@ -286,6 +293,9 @@ def create_canonical_blueprint(app_module: Any) -> Blueprint:
         from src.engine.models.Dance import getCripsData
 
         effective_anchors: dict[str, tuple[Any, Any]] = {}
+        trace_records = getattr(state, "trace", None)
+        if trace_records is None:
+            trace_records = getattr(state, "trace_records", ())
 
         def visit(node: DanceNode, offset=(0, 0)) -> None:
             if isinstance(node, CompositeOccurrence):
@@ -305,7 +315,7 @@ def create_canonical_blueprint(app_module: Any) -> Blueprint:
 
         visit(document.root)
         lines = []
-        for record in state.trace:
+        for record in trace_records:
             if record.kind != "figure" or record.figure_ref is None:
                 continue
             occurrence = document.find_node(record.node_id)
@@ -313,19 +323,160 @@ def create_canonical_blueprint(app_module: Any) -> Blueprint:
             figure_node = replace(occurrence, anchor=anchor)
             bar_start = record.bar_range[0] if record.bar_range else 1
             legacy_floor = record.incoming_floor.to_legacy()
-            max_row = max(
-                (position[0] for position in legacy_floor.DanceFloorMap),
-                default=0,
-            )
+            rows = [position[0] for position in legacy_floor.DanceFloorMap]
+            for floor in (record.incoming_floor, record.outgoing_floor):
+                if floor is None:
+                    continue
+                for position, entry in floor.positions.items():
+                    rows.append(position[0])
+                    if isinstance(entry.facing, (list, tuple)) and len(entry.facing) == 2:
+                        rows.append(entry.facing[0])
+            max_row = max(rows, default=0)
             legacy_floor.setupDanceFloorNames(int(max_row))
             figure_lines = getCripsData(
                 figure_node, legacy_floor, bar_start=bar_start
             )
-            if record.bar_range is not None:
-                for line in figure_lines:
+            for line in figure_lines:
+                line["nodeId"] = record.node_id
+                if record.bar_range is not None:
                     line["barRange"] = list(record.bar_range)
             lines.extend(figure_lines)
         return lines
+
+    def composite_with_addons(node: DanceNode) -> CompositeOccurrence | None:
+        if isinstance(node, CompositeOccurrence):
+            return node if node.addons else composite_with_addons(node.root)
+        if isinstance(node, GroupNode):
+            for child in node.children:
+                found = composite_with_addons(child)
+                if found is not None:
+                    return found
+        return None
+
+    def composite_catalog_floor(
+        node: DanceNode, repo: FigureRepository
+    ) -> tuple[FloorState, int]:
+        """Build only the initial participants required by the composite's first step."""
+        from src.engine.figures.SimpleFigure import SimpleFigure
+
+        requirements: dict[tuple[Any, Any], FloorEntry] = {}
+        positions_by_dancer: dict[str, tuple[Any, Any]] = {}
+        participants: set[str] = set()
+
+        def visit(current: DanceNode, offset=(0, 0)) -> None:
+            if isinstance(current, CompositeOccurrence):
+                visit(
+                    current.root,
+                    (offset[0] + current.anchor[0], offset[1] + current.anchor[1]),
+                )
+                return
+            if isinstance(current, GroupNode):
+                children = current.children
+                if current.kind == "series":
+                    children = children[:1]
+                for child in children:
+                    visit(child, offset)
+                return
+            if not isinstance(current, FigureOccurrence):
+                raise _PreviewUnsupported("Composite contains an unsupported node.")
+
+            effective_anchor = (
+                current.anchor[0] + offset[0],
+                current.anchor[1] + offset[1],
+            )
+            repo.validate_addons(
+                current.figure_ref,
+                current.addons,
+                path=f"preview.{current.id}",
+                occurrence_id=current.id,
+            )
+            definition = repo.get_legacy_definition(current.figure_ref)
+            figure = SimpleFigure(
+                current.figure_ref,
+                list(effective_anchor),
+                list(current.addons),
+            )
+            if not figure.StartPos or len(figure.StartPos) != len(figure.StartDancers):
+                raise _PreviewUnsupported(
+                    f"Figure {current.figure_ref!r} has no complete declared start formation."
+                )
+            declared_names = definition.get("StartDancers")
+            for index, start in enumerate(figure.StartPos):
+                position = tuple(figure.posWithAnchor(start))
+                if any(
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not isfinite(value)
+                    for value in position
+                ):
+                    raise _PreviewUnsupported(
+                        f"Figure {current.figure_ref!r} has a non-finite start position."
+                    )
+                name = figure.StartDancers[index]
+                explicit_name = (
+                    isinstance(declared_names, list)
+                    and index < len(declared_names)
+                    and isinstance(declared_names[index], str)
+                    and bool(declared_names[index])
+                )
+                # Automatic labels are only safe when they match the conventional
+                # standard-set identity at the absolute position. Otherwise the
+                # preview cannot infer which dancer the composite intends.
+                if not explicit_name:
+                    row, column = position
+                    if (
+                        isinstance(row, (int, float))
+                        and row > 0
+                        and float(row).is_integer()
+                        and column in (-1, 1)
+                    ):
+                        name = f"{int(row)}{'m' if column == -1 else 'w'}"
+                    else:
+                        raise _PreviewUnsupported(
+                            f"Figure {current.figure_ref!r} needs explicit StartDancers "
+                            "to build a non-standard composite preview floor."
+                        )
+                gender = "male" if name.endswith("m") else "female"
+                facing_declaration = (
+                    figure.StartFacing[index]
+                    if index < len(figure.StartFacing)
+                    else ""
+                )
+                if isinstance(facing_declaration, (list, tuple)) and len(facing_declaration) == 2:
+                    facing = tuple(figure.posWithAnchor(facing_declaration))
+                else:
+                    facing = tuple(default_facing_target(position))
+                entry = FloorEntry(name, gender, facing)
+                existing = requirements.get(position)
+                if existing is not None and existing != entry:
+                    raise _PreviewUnsupported(
+                        "Composite constituents declare incompatible dancers or facings "
+                        f"at initial position {position!r}."
+                    )
+                other_position = positions_by_dancer.get(name)
+                if other_position is not None and other_position != position:
+                    raise _PreviewUnsupported(
+                        f"Composite start declarations place dancer {name!r} at multiple "
+                        "initial positions."
+                    )
+                requirements[position] = entry
+                positions_by_dancer[name] = position
+                participants.add(name)
+
+        visit(node)
+        if not requirements:
+            raise _PreviewUnsupported(
+                "Composite has no initial participant positions for an isolated preview."
+            )
+        couples = max(
+            (int(name[:-1]) for name in participants if name[:-1].isdigit()),
+            default=0,
+        )
+        if couples < 1:
+            raise _PreviewUnsupported(
+                "Composite start declarations do not identify a standard participant set."
+            )
+        return FloorState(requirements), couples
 
     def document_response(document: DanceDocument, history: History, *, status: int = 200):
         state = history.state
@@ -490,12 +641,146 @@ def create_canonical_blueprint(app_module: Any) -> Blueprint:
                 })
         return jsonify({"figures": result})
 
+    def preview_composite_catalog(identifier: str, repo: FigureRepository):
+        body = request.get_json(silent=True)
+        if not isinstance(body, dict):
+            return error("invalid_preview", "Preview request must be a JSON object.", 400)
+        anchor = body.get("anchor", [1, 0])
+        addons = body.get("addons", [])
+        if (
+            not isinstance(anchor, list)
+            or len(anchor) != 2
+            or any(
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not isfinite(value)
+                for value in anchor
+            )
+        ):
+            return error("invalid_preview", "Preview anchor must contain two numbers.", 400)
+        if not isinstance(addons, list) or any(
+            not isinstance(addon, str) for addon in addons
+        ):
+            return error("invalid_preview", "Preview addons must be an array of names.", 400)
+        if addons:
+            return error(
+                "composite_addons_unsupported",
+                "Add-ons are not supported on composite figures; select add-ons on their simple constituents.",
+                400,
+                figureRef=identifier,
+                addons=addons,
+            )
+
+        try:
+            document = LegacyDanceAdapter.from_data(
+                {
+                    "Version": 3,
+                    "FigureList": ["s", [[[0, 0], identifier]]],
+                },
+                repo.figure_exists,
+                get_definition=repo.get_legacy_definition,
+            )
+            composite = document.root.children[0]
+            if not isinstance(composite, CompositeOccurrence):
+                raise _PreviewUnsupported(
+                    "Version 3 catalog figure did not produce a composite occurrence."
+                )
+            composite = replace(composite, anchor=(anchor[0], anchor[1]))
+            document = replace(
+                document,
+                root=replace(document.root, children=(composite,)),
+            )
+            unsupported = composite_with_addons(composite)
+            if unsupported is not None:
+                return error(
+                    "composite_addons_unsupported",
+                    "Add-ons are not supported on composite occurrences; select add-ons on their simple constituents.",
+                    400,
+                    figureRef=unsupported.figure_ref,
+                    addons=list(unsupported.addons),
+                    occurrenceId=unsupported.id,
+                )
+            incoming, couples = composite_catalog_floor(document.root, repo)
+            active_names = sorted(
+                entry.dancer_name for entry in incoming.positions.values()
+            )
+            execution = execute_document(
+                document,
+                incoming,
+                repo,
+                bar_start=1,
+            )
+            if execution.status != "completed" or execution.outgoing_floor is None:
+                failure = next(
+                    (
+                        diagnostic
+                        for diagnostic in execution.diagnostics
+                        if getattr(diagnostic, "code", None)
+                    ),
+                    None,
+                )
+                code = getattr(failure, "code", "figure_execution_failed")
+                message = str(failure or "Composite execution did not produce a complete floor.")
+                details = {}
+                if isinstance(failure, Exception) and hasattr(failure, "conflicts"):
+                    details["conflicts"] = [
+                        {
+                            "position": list(position),
+                            "branches": list(branches),
+                        }
+                        for position, branches in failure.conflicts.items()
+                    ]
+                return error(code, message, 422, dancers=active_names, **details)
+            trace = execution.trace_records[0]
+            return jsonify({
+                "figureRef": identifier,
+                "couples": couples,
+                "activeDancers": (
+                    sorted(trace.active_dancers) if trace.active_dancers is not None else None
+                ),
+                "incomingFloor": serialize_floor(incoming),
+                "outgoingFloor": serialize_floor(execution.outgoing_floor),
+                "crips": structured_crips(document, execution),
+            })
+        except AddonValidationError as exc:
+            return error(
+                exc.code,
+                exc.message,
+                400,
+                figureRef=exc.figure_ref,
+                addons=list(exc.addons),
+                path=exc.path,
+                occurrenceId=exc.occurrence_id,
+                dancers=exc.dancers,
+            )
+        except _PreviewUnsupported as exc:
+            return error(exc.code, str(exc), 422)
+        except ExecutionError as exc:
+            return error(
+                exc.code,
+                str(exc),
+                422,
+                nodeId=exc.node_id,
+                path=list(exc.path),
+                dancers=active_names if "active_names" in locals() else [],
+            )
+        except (ValueError, OSError, TypeError, KeyError) as exc:
+            return error(
+                getattr(exc, "code", "invalid_preview"),
+                str(exc),
+                422 if isinstance(exc, _PreviewUnsupported) else 400,
+                dancers=active_names if "active_names" in locals() else [],
+            )
+
+
     @bp.post("/api/figures/<path:identifier>/preview")
     def figure_preview(identifier: str):
         repo = repository()
         preview_dancers: list[str] = []
         try:
             definition = repo.get_legacy_definition(identifier)
+            if definition["Version"] == 3:
+                return preview_composite_catalog(identifier, repo)
             if definition["Version"] != 2:
                 return error(
                     "preview_unsupported",
@@ -618,11 +903,11 @@ def create_canonical_blueprint(app_module: Any) -> Blueprint:
                 )
             outgoing_positions = {}
             for index, position in enumerate(anchored_ends):
-                dancer = moved_by_position[position]
+                dancer, executed_facing = moved_floor.DanceFloorMap[position]
                 outgoing_positions[position] = FloorEntry(
                     str(dancer.name),
                     str(getattr(dancer, "gender", "")),
-                    facing_target(index, anchored_ends, facings),
+                    executed_facing,
                 )
             outgoing = FloorState(outgoing_positions)
             from src.engine.models.Dance import getCripsData
@@ -652,7 +937,9 @@ def create_canonical_blueprint(app_module: Any) -> Blueprint:
                 dancers=exc.dancers,
             )
         except (ValueError, OSError) as exc:
-            return error("invalid_preview", str(exc), 400, dancers=preview_dancers)
+            code = getattr(exc, "code", "invalid_preview")
+            status = 422 if code == "unsupported_facing_notation" else 400
+            return error(code, str(exc), status, dancers=preview_dancers)
         except Exception as exc:
             return error("preview_failed", str(exc), 422, dancers=preview_dancers)
         return jsonify({
@@ -697,24 +984,64 @@ def create_canonical_blueprint(app_module: Any) -> Blueprint:
             node = document.find_node(node_id)
         except KeyError:
             return error("node_not_found", "Dance node was not found.", 404)
-        if not isinstance(node, FigureOccurrence):
+        if not isinstance(node, (FigureOccurrence, CompositeOccurrence)):
             return error(
                 "preview_unsupported",
-                "Preview is available for simple figure nodes only.",
+                "Preview is available for figure and composite occurrence nodes.",
                 422,
             )
+        is_composite = isinstance(node, CompositeOccurrence)
+        if is_composite and (addons or node.addons):
+            return error(
+                "composite_addons_unsupported",
+                "Add-ons are not supported on composite occurrences; select add-ons on their simple constituents.",
+                400,
+                figureRef=node.figure_ref,
+                addons=addons or list(node.addons),
+                occurrenceId=node_id,
+            )
+        if is_composite:
+            unsupported = composite_with_addons(node)
+            if unsupported is not None:
+                return error(
+                    "composite_addons_unsupported",
+                    "Add-ons are not supported on composite occurrences; select add-ons on their simple constituents.",
+                    400,
+                    figureRef=unsupported.figure_ref,
+                    addons=list(unsupported.addons),
+                    occurrenceId=unsupported.id,
+                )
         record = next(
             (
                 item for item in history.state.trace
-                if item.node_id == node_id and item.kind == "figure"
+                if item.node_id == node_id
+                and item.kind == ("composite" if is_composite else "figure")
             ),
             None,
         )
         if record is None:
             try:
-                start_count = len(repository().get_legacy_definition(node.figure_ref).get("StartPos", []))
+                start_count = len(
+                    repository().get_legacy_definition(node.figure_ref).get("StartPos", [])
+                )
             except (FileNotFoundError, OSError, ValueError, TypeError):
                 start_count = 0
+            failure = next(
+                (
+                    diagnostic
+                    for diagnostic in history.state.execution_result.diagnostics
+                    if getattr(diagnostic, "node_id", None) == node_id
+                    and getattr(diagnostic, "code", None) == "unsupported_facing_notation"
+                ),
+                None,
+            )
+            if failure is not None:
+                return error(
+                    failure.code,
+                    str(getattr(failure, "message", failure)),
+                    422,
+                    dancers=[f"start position {index + 1}" for index in range(start_count)],
+                )
             return error(
                 "preview_failed",
                 "The dance trace has no incoming floor for this figure node.",
@@ -725,7 +1052,7 @@ def create_canonical_blueprint(app_module: Any) -> Blueprint:
         def parent_offset(current: DanceNode, target_id: str, offset=(0, 0)):
             if isinstance(current, CompositeOccurrence):
                 if current.id == target_id:
-                    return None
+                    return offset
                 nested = (offset[0] + current.anchor[0], offset[1] + current.anchor[1])
                 return parent_offset(current.root, target_id, nested)
             if isinstance(current, GroupNode):
@@ -742,19 +1069,30 @@ def create_canonical_blueprint(app_module: Any) -> Blueprint:
         offset = offset or (0, 0)
         effective_anchor = (anchor[0] + offset[0], anchor[1] + offset[1])
         incoming = record.incoming_floor
-        affected_dancers: list[str] = []
+        affected_dancers: list[str] = (
+            sorted(record.active_dancers)
+            if record.active_dancers is not None
+            else []
+        )
         try:
             repo = history.state.repository
-            repo.validate_addons(node.figure_ref, addons, path=f"preview.{node_id}", occurrence_id=node_id)
-            from src.engine.figures.SimpleFigure import SimpleFigure
-
-            figure = SimpleFigure(node.figure_ref, list(effective_anchor), addons)
-            for index, start in enumerate(figure.StartPos):
-                position = tuple(figure.posWithAnchor(start))
-                entry = incoming.positions.get(position)
-                affected_dancers.append(
-                    entry.dancer_name if entry is not None else f"start position {index + 1}"
+            if not is_composite:
+                repo.validate_addons(
+                    node.figure_ref,
+                    addons,
+                    path=f"preview.{node_id}",
+                    occurrence_id=node_id,
                 )
+                from src.engine.figures.SimpleFigure import SimpleFigure
+
+                figure = SimpleFigure(node.figure_ref, list(effective_anchor), addons)
+                affected_dancers = []
+                for index, start in enumerate(figure.StartPos):
+                    position = tuple(figure.posWithAnchor(start))
+                    entry = incoming.positions.get(position)
+                    affected_dancers.append(
+                        entry.dancer_name if entry is not None else f"start position {index + 1}"
+                    )
             candidate = replace(
                 node,
                 anchor=effective_anchor,
@@ -765,31 +1103,39 @@ def create_canonical_blueprint(app_module: Any) -> Blueprint:
                 {},
                 GroupNode(f"preview-root-{uuid4().hex}", "series", (candidate,)),
             )
-            execution = execute_document(isolated_document, incoming, repo)
+            bar_start = record.bar_range[0] if record.bar_range else 1
+            execution = execute_document(
+                isolated_document,
+                incoming,
+                repo,
+                bar_start=bar_start,
+            )
             if execution.status != "completed" or execution.outgoing_floor is None:
+                failure = next(
+                    (
+                        diagnostic
+                        for diagnostic in execution.diagnostics
+                        if getattr(diagnostic, "code", None)
+                    ),
+                    None,
+                )
+                code = getattr(failure, "code", "figure_execution_failed")
+                message = str(failure or "The proposed figure did not produce a valid outgoing floor.")
+                details = {}
+                if isinstance(failure, Exception) and hasattr(failure, "conflicts"):
+                    details["conflicts"] = [
+                        {"position": list(position), "branches": list(branches)}
+                        for position, branches in failure.conflicts.items()
+                    ]
                 return error(
-                    "preview_failed",
-                    "The proposed figure did not produce a valid outgoing floor.",
+                    code,
+                    message,
                     422,
                     dancers=affected_dancers,
+                    **details,
                 )
 
-            from src.engine.models.Dance import getCripsData
-
-            legacy_floor = incoming.to_legacy()
-            rows = [position[0] for position in incoming.positions]
-            rows.extend(
-                effective_anchor[0] + position[0]
-                for position in list(figure.StartPos) + list(figure.EndPos)
-            )
-            rows.extend(
-                effective_anchor[0] + facing[0]
-                for facing in figure.EndFacing
-                if isinstance(facing, (list, tuple)) and len(facing) == 2
-            )
-            legacy_floor.setupDanceFloorNames(int(max(rows, default=0)))
-            bar_start = record.bar_range[0] if record.bar_range else 1
-            crips = getCripsData(candidate, legacy_floor, bar_start=bar_start)
+            crips = structured_crips(isolated_document, execution)
         except AddonValidationError as exc:
             return error(
                 exc.code,
@@ -812,6 +1158,8 @@ def create_canonical_blueprint(app_module: Any) -> Blueprint:
             )
         except (ValueError, OSError, TypeError, KeyError) as exc:
             return error("preview_failed", str(exc), 422, dancers=affected_dancers)
+        except Exception as exc:
+            return error("preview_failed", str(exc), 422, dancers=affected_dancers)
 
         return jsonify({
             "danceId": path.stem,
@@ -819,6 +1167,10 @@ def create_canonical_blueprint(app_module: Any) -> Blueprint:
             "figureRef": node.figure_ref,
             "incomingFloor": serialize_floor(incoming),
             "outgoingFloor": serialize_floor(execution.outgoing_floor),
+            "activeDancers": (
+                sorted(execution.trace_records[0].active_dancers)
+                if execution.trace_records[0].active_dancers is not None else None
+            ),
             "crips": crips,
         })
 

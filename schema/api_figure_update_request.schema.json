@@ -61,7 +61,17 @@
     },
     "EndFacing": {
       "type": "array",
-      "description": "Ending facing directions for each dancer"
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/OptionalPosition"
+          },
+          {
+            "$ref": "#/definitions/FacingNotation"
+          }
+        ]
+      },
+      "description": "Per-dancer ending-facing target or symbolic notation"
     },
     "CriptDesc": {
       "type": "array",
@@ -164,9 +174,56 @@
     }
   ],
   "definitions": {
+    "PositionPair": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "additionalItems": false
+    },
+    "OptionalPosition": {
+      "oneOf": [
+        {
+          "type": "array",
+          "maxItems": 0
+        },
+        {
+          "$ref": "#/definitions/PositionPair"
+        }
+      ]
+    },
+    "FacingResetOrPosition": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/definitions/OptionalPosition"
+        },
+        {
+          "$ref": "#/definitions/FacingNotation"
+        }
+      ]
+    },
+    "FacingNotation": {
+      "type": "string",
+      "enum": ["=", "I", "O", "U", "D", "OwnL", "OpL", "M"]
+    },
     "Addon": {
       "type": "object",
       "properties": {
+        "Bars": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Replacement duration"
+        },
         "Name": {
           "type": "string",
           "minLength": 1,
@@ -187,15 +244,31 @@
         },
         "StartPos": {
           "type": "array",
+          "items": {
+            "$ref": "#/definitions/OptionalPosition"
+          },
           "description": "Modified starting positions"
         },
         "EndPos": {
           "type": "array",
+          "items": {
+            "$ref": "#/definitions/OptionalPosition"
+          },
           "description": "Modified ending positions"
         },
         "EndFacing": {
           "type": "array",
-          "description": "Modified facing directions"
+          "items": {
+            "$ref": "#/definitions/FacingResetOrPosition"
+          },
+          "description": "Modified facing directions; null explicitly resets to default, while [] leaves the base entry unchanged."
+        },
+        "Partner": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OptionalPosition"
+          },
+          "description": "Modified partner target positions"
         },
         "CriptDesc": {
           "type": "array",

@@ -35,3 +35,4 @@ class TraceRecord:
     branch_summaries: tuple[BranchSummary, ...] = ()
     conflict: ParallelWriteConflict | None = None
     duration: int | None = None
+    active_dancers: frozenset[str] | None = None

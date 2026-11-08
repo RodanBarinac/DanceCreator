@@ -65,9 +65,10 @@ execution; nested composite anchors add to the inherited offset.
 - Parallel children all receive the same incoming floor.
 - Parallel children execute independently.
 - Their results are combined into one outgoing floor.
-- Any parallel branches writing to the same floor position conflict, even when the resulting
-  dancer and facing values are identical; all overlapping writes are explicit
-  validation/execution errors.
+- Shared writes are not automatically conflicts: a branch may move into a position another
+  branch vacates, provided the merged position has one occupant and that occupant is not the
+  dancer retained there by the incoming floor. Multiple final occupants, or a retained incoming
+  dancer competing with a peer write, are conflicts.
 - Every executable occurrence has an incoming and outgoing floor state.
 - Trace bar ranges use one-based bar numbers with inclusive start and end.
 - If parallel combination conflicts, return a failed execution result with the isolated child

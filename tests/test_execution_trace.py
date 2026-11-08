@@ -36,6 +36,93 @@ def _trace_by_id(result):
     return {record.node_id: record for record in result.trace_records}
 
 
+def test_real_figure_participants_include_waits_and_nested_anchored_descendants():
+    from src.engine.figures.capabilities import FigureRepository
+    from src.engine.models.DanceFloor import DanceFloor
+
+    root = GroupNode("root", "series", (
+        CompositeOccurrence("comp", "Compound", (1, 0), (), GroupNode(
+            "inside", "parallel", (
+                FigureOccurrence("cast", "1cCast1p", (0, 0), ()),
+                FigureOccurrence("wait", "1cWait", (2, 0), ()),
+            )
+        )),
+    ))
+    result = execute_document(_document(root), DanceFloor("set", 4), FigureRepository())
+    records = _trace_by_id(result)
+    assert records["cast"].active_dancers == frozenset({"1m", "1w"})
+    assert records["wait"].active_dancers == frozenset({"3m", "3w"})
+    assert records["comp"].active_dancers == frozenset({"1m", "1w", "3m", "3w"})
+    assert records["root"].active_dancers == records["comp"].active_dancers
+
+
+def test_unchanged_wait_still_reports_participants():
+    from src.engine.figures.capabilities import FigureRepository
+    from src.engine.models.DanceFloor import DanceFloor
+
+    root = GroupNode("root", "series", (
+        FigureOccurrence("first", "1cWait", (1, 0), ()),
+        FigureOccurrence("second", "1cWait", (1, 0), ()),
+    ))
+    result = execute_document(_document(root), DanceFloor("set", 2), FigureRepository())
+    wait = _trace_by_id(result)["second"]
+    assert wait.writes == frozenset()
+    assert wait.active_dancers == frozenset({"1m", "1w"})
+
+
+def test_nested_composite_offsets_resolve_actual_starting_identities():
+    from src.engine.figures.capabilities import FigureRepository
+    from src.engine.models.DanceFloor import DanceFloor
+
+    inner = CompositeOccurrence("inner", "Inner", (1, 0), (), GroupNode(
+        "inner-root", "series", (FigureOccurrence("wait", "1cWait", (0, 0), ()),)
+    ))
+    outer = CompositeOccurrence("outer", "Outer", (1, 0), (), GroupNode(
+        "outer-root", "series", (inner,)
+    ))
+    result = execute_document(
+        _document(GroupNode("root", "series", (outer,))), DanceFloor("set", 3), FigureRepository()
+    )
+    for node_id in ("wait", "inner", "outer", "root"):
+        assert _trace_by_id(result)[node_id].active_dancers == frozenset({"2m", "2w"})
+
+
+def test_parallel_collision_remains_a_conflict_with_participants():
+    from src.engine.figures.capabilities import FigureRepository
+    from src.engine.models.DanceFloor import DanceFloor
+
+    root = GroupNode("root", "parallel", (
+        FigureOccurrence("left", "1cCast1p", (1, 0), ()),
+        FigureOccurrence("right", "1cCast1p", (1, 0), ()),
+    ))
+    result = execute_document(_document(root), DanceFloor("set", 3), FigureRepository())
+    assert result.status == "failed"
+    assert _trace_by_id(result)["root"].conflict is not None
+    assert _trace_by_id(result)["root"].active_dancers == frozenset({"1m", "1w"})
+
+
+def test_custom_executor_does_not_invent_participant_data():
+    root = GroupNode("root", "series", (_figure("custom"),))
+    result = execute_document(
+        _document(root), FloorState({}), _Repository(), figure_executor=lambda n, f, p, r: f
+    )
+    assert _trace_by_id(result)["custom"].active_dancers is None
+    assert _trace_by_id(result)["root"].active_dancers is None
+
+
+def test_ambiguous_dancer_names_do_not_claim_identified_participants():
+    from src.engine.figures.capabilities import FigureRepository
+
+    floor = FloorState({
+        (1, -1): FloorEntry("same", "male", (1, 1)),
+        (1, 1): FloorEntry("same", "female", (1, -1)),
+    })
+    root = GroupNode("root", "series", (FigureOccurrence("wait", "1cWait", (1, 0), ()),))
+    result = execute_document(_document(root), floor, FigureRepository())
+    assert _trace_by_id(result)["wait"].active_dancers is None
+    assert _trace_by_id(result)["root"].active_dancers is None
+
+
 def test_trace_paths_and_ranges_follow_series_parallel_and_composite_structure():
     root = GroupNode(
         "root",

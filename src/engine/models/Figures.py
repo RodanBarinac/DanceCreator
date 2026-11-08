@@ -111,10 +111,14 @@ class FigureAddon:
         return oldData
 
     @staticmethod
-    def _replace_entries(old_data, replacements):
+    def _replace_entries(old_data, replacements, allow_null=False):
         result = list(old_data)
         for index, replacement in enumerate(replacements):
-            if replacement:
+            if replacement is None and allow_null:
+                while len(result) <= index:
+                    result.append([])
+                result[index] = None
+            elif replacement:
                 while len(result) <= index:
                     result.append([])
                 result[index] = replacement
@@ -130,7 +134,7 @@ class FigureAddon:
         return self._replace_entries(oldData, self._newEndPos)
 
     def EndFacing(self, oldData):
-        return self._replace_entries(oldData, self._newEndFacing)
+        return self._replace_entries(oldData, self._newEndFacing, allow_null=True)
 
     def Partner(self, oldData):
         return self._replace_entries(oldData, self._newPartner)

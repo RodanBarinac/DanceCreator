@@ -2,12 +2,12 @@
   "EndFacing": [
     [],
     [
-      2,
-      -1
-    ],
-    [
       0,
       1
+    ],
+    [
+      2,
+      -1
     ],
     []
   ],
@@ -97,8 +97,8 @@
     "ESL": {
       "EndFacing": [
         [],
-        [],
-        [],
+        null,
+        null,
         []
       ],
       "EndPos": [
@@ -122,8 +122,8 @@
       "Name": "ESL",
       "CriptDesc": [
         "",
-        "face {Face}",
-        "face {Face}",
+        "end in {EndPos}",
+        "end in {EndPos}",
         ""
       ],
       "CriptReplace": [

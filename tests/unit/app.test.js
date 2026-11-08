@@ -263,13 +263,18 @@ describe('app.js utility functions', () => {
       <div id="incoming-floor"></div><div id="outgoing-floor"></div>
       <div id="figure-preview-status"></div>
     `;
-    const floor = {
+    const floor = anchor => ({
       '1m': {
-        position: [1, 1],
+        position: [anchor[0], anchor[1] - 1],
         dancer: { name: '1m', gender: 'male' },
-        facing: [1, 3],
+        facing: [anchor[0], anchor[1] + 1],
       },
-    };
+      '1w': {
+        position: [anchor[0], anchor[1] + 1],
+        dancer: { name: '1w', gender: 'female' },
+        facing: [anchor[0], anchor[1] - 1],
+      },
+    });
     const previewCalls = [];
     const failedDance = {
       document: {
@@ -288,8 +293,17 @@ describe('app.js utility functions', () => {
     };
     const send = async (path, options = {}) => {
       if (path === '/api/figures/Step/preview') {
-        previewCalls.push(JSON.parse(options.body));
-        return { status: 200, body: { incomingFloor: floor, outgoingFloor: floor } };
+        const request = JSON.parse(options.body);
+        previewCalls.push(request);
+        const anchoredFloor = floor(request.anchor);
+        return {
+          status: 200,
+          body: {
+            couples: 1,
+            incomingFloor: anchoredFloor,
+            outgoingFloor: anchoredFloor,
+          },
+        };
       }
       if (path === '/api/figures') {
         return {
@@ -335,7 +349,7 @@ describe('app.js utility functions', () => {
     expect(document.getElementById('error-panel').hidden).toBe(true);
     expect(document.getElementById('trace-heading').textContent).toContain('Step');
     expect(document.getElementById('figure-preview-status').textContent)
-      .toContain('smallest standard set');
+      .toContain('minimal declared participant set');
 
     document.getElementById('anchor-row').value = '2';
     document.getElementById('anchor-row').dispatchEvent(new Event('change', { bubbles: true }));
@@ -345,6 +359,28 @@ describe('app.js utility functions', () => {
     await new Promise(resolve => setTimeout(resolve, 0));
 
     expect(previewCalls.at(-1)).toEqual({ anchor: [2, 0], addons: ['Shift'] });
+
+    const initialPosition = document.querySelector(
+      '#incoming-floor [data-dancer="1m"]'
+    ).getAttribute('transform');
+    document.getElementById('anchor-col').value = '-1';
+    document.getElementById('anchor-col').dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(previewCalls.at(-1)).toEqual({ anchor: [2, -1], addons: ['Shift'] });
+    const mensLinePosition = document.querySelector(
+      '#incoming-floor [data-dancer="1m"]'
+    ).getAttribute('transform');
+    document.getElementById('anchor-col').value = '1';
+    document.getElementById('anchor-col').dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(previewCalls.at(-1)).toEqual({ anchor: [2, 1], addons: ['Shift'] });
+    const ladiesLinePosition = document.querySelector(
+      '#incoming-floor [data-dancer="1m"]'
+    ).getAttribute('transform');
+    expect(mensLinePosition).not.toBe(initialPosition);
+    expect(ladiesLinePosition).not.toBe(mensLinePosition);
   });
 
   test('failed catalog preview preserves and marks the last valid outgoing floor', async () => {
@@ -474,6 +510,51 @@ describe('app.js utility functions', () => {
     expect(document.querySelector('#incoming-floor [data-dancer="1m"]')).not.toBeNull();
   });
 
+  test('inspector filters by active identity and shares full-set frame across snapshots', async () => {
+    document.body.innerHTML = `
+      <div id="dance-tree"></div><div id="figure-meta"></div><div id="addon-controls"></div>
+      <input id="anchor-row"><input id="anchor-col"><p id="trace-status"></p>
+      <div id="incoming-floor"></div><div id="outgoing-floor"></div><div id="dance-floor-canvas"></div>`;
+    const node = { type: 'figure', id: 'cast', figureRef: 'Cast', anchor: [1, 0], addons: [] };
+    const root = { type: 'group', id: 'root', kind: 'series', children: [node] };
+    const floor = (row, side = -1) => ({
+      a: { position: [row, side], dancer: { name: '1m', gender: 'male' } },
+      b: { position: [4, 1], dancer: { name: '4w', gender: 'female' } },
+    });
+    const trace = { nodeId: 'cast', kind: 'figure', status: 'completed',
+      incomingFloor: floor(1), outgoingFloor: floor(2.5, 2), activeDancers: ['1m'] };
+    const readModel = { document: { root, metadata: { name: 'Dance' } }, tree: root,
+      trace: [trace], crips: [], validation: { isValid: true, errors: [] } };
+    const editor = createEditor({ send: async () => ({ status: 200, body: readModel }), documentRef: document });
+    editor.wire();
+    await editor.loadDance('dance-id');
+    document.querySelector('#dance-tree [data-node-id="cast"]').click();
+    expect(document.querySelector('#incoming-floor [data-dancer="4w"]')).toBeNull();
+    expect(document.querySelector('#outgoing-floor [data-dancer="4w"]')).toBeNull();
+    expect(document.querySelector('#outgoing-floor [data-dancer="1m"]').getAttribute('data-position')).toBe('2.5,2');
+    const incoming = document.querySelector('#incoming-floor svg');
+    const outgoing = document.querySelector('#outgoing-floor svg');
+    const lines = svg => [...svg.querySelectorAll('line[data-set-line]')].map(line => line.outerHTML);
+    expect(lines(incoming)).toHaveLength(2);
+    expect(lines(incoming)).toEqual(lines(outgoing));
+    expect(incoming.textContent).toContain('4');
+    expect(outgoing.textContent).toContain('4');
+
+    editor.state.nodePreview = {
+      nodeId: 'cast', model: editor.state.readModel, anchor: [1, 0], addons: [],
+      activeDancers: ['4w'], outgoingFloor: floor(2.5, 2),
+    };
+    editor.render();
+    expect(document.querySelector('#incoming-floor [data-dancer="1m"]')).toBeNull();
+    expect(document.querySelector('#incoming-floor [data-dancer="4w"]')).not.toBeNull();
+    expect(document.querySelector('#outgoing-floor [data-dancer="4w"]')).not.toBeNull();
+
+    delete editor.state.nodePreview.activeDancers;
+    editor.render();
+    expect(document.querySelector('#incoming-floor [data-dancer="1m"]')).not.toBeNull();
+    expect(document.querySelector('#incoming-floor [data-dancer="4w"]')).not.toBeNull();
+  });
+
   test('composite dance node displays child crips within its traced bar range', async () => {
     document.body.innerHTML = `
       <div id="dance-tree"></div><div id="figure-meta"></div><div id="addon-controls"></div>
@@ -508,6 +589,80 @@ describe('app.js utility functions', () => {
 
     expect(document.querySelector('#figure-crips').textContent).toContain('Child instruction.');
     expect(document.querySelector('#figure-crips').textContent).not.toContain('Outside instruction.');
+  });
+
+  test('group crips include only descendant occurrences, including nested composites', async () => {
+    document.body.innerHTML = `
+      <div id="dance-tree"></div><div id="figure-meta"></div><div id="addon-controls"></div>
+      <input id="anchor-row"><input id="anchor-col"><p id="trace-status"></p>
+      <div id="incoming-floor"></div><div id="outgoing-floor"></div>
+      <div id="figure-crips"></div><div id="dance-floor-canvas"></div>`;
+    const leaf = id => ({ type: 'figure', id, figureRef: 'Step', anchor: [1, 0], addons: [] });
+    const composite = { type: 'compositeOccurrence', id: 'comp', figureRef: 'Composite',
+      anchor: [0, 0], addons: [], root: { type: 'group', id: 'embedded', kind: 'series',
+        children: [leaf('nested')] } };
+    const group = { type: 'group', id: 'selected-group', kind: 'parallel',
+      children: [leaf('selected'), composite] };
+    const empty = { type: 'group', id: 'empty', kind: 'series', children: [] };
+    const root = { type: 'group', id: 'root', kind: 'parallel',
+      children: [group, leaf('sibling'), empty] };
+    const floor = { a: { position: [1, 1], dancer: { name: '1m', gender: 'male' } } };
+    const model = { document: { root, metadata: { name: 'Dance' } }, tree: root,
+      trace: [{ nodeId: 'selected-group', kind: 'parallel', status: 'completed',
+        barRange: [21, 24], incomingFloor: floor, outgoingFloor: floor }],
+      crips: [
+        { nodeId: 'selected', figureRef: 'Step', dancer: '1m', barRange: [21, 24], text: 'Selected instruction.' },
+        { nodeId: 'nested', figureRef: 'Step', dancer: '1m', barRange: [21, 24], text: 'Nested instruction.' },
+        { nodeId: 'sibling', figureRef: 'Step', dancer: '1m', barRange: [21, 24], text: 'Sibling instruction.' },
+        { figureRef: 'Step', dancer: '1m', barRange: [21, 24], text: 'Unidentified instruction.' },
+      ], validation: { isValid: true, errors: [] } };
+    const editor = createEditor({ send: async () => ({ status: 200, body: model }), documentRef: document });
+    editor.wire();
+    await editor.loadDance('dance-id');
+    document.querySelector('#dance-tree [data-node-id="selected-group"]').click();
+
+    const text = document.querySelector('#figure-crips').textContent;
+    expect(text).toContain('Selected instruction.');
+    expect(text).toContain('Nested instruction.');
+    expect(text).not.toContain('Sibling instruction.');
+    expect(text).not.toContain('Unidentified instruction.');
+
+    document.querySelector('#dance-tree [data-node-id="embedded"]').click();
+    const nestedText = document.querySelector('#figure-crips').textContent;
+    expect(nestedText).toContain('Nested instruction.');
+    expect(nestedText).not.toContain('Selected instruction.');
+    expect(nestedText).not.toContain('Sibling instruction.');
+
+    document.querySelector('#dance-tree [data-node-id="empty"]').click();
+    expect(document.querySelector('#figure-crips').textContent).toContain('No crips available.');
+  });
+
+  test('group and composite snapshots use the descendant participant union', async () => {
+    document.body.innerHTML = `
+      <div id="dance-tree"></div><div id="figure-meta"></div><div id="addon-controls"></div>
+      <input id="anchor-row"><input id="anchor-col"><p id="trace-status"></p>
+      <div id="incoming-floor"></div><div id="outgoing-floor"></div>`;
+    const composite = { type: 'compositeOccurrence', id: 'comp', figureRef: 'Comp',
+      anchor: [1, 0], addons: [], root: { type: 'group', id: 'embedded', kind: 'series', children: [] } };
+    const group = { type: 'group', id: 'parallel', kind: 'parallel', children: [composite] };
+    const root = { type: 'group', id: 'root', kind: 'series', children: [group] };
+    const floor = Object.fromEntries(['1m', '2m', '3m'].map((name, i) =>
+      [name, { position: [i + 1, -1], dancer: { name, gender: 'male' } }]));
+    const records = ['parallel', 'comp'].map(nodeId => ({
+      nodeId, kind: nodeId === 'parallel' ? 'parallel' : 'composite', status: 'completed',
+      incomingFloor: floor, outgoingFloor: floor, activeDancers: ['1m', '3m'],
+    }));
+    const model = { document: { root, metadata: { name: 'Dance' } }, tree: root,
+      trace: records, crips: [], validation: { isValid: true, errors: [] } };
+    const editor = createEditor({ send: async () => ({ status: 200, body: model }), documentRef: document });
+    editor.wire();
+    await editor.loadDance('dance-id');
+    for (const id of ['parallel', 'comp']) {
+      document.querySelector(`#dance-tree [data-node-id="${id}"]`).click();
+      expect([...document.querySelectorAll('#incoming-floor [data-dancer]')]
+        .map(token => token.getAttribute('data-dancer'))).toEqual(['1m', '3m']);
+      expect(document.querySelector('#outgoing-floor [data-dancer="2m"]')).toBeNull();
+    }
   });
 
   test('save confirms an incomplete transition before retrying', async () => {

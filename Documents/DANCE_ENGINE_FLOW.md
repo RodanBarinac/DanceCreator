@@ -135,8 +135,11 @@ addon changes where dancers finish facing.
 3. Loads `StartPos`, `EndPos`, `CriptDesc`, `StartFacing`, `StartDancers`, `EndFacing`, and
    `Partner`. Optional `StartDancers` and `StartFacing` lists must parallel `StartPos`; dancer
    identifiers are validated for format and uniqueness after empty entries receive the automatic
-   preview assignment. Empty facing entries use the same-row opposite-line default. `Facing` alone
-   is not a figure key or property.
+   preview assignment. Empty facing entries use the same-row opposite-line default. End-facing
+   entries may also use `=`, `I`, `O`, `U`, `D`, `OwnL`, `OpL`, or `M`; symbolic targets are
+   resolved against the actual incoming floor and final anchored position. `M` returns the
+   structured `unsupported_facing_notation` error because last-move direction is unavailable.
+   `Facing` alone is not a figure key or property.
 4. If `Addons` names were passed in, wraps each one in a `FigureAddon` and appends it to
    `self._Addons` — these are applied transparently whenever `StartPos`/`EndPos`/`EndFacing`/
    `Partner`/Cripts are read.
@@ -314,7 +317,7 @@ Country Dance terminology). They are generated in lock-step with (but separately
 2. For each dancer index, resolves placeholders against the **input** floor `myDF`:
    - `{Dancer}` → dancer name at `StartPos[i]`
    - `{StartPos}` / `{EndPos}` → position display name (e.g. `"1m's position"`)
-   - `{Face}` → position name of `EndFacing[i]` (raises if figure requires facing but none is set)
+   - `{Face}` → display name of the same resolved target used by execution, including symbolic `EndFacing`
    - `{Partner}` → dancer name at `Partner[i]` (raises if figure requires a partner but none is
      set)
 3. Prefixes each resolved line with its bar range: `f"{AktBar} - {AktBar+Bars-1}: {line}"`.

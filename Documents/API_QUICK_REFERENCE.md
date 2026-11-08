@@ -73,6 +73,13 @@ curl "http://localhost:5000/api/figures/H1DR"
 
 Simple figure definitions may declare `StartDancers` and `StartFacing`, each parallel to `StartPos`. They control only isolated catalog preview: dancer IDs (such as `2m`, `1w`) supply preview name/gender and couple color identity; target-coordinate `StartFacing` values set incoming facing. Empty or omitted entries use automatic dancer allocation or the default same-row opposite-line facing, respectively. Inside a dance, declarations are ignored; floor dancers keep their actual identity and incoming facing. See `FIGURE_LIST_API_CONTRACT.md` and `figure.schema.json`.
 
+`EndFacing` accepts coordinate targets or the symbolic values `=`, `I`, `O`, `U`, `D`, `OwnL`,
+`OpL`, and `M` in base figures and addons. Preview `outgoingFloor` contains the target actually
+resolved by execution, and `{Face}` crips use that target. `M` is explicitly unsupported at
+runtime (`unsupported_facing_notation`); other notation errors depend on the final anchored
+position or incoming dancer facing. See the normative
+[general figure contract](Project%20Design/GENERAL_DANCE_AND_FIGURE_JSON_CONTRACT.md).
+
 #### Figure Preview and Crips
 
 **POST /api/figures/<identifier>/preview** accepts `anchor` and selected `addons`, and returns
@@ -95,17 +102,34 @@ where each figure node uses its trace `incomingFloor` (not the caller's floor):
 `barRange` is inclusive; it uses effective `B<n>` duration, serial groups advance the range,
 and parallel children share a range. `text` is the figure/addon `getCrips` text without its legacy
 bar prefix or repeated leading dancer name; position labels use possessives (for example, `2w's position`). The legacy `getCrips` method retains its prefixed text for CLI callers. See `schema/api_crip_line.schema.json`.
+Trace-derived lines additionally contain `nodeId`, identifying the source figure occurrence.
+Dance responses and dance-node previews use canonical dance-tree IDs; composite catalog previews
+use their isolated execution-tree IDs. Simple catalog and other non-trace crips omit this field.
 
 **POST /api/dances/<dance-id>/nodes/<node-id>/preview** previews proposed edits to a simple
-figure node using its execution-trace incoming floor. The request body is `{"anchor": [1, 0],
+figure or composite node using its execution-trace incoming floor. The request body is `{"anchor": [1, 0],
 "addons": ["B4", "E1c"]}`; `node-id` is the canonical node ID in the dance tree. The success
-response contains `danceId`, `nodeId`, `figureRef`, `incomingFloor`, `outgoingFloor`, and `crips`.
+response contains `danceId`, `nodeId`, `figureRef`, `incomingFloor`, `outgoingFloor`,
+`activeDancers`, and `crips`. When identities are available, `activeDancers` identifies the
+actual occupants of the proposed figure's start positions, including dancers who wait.
+Trace records expose the
+same field, with groups and composites reporting the union of participating descendants;
+in either response, null means the participants are unavailable rather than an empty set.
 It does not mutate the dance, history, revision, proposal registry, or file. The separate
 `POST /api/dances/<dance-id>/proposals` route creates a pending in-memory token but does not
 commit; `/apply` updates in-memory document/history state only after validation succeeds, and `/save`
 persists the document. Schemas:
 `schema/api_dance_node_preview_request.schema.json` and
 `schema/api_dance_node_preview_response.schema.json`.
+
+Composite-node preview keeps constituent anchors and add-ons and reports crips from the
+canonical execution trace with each child's real bar range. Composite-level add-ons are
+unsupported and return `composite_addons_unsupported`. Catalog Version 3 previews execute
+their canonical serial/parallel tree on the minimum declared initial participant floor;
+`StartDancers` and `StartFacing` declarations are honored where needed. Unsupported or
+ambiguous initial formations fail explicitly instead of returning partial results. The
+Version 3 catalog response can include `activeDancers` in addition to the usual floor and
+crips fields.
 
 Preview errors follow `schema/api_error.schema.json`; `error` contains `code` and `message`, and
 when affected dancers are known it also contains `dancers` (names or labels such as `start position 1`).

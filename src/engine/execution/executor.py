@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from numbers import Real
-from typing import Callable, Mapping
+from typing import Callable, Iterable, Mapping
 
 from src.engine.domain.dance_model import (
     CompositeOccurrence,
@@ -37,8 +37,9 @@ class FigureExecutionError(ExecutionError):
         self.figure_ref = occurrence.figure_ref
         self.occurrence = occurrence
         self.cause = cause
+        self.code = getattr(cause, "code", "figure_execution_failed")
         super().__init__(
-            code="figure_execution_failed",
+            code=self.code,
             message=(
                 f"Figure occurrence {occurrence.id!r} ({occurrence.figure_ref!r}) "
                 f"failed: {cause}"
@@ -85,12 +86,31 @@ class _ExecutionContext:
     anchor_offset: tuple[Real, Real] = (0, 0)
 
 
+def _active_union(results: Iterable[NodeExecution]) -> frozenset[str] | None:
+    active = set()
+    for result in results:
+        dancers = result.trace_records[0].active_dancers
+        if dancers is None:
+            return None
+        active.update(dancers)
+    return frozenset(active)
+
+
+def _active_identities(incoming: FloorState, starts: set[Position]) -> frozenset[str] | None:
+    """Names must uniquely identify dancers before they can safely filter snapshots."""
+    names = [entry.dancer_name for entry in incoming.positions.values()]
+    if any(not name for name in names) or len(names) != len(set(names)):
+        return None
+    return frozenset(incoming.positions[position].dancer_name for position in starts)
+
+
 def execute_document(
     document: DanceDocument,
     initial_floor: FloorState | object,
     repository: object,
     *,
     figure_executor: FigureExecutor | None = None,
+    bar_start: int = 1,
 ) -> ExecutionResult:
     if document.incomplete:
         raise ExecutionError(
@@ -113,7 +133,7 @@ def execute_document(
             figure_executor,
             duration_analysis.node_durations,
         ),
-        1,
+        bar_start,
     )
     return ExecutionResult(
         outgoing_floor=result.outgoing_floor,
@@ -166,6 +186,7 @@ def execute_node(
             status=result.status,
             writes=result.writes,
             duration=duration,
+            active_dancers=result.trace_records[0].active_dancers,
         )
         return NodeExecution(
             node_id=node.id,
@@ -227,6 +248,10 @@ def execute_node(
             status="failed" if failed else "completed",
             writes=writes,
             duration=duration,
+            active_dancers=(
+                _active_union(child_results)
+                if len(child_results) == len(node.children) else None
+            ),
         )
         return NodeExecution(
             node_id=node.id,
@@ -299,6 +324,7 @@ def execute_node(
         branch_summaries=summaries,
         conflict=conflict,
         duration=duration,
+        active_dancers=_active_union(branches),
     )
     return NodeExecution(
         node_id=node.id,
@@ -330,10 +356,11 @@ def _execute_occurrence(
             outgoing = context.figure_executor(
                 occurrence, incoming, path, context.repository
             )
+            active_dancers = None
             if not isinstance(outgoing, FloorState):
                 raise TypeError("Figure executor must return a FloorState")
         else:
-            outgoing = _execute_legacy_figure(
+            outgoing, active_dancers = _execute_legacy_figure(
                 occurrence, incoming, path, context.repository
             )
     except ExecutionError:
@@ -362,6 +389,7 @@ def _execute_occurrence(
                 status="completed",
                 writes=writes,
                 duration=context.durations[occurrence.id],
+                active_dancers=active_dancers,
             ),
         ),
         writes=writes,
@@ -380,7 +408,7 @@ def _execute_legacy_figure(
     incoming: FloorState,
     path: tuple[str, ...],
     repository: object,
-) -> FloorState:
+) -> tuple[FloorState, frozenset[str] | None]:
     from src.engine.figures.SimpleFigure import SimpleFigure
 
     if repository is not None and hasattr(repository, "validate_addons"):
@@ -423,4 +451,4 @@ def _execute_legacy_figure(
             str(getattr(dancer, "gender", "")),
             facing,
         )
-    return FloorState(positions)
+    return FloorState(positions), _active_identities(incoming, starts)

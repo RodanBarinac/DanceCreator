@@ -114,7 +114,7 @@ class BranchResult:
 
 
 class ParallelWriteConflict(RuntimeError):
-    """Raised when two parallel branches change the same floor position."""
+    """Raised when parallel branches compete to occupy the same position."""
 
     def __init__(
         self,
@@ -137,7 +137,7 @@ class ParallelWriteConflict(RuntimeError):
             f"{position}: {', '.join(branch_ids)}"
             for position, branch_ids in self.conflicts.items()
         )
-        super().__init__(f"Parallel group {group_id!r} has overlapping writes: {details}")
+        super().__init__(f"Parallel group {group_id!r} has competing writes: {details}")
 
 
 def combine_parallel(
@@ -145,24 +145,50 @@ def combine_parallel(
     group_id: str,
     branches: tuple[BranchResult, ...],
 ) -> FloorState:
-    """Overlay disjoint branch deltas, rejecting every overlapping write."""
+    """Merge branch deltas, allowing moves into positions vacated by peers."""
     writers: dict[Position, list[str]] = {}
+    branches_by_id = {branch.node_id: branch for branch in branches}
     for branch in branches:
         for position in branch.writes:
             writers.setdefault(position, []).append(branch.node_id)
-    conflicts = {
-        position: tuple(branch_ids)
-        for position, branch_ids in writers.items()
-        if len(branch_ids) > 1
-    }
+    conflicts = {}
+    for position, branch_ids in writers.items():
+        occupying_entries = [
+            (
+                branch_id,
+                branches_by_id[branch_id].outgoing_floor.positions.get(position),
+            )
+            for branch_id in branch_ids
+        ]
+        occupying = [
+            (branch_id, entry)
+            for branch_id, entry in occupying_entries
+            if entry is not None
+        ]
+        incoming_entry = incoming.positions.get(position)
+        retained_dancer = False
+        if incoming_entry is not None and len(occupying) == 1:
+            retained_dancer = (
+                occupying[0][1].dancer_name == incoming_entry.dancer_name
+                and occupying[0][1].dancer_gender == incoming_entry.dancer_gender
+            )
+        if len(occupying) > 1 or (len(branch_ids) > 1 and retained_dancer):
+            conflicts[position] = tuple(branch_ids)
     if conflicts:
         raise ParallelWriteConflict(group_id=group_id, conflicts=conflicts)
 
     merged = dict(incoming.positions)
-    for branch in branches:
-        for position in sorted(branch.writes):
-            if position in branch.outgoing_floor.positions:
-                merged[position] = branch.outgoing_floor.positions[position]
-            else:
-                merged.pop(position, None)
+    for position, branch_ids in writers.items():
+        occupying_branch = next(
+            (
+                branches_by_id[branch_id]
+                for branch_id in branch_ids
+                if position in branches_by_id[branch_id].outgoing_floor.positions
+            ),
+            None,
+        )
+        if occupying_branch is None:
+            merged.pop(position, None)
+        else:
+            merged[position] = occupying_branch.outgoing_floor.positions[position]
     return FloorState(merged)

@@ -391,9 +391,10 @@ Cancel/rejected proposals do not change cache state.
    not alter execution or frontend.
 3. **Series/parallel execution** — add execution executor/combine modules and
    `tests/test_execution_engine.py`. Assert same-input branches, nested execution,
-   deterministic merges, repeated references, and input immutability. Any overlapping
-   parallel writes to a position conflict, even for identical resulting values. Depends on
-   stage 2. Do not add routes or editing.
+   deterministic merges, repeated references, and input immutability. Shared writes are
+   allowed when one branch vacates a position and another uniquely occupies it; competing
+   final occupants or a retained incoming dancer competing with a peer write conflict.
+   Depends on stage 2. Do not add routes or editing.
 4. **Equal-duration validation** — add duration validation and
    `tests/test_parallel_duration_validation.py`. Assert series sums, equal paths, unequal
    rejection, and explicit wait/padding. Depends on stage 3. Do not coerce to longest path.
@@ -458,8 +459,9 @@ below, which is kept only for traceability:
   independent positive-integer `CapabilityVersion` (legacy default `1`); JSON definitions may
   declare `AddonCombinationValidator.allowedCombinations` as unordered sets. Validation
   preserves submitted selection order and rejects duplicate selections.
-- ~~Decide whether identical parallel writes coalesce~~ → Any overlapping writes to a floor
-  position conflict, even if dancer and facing results are identical.
+- ~~Define parallel writes to vacated positions~~ → A shared position may be merged when one
+  branch vacates it and exactly one branch supplies a different final occupant. Competing final
+  occupants and a retained incoming dancer competing with a peer write remain conflicts.
 - ~~Decide trace bar-range boundaries~~ → Use one-based inclusive start and end bar numbers.
 - ~~Decide how parallel-conflict traces are exposed~~ → Return a failed `ExecutionResult`
   containing isolated child traces and conflict details, with no group outgoing floor and the
